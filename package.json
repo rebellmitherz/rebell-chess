@@ -1,0 +1,41 @@
+{
+  "name": "rebell-chess-3d",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Rebell Chess 3D – Premium-3D-Schach im Browser",
+  "type": "module",
+  "scripts": {
+    "engine:copy": "node scripts/copy-engine.mjs",
+    "predev": "npm run engine:copy",
+    "dev": "vite",
+    "dev:lan": "npm run engine:copy && vite --host",
+    "prebuild": "npm run engine:copy",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "chess.js": "^1.4.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "stockfish": "^19.0.1",
+    "three": "^0.186.1",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,243 @@
+import { useState } from 'react';
+import type { Color } from '../core/types';
+import { DIFFICULTY_LEVELS } from '../engine/difficulty';
+import { gameStore, useGame } from '../game/instance';
+import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality } from '../game/settings';
+import { FIGURINE } from './format';
+
+type Panel = 'home' | 'new' | 'settings' | 'help';
+type ColorChoice = Color | 'random';
+
+const actions = () => gameStore.getState();
+
+function Segmented<T extends string>({ value, options, onChange }: { value: T; options: Array<{ value: T; label: string }>; onChange: (v: T) => void }) {
+  return (
+    <div className="segmented" role="radiogroup">
+      {options.map((o) => (
+        <button key={o.value} role="radio" aria-checked={value === o.value} className={value === o.value ? 'active' : ''} onClick={() => onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+  return (
+    <label className="toggle-row">
+      <span>
+        <span className="toggle-label">{label}</span>
+        {hint && <span className="toggle-hint">{hint}</span>}
+      </span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="toggle-switch" aria-hidden="true" />
+    </label>
+  );
+}
+
+function NewGamePanel({ onBack }: { onBack: () => void }) {
+  const last = useGame((s) => s.settings);
+  const [mode, setMode] = useState<GameMode>(last.mode);
+  const [color, setColor] = useState<ColorChoice>(last.humanColor);
+  const [level, setLevel] = useState(last.aiLevel);
+  const [tc, setTc] = useState(last.timeControlId);
+  const [training, setTraining] = useState(last.training);
+
+  const start = () => {
+    const humanColor: Color = color === 'random' ? (Math.random() < 0.5 ? 'w' : 'b') : color;
+    const settings: GameSettings = { mode, humanColor, aiLevel: level, timeControlId: tc, training };
+    actions().startGame(settings);
+  };
+
+  return (
+    <div className="menu-panel">
+      <h2 className="panel-title">Neue Partie</h2>
+      <div className="field">
+        <span className="field-label">Gegner</span>
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'ai', label: 'Stockfish-KI' },
+            { value: 'local', label: 'Zwei Spieler' },
+          ]}
+        />
+      </div>
+      {mode === 'ai' && (
+        <>
+          <div className="field">
+            <span className="field-label">Deine Farbe</span>
+            <Segmented
+              value={color}
+              onChange={setColor}
+              options={[
+                { value: 'w', label: `${FIGURINE.k} Weiß` },
+                { value: 'random', label: 'Zufall' },
+                { value: 'b', label: `${FIGURINE.k} Schwarz` },
+              ]}
+            />
+          </div>
+          <div className="field">
+            <span className="field-label">Spielstärke</span>
+            <div className="level-grid">
+              {DIFFICULTY_LEVELS.map((l) => (
+                <button key={l.id} className={`level${level === l.id ? ' active' : ''}`} onClick={() => setLevel(l.id)} title={l.description}>
+                  <span className="level-no">{l.id}</span>
+                  <span className="level-name">{l.name}</span>
+                  <span className="level-elo">{l.strength}</span>
+                </button>
+              ))}
+            </div>
+            <p className="field-hint">{DIFFICULTY_LEVELS.find((l) => l.id === level)?.description}</p>
+          </div>
+        </>
+      )}
+      <div className="field">
+        <span className="field-label">Bedenkzeit</span>
+        <div className="chip-grid">
+          {TIME_CONTROLS.map((t) => (
+            <button key={t.id} className={`chip${tc === t.id ? ' active' : ''}`} onClick={() => setTc(t.id)}>
+              <strong>{t.label}</strong>
+              <span>{t.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <Toggle
+        checked={training}
+        onChange={setTraining}
+        label="Trainingsmodus"
+        hint="Hinweise per Knopfdruck, Bewertung und Erklärung jedes Zuges"
+      />
+      <div className="menu-actions">
+        <button className="btn primary big" onClick={start}>
+          Partie starten
+        </button>
+        <button className="btn ghost" onClick={onBack}>
+          Zurück
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ onBack }: { onBack: () => void }) {
+  const prefs = useGame((s) => s.prefs);
+  const set = actions().setPrefs;
+  return (
+    <div className="menu-panel">
+      <h2 className="panel-title">Einstellungen</h2>
+      <div className="field">
+        <span className="field-label">Grafikqualität</span>
+        <Segmented<GraphicsQuality>
+          value={prefs.graphics}
+          onChange={(graphics) => set({ graphics })}
+          options={[
+            { value: 'high', label: 'Hoch' },
+            { value: 'medium', label: 'Mittel' },
+            { value: 'low', label: 'Niedrig' },
+          ]}
+        />
+        <p className="field-hint">Niedrig schaltet Schatten und Partikel ab – für ältere Smartphones.</p>
+      </div>
+      <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
+      <Toggle checked={prefs.showLegalMoves} onChange={(showLegalMoves) => set({ showLegalMoves })} label="Legale Züge anzeigen" />
+      <Toggle checked={prefs.showLastMove} onChange={(showLastMove) => set({ showLastMove })} label="Letzten Zug markieren" />
+      <Toggle checked={prefs.showCoordinates} onChange={(showCoordinates) => set({ showCoordinates })} label="Koordinaten am Brettrand" />
+      <Toggle
+        checked={prefs.autoRotate}
+        onChange={(autoRotate) => set({ autoRotate })}
+        label="Brett automatisch drehen"
+        hint="Zwei Spieler: Das Brett dreht sich zur Seite am Zug"
+      />
+      <div className="menu-actions">
+        <button className="btn ghost" onClick={onBack}>
+          Zurück
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HelpPanel({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="menu-panel help">
+      <h2 className="panel-title">Anleitung</h2>
+      <h3>Ziehen</h3>
+      <p>Figur antippen oder anklicken, dann das Zielfeld. Punkte zeigen legale Züge, Ringe zeigen Schlagzüge.</p>
+      <h3>Kamera</h3>
+      <p>Ziehen mit Maus oder Finger dreht das Brett, Mausrad oder zwei Finger zoomen. „Drehen“ wechselt die Seite.</p>
+      <h3>Tastatur</h3>
+      <p>
+        <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü
+      </p>
+      <h3>Regeln</h3>
+      <p>
+        Alle Schachregeln inklusive Rochade, en passant und Bauernumwandlung. Remis bei Patt, ungenügendem Material,
+        dreifacher Stellungswiederholung und nach der 50-Züge-Regel. Bei Zeitüberschreitung gewinnt der Gegner – außer er
+        kann gar nicht mehr mattsetzen, dann ist es Remis.
+      </p>
+      <h3>Speichern</h3>
+      <p>Die Partie wird nach jedem Zug automatisch im Browser gespeichert. Über „PGN“ lässt sie sich exportieren und auf anderen Geräten laden.</p>
+      <h3>Lizenzen</h3>
+      <p>
+        Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
+        Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
+        3D: three.js, React Three Fiber (MIT). Schriften Cinzel und Inter (OFL-1.1).
+      </p>
+      <div className="menu-actions">
+        <button className="btn ghost" onClick={onBack}>
+          Zurück
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function MainMenu() {
+  const [panel, setPanel] = useState<Panel>('home');
+  const active = useGame((s) => s.active);
+  const hasSave = useGame((s) => s.hasSave);
+  const result = useGame((s) => s.result);
+  const back = () => setPanel('home');
+
+  return (
+    <div className="menu-overlay">
+      <div className="menu-card">
+        <header className="menu-brand">
+          <div className="crest">{FIGURINE.n}</div>
+          <h1>
+            <span className="brand-mark">REBELL</span> <span className="brand-chess">CHESS</span>
+          </h1>
+          <p className="tagline">Schach in Gold, Silber und Schwarz</p>
+        </header>
+        {panel === 'home' && (
+          <nav className="menu-list">
+            {active && (
+              <button className="btn primary big" onClick={() => actions().closeMenu()}>
+                {result ? 'Zurück zum Brett' : 'Zurück zur Partie'}
+              </button>
+            )}
+            {!active && hasSave && (
+              <button className="btn primary big" onClick={() => actions().continueSaved()}>
+                Gespeicherte Partie fortsetzen
+              </button>
+            )}
+            <button className={`btn big${!active && !hasSave ? ' primary' : ''}`} onClick={() => setPanel('new')}>
+              Neue Partie
+            </button>
+            <button className="btn" onClick={() => setPanel('settings')}>
+              Einstellungen
+            </button>
+            <button className="btn" onClick={() => setPanel('help')}>
+              Anleitung
+            </button>
+          </nav>
+        )}
+        {panel === 'new' && <NewGamePanel onBack={back} />}
+        {panel === 'settings' && <SettingsPanel onBack={back} />}
+        {panel === 'help' && <HelpPanel onBack={back} />}
+      </div>
+    </div>
+  );
+}
