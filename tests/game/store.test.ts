@@ -62,6 +62,22 @@ describe('Lokale Partie', () => {
     expect(store.getState().selected).toBeNull();
   });
 
+  it('Drag & Drop: legales Ziel zieht, Ausgangsfeld behält Auswahl, illegales Ziel bricht ab', () => {
+    const { store } = setup();
+    store.getState().dropPiece('e2', 'e5');
+    expect(store.getState().history).toHaveLength(0);
+    expect(store.getState().selected).toBeNull();
+    store.getState().dropPiece('e2', 'e2');
+    expect(store.getState().selected).toBe('e2');
+    expect(store.getState().targets.map((t) => t.to).sort()).toEqual(['e3', 'e4']);
+    store.getState().dropPiece('e2', null); // neben das Brett
+    expect(store.getState().selected).toBeNull();
+    store.getState().dropPiece('g1', 'f3');
+    expect(store.getState().history.map((m) => m.san)).toEqual(['Nf3']);
+    store.getState().dropPiece('f3', 'e5'); // Schwarz ist am Zug – Weiß darf nicht ziehen
+    expect(store.getState().history).toHaveLength(1);
+  });
+
   it('fragt bei der Bauernumwandlung nach der Figur', () => {
     const { store } = setup();
     store.getState().importPgn('[FEN "8/P6k/8/8/8/8/8/K7 w - - 0 1"]\n[SetUp "1"]\n\n*');
@@ -280,8 +296,11 @@ describe('Speichern und Laden', () => {
 
   it('merkt sich Einstellungen', () => {
     const { store, storage } = setup();
-    store.getState().setPrefs({ sound: false, graphics: 'low' });
+    store.getState().setPrefs({ sound: false, graphics: 'low', volume: 0.35 });
     const again = createGameStore({ storage });
-    expect(again.getState().prefs).toMatchObject({ sound: false, graphics: 'low' });
+    expect(again.getState().prefs).toMatchObject({ sound: false, graphics: 'low', volume: 0.35 });
+    // Kaputte Werte werden begrenzt bzw. ersetzt
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ volume: 7, graphics: 'ultra' }));
+    expect(createGameStore({ storage }).getState().prefs).toMatchObject({ volume: 1, graphics: 'high' });
   });
 });

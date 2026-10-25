@@ -27,6 +27,7 @@ import {
 } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
 import { scoreToCp } from '../engine/uci';
+import { resolveDrop } from './drop';
 import type { EngineService } from './engineService';
 import {
   decodeSave,
@@ -104,6 +105,8 @@ export interface GameActions {
   openMenu(): void;
   closeMenu(): void;
   selectSquare(square: Square): void;
+  /** Gezogene Figur von `from` über Feld `over` losgelassen (Drag & Drop) */
+  dropPiece(from: Square, over: Square | null): void;
   tryMove(from: Square, to: Square, promotion?: PieceSymbol): boolean;
   choosePromotion(piece: PieceSymbol | null): void;
   undo(): void;
@@ -137,6 +140,21 @@ export interface StoreDeps {
 
 const POSITIONAL: ResultReason[] = ['checkmate', 'stalemate', 'insufficient-material', 'threefold-repetition', 'fifty-move-rule'];
 const isPositional = (r: GameResult) => POSITIONAL.includes(r.reason);
+
+/** Darf der Mensch gerade eine Figur auswählen oder ziehen? */
+export function canHumanInteract(s: GameData): boolean {
+  const humanToMove = s.settings.mode === 'local' || s.status.turn === s.settings.humanColor;
+  return (
+    s.screen === 'game' &&
+    s.active &&
+    !s.result &&
+    !s.paused &&
+    !s.pendingPromotion &&
+    !s.drawOffer &&
+    !s.engineThinking &&
+    humanToMove
+  );
+}
 
 const HINT_DEPTH = 14;
 const FEEDBACK_DEPTH = 12;
@@ -187,17 +205,7 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
       };
     };
 
-    const humanToMove = (s: GameData) => s.settings.mode === 'local' || s.status.turn === s.settings.humanColor;
-
-    const canInteract = (s: GameData) =>
-      s.screen === 'game' &&
-      s.active &&
-      !s.result &&
-      !s.paused &&
-      !s.pendingPromotion &&
-      !s.drawOffer &&
-      !s.engineThinking &&
-      humanToMove(s);
+    const canInteract = canHumanInteract;
 
     const persist = () => {
       const s = get();
@@ -565,6 +573,17 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
           return;
         }
         if (s.selected) set({ selected: null, targets: [], ...sfx('illegal') });
+      },
+
+      dropPiece(from, over) {
+        const s = get();
+        if (!canInteract(s)) return;
+        const targets = s.selected === from ? s.targets : game.legalMovesFrom(from);
+        const action = resolveDrop(from, over, targets);
+        if (action.kind === 'move') get().tryMove(from, action.to);
+        else if (action.kind === 'keep') {
+          if (s.selected !== from) set({ selected: from, targets });
+        } else set({ selected: null, targets: [], ...sfx('illegal') });
       },
 
       tryMove(from, to, promotion) {

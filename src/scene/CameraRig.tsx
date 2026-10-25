@@ -2,6 +2,7 @@ import { CameraControls, CameraControlsImpl } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { useGame } from '../game/instance';
+import { sceneHandles } from './interaction';
 
 const { ACTION } = CameraControlsImpl;
 const FOV_HALF_TAN = Math.tan(((40 / 2) * Math.PI) / 180);
@@ -57,9 +58,13 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
     if (screen === 'menu' && controls.current) controls.current.azimuthAngle += dt * 0.06;
   });
 
-  // Nur im Dev-Modus: Kamera für Prüfungen in der Browser-Konsole erreichbar
   useEffect(() => {
+    sceneHandles.controls = controls.current;
+    // Nur im Dev-Modus: Kamera für Prüfungen in der Browser-Konsole erreichbar
     if (import.meta.env.DEV) (window as unknown as { __camera?: CameraControlsImpl }).__camera = controls.current;
+    return () => {
+      sceneHandles.controls = null;
+    };
   }, []);
 
   return (

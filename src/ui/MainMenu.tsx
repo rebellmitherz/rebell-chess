@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSfx } from '../audio/sound';
 import type { Color } from '../core/types';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 import { gameStore, useGame } from '../game/instance';
@@ -141,6 +142,22 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
         <p className="field-hint">Niedrig schaltet Schatten und Partikel ab – für ältere Smartphones.</p>
       </div>
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
+      {prefs.sound && (
+        <label className="slider-row">
+          <span className="toggle-label">Lautstärke</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={Math.round(prefs.volume * 100)}
+            onChange={(e) => set({ volume: Number(e.target.value) / 100 })}
+            onPointerUp={() => playSfx('move')}
+            aria-label="Lautstärke"
+          />
+          <span className="slider-value">{Math.round(prefs.volume * 100)} %</span>
+        </label>
+      )}
       <Toggle checked={prefs.showLegalMoves} onChange={(showLegalMoves) => set({ showLegalMoves })} label="Legale Züge anzeigen" />
       <Toggle checked={prefs.showLastMove} onChange={(showLastMove) => set({ showLastMove })} label="Letzten Zug markieren" />
       <Toggle checked={prefs.showCoordinates} onChange={(showCoordinates) => set({ showCoordinates })} label="Koordinaten am Brettrand" />
@@ -164,9 +181,12 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
     <div className="menu-panel help">
       <h2 className="panel-title">Anleitung</h2>
       <h3>Ziehen</h3>
-      <p>Figur antippen oder anklicken, dann das Zielfeld. Punkte zeigen legale Züge, Ringe zeigen Schlagzüge.</p>
+      <p>
+        Figur antippen oder anklicken, dann das Zielfeld – oder die Figur direkt aufs Zielfeld ziehen. Punkte zeigen legale
+        Züge, Ringe zeigen Schlagzüge.
+      </p>
       <h3>Kamera</h3>
-      <p>Ziehen mit Maus oder Finger dreht das Brett, Mausrad oder zwei Finger zoomen. „Drehen“ wechselt die Seite.</p>
+      <p>Ziehen auf freier Fläche dreht das Brett, Mausrad oder zwei Finger zoomen. „Drehen“ wechselt die Seite.</p>
       <h3>Tastatur</h3>
       <p>
         <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü
@@ -183,7 +203,8 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       <p>
         Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
         Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
-        3D: three.js, React Three Fiber (MIT). Schriften Cinzel und Inter (OFL-1.1).
+        3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
+        Figuren, Texturen und Klänge sind im Code erzeugt.
       </p>
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

@@ -42,6 +42,7 @@ export function GoldDust({ count }: { count: number }) {
   const base = useMemo(() => (geometry.attributes.position.array as Float32Array).slice(), [geometry]);
 
   useFrame(({ clock }) => {
+    if (!points.current) return; // count 0: nichts gerendert (Grafikstufe „Niedrig“)
     const t = clock.elapsedTime;
     const pos = geometry.attributes.position as THREE.BufferAttribute;
     const phase = geometry.attributes.phase.array as Float32Array;

@@ -1,20 +1,40 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { PieceSymbol } from '../core/types';
 
 /**
  * Prozedurale Staunton-Figuren: Drehkörper (Lathe) aus fein gesetzten Profilkurven,
- * Springerkopf als gefaste Extrusion, Krone/Kreuz/Zinnen als Zusatzteile.
+ * Springerkopf als modellierte Extrusion (verjüngtes Maul, Wangen, weich schattiert),
+ * Läuferkerbe per CSG-Subtraktion, Krone/Kreuz/Zinnen als Zusatzteile.
  * Pro Figurtyp wird die Geometrie einmal erzeugt, gemergt und von allen Figuren geteilt.
  */
 
-const SEGMENTS = 64;
+const SEGMENTS = 48;
+/** Ziel-Abstand der Profilpunkte – kurze Rundungen bekommen wenige, lange Bögen mehr Punkte */
+const PROFILE_STEP = 0.02;
 
-function lathe(build: (p: THREE.Path) => void, divisions = 12): THREE.BufferGeometry {
+/** Profilpunkte nach Kurvenlänge verteilen (statt jede Teilkurve gleich fein) – spart Dreiecke ohne sichtbaren Verlust. */
+function profilePoints(path: THREE.Path): THREE.Vector2[] {
+  const points: THREE.Vector2[] = [];
+  for (const curve of path.curves) {
+    const isLine = curve instanceof THREE.LineCurve;
+    const max = curve instanceof THREE.EllipseCurve ? 18 : 10;
+    const n = isLine ? 1 : Math.max(2, Math.min(max, Math.ceil(curve.getLength() / PROFILE_STEP)));
+    for (const p of curve.getPoints(n)) {
+      const last = points[points.length - 1];
+      if (!last || last.distanceTo(p) > 1e-6) points.push(new THREE.Vector2(p.x, p.y));
+    }
+  }
+  return points;
+}
+
+function lathe(build: (p: THREE.Path) => void): THREE.BufferGeometry {
   const path = new THREE.Path();
   build(path);
-  return new THREE.LatheGeometry(path.getPoints(divisions), SEGMENTS);
+  return new THREE.LatheGeometry(profilePoints(path), SEGMENTS);
 }
 
 function merge(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
@@ -90,6 +110,46 @@ function rook(): THREE.BufferGeometry {
   return merge(parts);
 }
 
+const smoothstep = (a: number, b: number, v: number) => {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * Formt eine flache Extrusion (Seitenansicht x/y, Dicke z um 0 zentriert) plastisch:
+ * Maul und Ohren schmaler, Wangen gewölbt. Danach weiche Normalen für runde Übergänge.
+ */
+function sculpt(flat: THREE.BufferGeometry, profile: (x: number, y: number) => { scale: number; bulge: number }) {
+  // Die Deckflächen einer Extrusion haben nur Randpunkte – erst fein unterteilen, damit sie sich wölben lassen
+  // Genug Durchläufe, damit jede Kante geteilt wird – sonst bleiben T-Stöße (fleckige Schattierung)
+  const geo = new TessellateModifier(0.045, 24).modify(flat);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const { scale, bulge } = profile(x, y);
+    pos.setZ(i, z * scale + Math.sign(z) * bulge);
+  }
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  const welded = mergeVertices(geo, 1e-5);
+  welded.computeVertexNormals();
+  welded.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(welded.attributes.position.count * 2), 2));
+  return welded;
+}
+
+/** Plastik des Pferdekopfes in Profilkoordinaten (x = Blickrichtung, y = Höhe über dem Sockel) */
+function headProfile(x: number, y: number) {
+  let scale = 1;
+  scale *= 1 - 0.36 * smoothstep(0.07, 0.23, x); // Maul schmal
+  scale *= 1 - 0.22 * smoothstep(0.42, 0.6, y); // Ohren schmal
+  scale *= 1 - 0.12 * smoothstep(-0.05, -0.19, x); // Nacken etwas schlanker
+  const cheek = Math.hypot((x - 0.05) / 0.13, (y - 0.29) / 0.11);
+  const bulge = 0.032 * Math.max(0, 1 - cheek) ** 2; // Wangenknochen
+  return { scale, bulge };
+}
+
 function knight(): THREE.BufferGeometry {
   const plinth = lathe((p) => {
     base(p, 0.3);
@@ -101,30 +161,35 @@ function knight(): THREE.BufferGeometry {
   // Seitenansicht des Pferdekopfes (x = Blickrichtung, y = oben)
   const s = new THREE.Shape();
   s.moveTo(-0.15, 0);
-  s.bezierCurveTo(-0.14, 0.09, -0.2, 0.16, -0.19, 0.25);
-  s.bezierCurveTo(-0.18, 0.35, -0.14, 0.42, -0.09, 0.47);
+  s.bezierCurveTo(-0.14, 0.09, -0.2, 0.16, -0.19, 0.25); // Hals hinten
+  s.bezierCurveTo(-0.18, 0.35, -0.14, 0.42, -0.09, 0.47); // Hinterkopf
   s.lineTo(-0.06, 0.53);
-  s.quadraticCurveTo(-0.035, 0.6, -0.02, 0.6);
+  s.quadraticCurveTo(-0.035, 0.6, -0.02, 0.6); // Ohrspitze
   s.quadraticCurveTo(0.0, 0.56, 0.005, 0.51);
-  s.bezierCurveTo(0.04, 0.5, 0.075, 0.47, 0.1, 0.43);
-  s.bezierCurveTo(0.14, 0.37, 0.19, 0.31, 0.215, 0.25);
-  s.bezierCurveTo(0.235, 0.21, 0.225, 0.17, 0.195, 0.16);
-  s.bezierCurveTo(0.17, 0.15, 0.13, 0.155, 0.1, 0.175);
-  s.bezierCurveTo(0.075, 0.19, 0.05, 0.21, 0.03, 0.205);
-  s.bezierCurveTo(0.0, 0.17, 0.06, 0.1, 0.11, 0.05);
+  s.bezierCurveTo(0.04, 0.5, 0.075, 0.47, 0.1, 0.43); // Stirn
+  s.bezierCurveTo(0.14, 0.37, 0.19, 0.31, 0.215, 0.25); // Nasenrücken
+  s.bezierCurveTo(0.232, 0.222, 0.233, 0.2, 0.222, 0.19); // Nüstern
+  s.lineTo(0.172, 0.187); // Maulspalte
+  s.lineTo(0.204, 0.171); // Unterlippe
+  s.bezierCurveTo(0.2, 0.152, 0.16, 0.148, 0.12, 0.168); // Kinn
+  s.bezierCurveTo(0.09, 0.185, 0.055, 0.21, 0.03, 0.205); // Ganasche
+  s.bezierCurveTo(0.0, 0.17, 0.06, 0.1, 0.11, 0.05); // Kehle, Brust
   s.lineTo(0.13, 0);
   s.closePath();
 
   const depth = 0.15;
-  const head = new THREE.ExtrudeGeometry(s, {
+  const bevel = 0.04;
+  const rawHead = new THREE.ExtrudeGeometry(s, {
     depth,
     bevelEnabled: true,
-    bevelThickness: 0.04,
+    bevelThickness: bevel,
     bevelSize: 0.028,
-    bevelSegments: 5,
-    curveSegments: 24,
+    bevelSegments: 4,
+    curveSegments: 16,
   });
-  head.translate(-0.01, 0.175, -depth / 2);
+  rawHead.translate(0, 0, -depth / 2);
+  const head = sculpt(rawHead, headProfile);
+  head.translate(-0.01, 0.175, 0);
 
   // Mähne: schmaler Kamm entlang des Nackens
   const m = new THREE.Shape();
@@ -136,25 +201,40 @@ function knight(): THREE.BufferGeometry {
   m.bezierCurveTo(-0.16, 0.18, -0.13, 0.12, -0.1, 0.06);
   m.closePath();
   const maneDepth = 0.05;
-  const mane = new THREE.ExtrudeGeometry(m, {
+  const rawMane = new THREE.ExtrudeGeometry(m, {
     depth: maneDepth,
     bevelEnabled: true,
     bevelThickness: 0.02,
     bevelSize: 0.012,
-    bevelSegments: 3,
-    curveSegments: 16,
+    bevelSegments: 2,
+    curveSegments: 10,
   });
-  mane.translate(-0.012, 0.175, -maneDepth / 2);
+  rawMane.translate(-0.012, 0, -maneDepth / 2);
+  const mane = sculpt(rawMane, () => ({ scale: 1, bulge: 0 }));
+  mane.translate(0, 0.175, 0);
 
-  // Augen als kleine Halbkugeln auf beiden Seiten
+  // Augen sitzen auf der modellierten Oberfläche
+  const eyeX = 0.065;
+  const eyeY = 0.405;
+  const eyeProfile = headProfile(eyeX, eyeY);
+  const eyeZ = (depth / 2 + bevel) * eyeProfile.scale + eyeProfile.bulge - 0.004;
   const eyes = [-1, 1].map((side) => {
-    const e = new THREE.SphereGeometry(0.022, 12, 8);
+    const e = new THREE.SphereGeometry(0.021, 14, 10);
     e.scale(1, 0.8, 0.5);
-    e.translate(0.06, 0.175 + 0.4, side * (depth / 2 + 0.038));
+    e.translate(eyeX - 0.01, 0.175 + eyeY, side * eyeZ);
     return e;
   });
 
-  return merge([plinth, head, mane, ...eyes]);
+  // Nüstern als kleine Wülste
+  const nostrils = [-1, 1].map((side) => {
+    const n = new THREE.SphereGeometry(0.014, 10, 8);
+    n.scale(1, 0.7, 0.5);
+    const np = headProfile(0.205, 0.215);
+    n.translate(0.195, 0.175 + 0.215, side * ((depth / 2 + bevel) * np.scale - 0.004));
+    return n;
+  });
+
+  return merge([plinth, head, mane, ...eyes, ...nostrils]);
 }
 
 function bishop(): THREE.BufferGeometry {
@@ -170,11 +250,26 @@ function bishop(): THREE.BufferGeometry {
     p.quadraticCurveTo(0.05, 0.8, 0.032, 0.802);
     p.absarc(0, 0.84, 0.042, Math.atan2(0.802 - 0.84, 0.032), Math.PI / 2, false);
   });
-  // Angedeutete Mitra-Kerbe: schräger, dünner Steg
-  const notch = new RoundedBoxGeometry(0.2, 0.022, 0.03, 2, 0.008);
-  notch.rotateZ(-0.75);
-  notch.translate(0.035, 0.705, 0);
-  return merge([body, notch]);
+  return merge([cutMitre(body)]);
+}
+
+/**
+ * Die typische Läuferkerbe: ein schräger Schlitz von der rechten Seite bis knapp über die Mitte,
+ * durch die ganze Tiefe der Mitra – per CSG aus dem Drehkörper herausgeschnitten.
+ */
+export const BISHOP_SLOT = { centerX: 0.1, centerY: 0.7, length: 0.2, width: 0.03, angle: -0.62 };
+
+function cutMitre(body: THREE.BufferGeometry): THREE.BufferGeometry {
+  const slot = new THREE.BoxGeometry(BISHOP_SLOT.length, BISHOP_SLOT.width, 0.6);
+  const target = new Brush(body);
+  const cutter = new Brush(slot);
+  cutter.rotation.z = BISHOP_SLOT.angle;
+  cutter.position.set(BISHOP_SLOT.centerX, BISHOP_SLOT.centerY, 0);
+  cutter.updateMatrixWorld();
+  target.updateMatrixWorld();
+  const evaluator = new Evaluator();
+  evaluator.useGroups = false;
+  return evaluator.evaluate(target, cutter, SUBTRACTION).geometry;
 }
 
 function queen(): THREE.BufferGeometry {
@@ -195,11 +290,11 @@ function queen(): THREE.BufferGeometry {
   const spikes = 9;
   for (let i = 0; i < spikes; i++) {
     const a = (i / spikes) * Math.PI * 2;
-    const g = new THREE.SphereGeometry(0.03, 14, 10);
+    const g = new THREE.SphereGeometry(0.03, 10, 7);
     g.translate(Math.cos(a) * 0.205, 0.9, Math.sin(a) * 0.205);
     parts.push(g);
   }
-  const top = new THREE.SphereGeometry(0.055, 20, 14);
+  const top = new THREE.SphereGeometry(0.055, 16, 10);
   top.translate(0, 1.0, 0);
   parts.push(top);
   return merge(parts);
@@ -241,6 +336,9 @@ export function getPieceGeometry(type: PieceSymbol): THREE.BufferGeometry {
   let g = cache.get(type);
   if (!g) {
     g = builders[type]();
+    if (g.index) g = g.toNonIndexed(); // einheitlich: alle Figuren nicht-indiziert (Bauer ist ein reiner Drehkörper)
+    g.computeBoundingBox();
+    g.computeBoundingSphere();
     cache.set(type, g);
   }
   return g;
@@ -253,7 +351,7 @@ const accentCache = new Map<PieceSymbol, THREE.BufferGeometry>();
 export function getAccentGeometry(type: PieceSymbol): THREE.BufferGeometry {
   let g = accentCache.get(type);
   if (!g) {
-    g = new THREE.TorusGeometry(ACCENT_RADIUS[type], 0.012, 10, 72);
+    g = new THREE.TorusGeometry(ACCENT_RADIUS[type], 0.012, 6, 56);
     g.rotateX(Math.PI / 2);
     const y = type === 'q' ? 0.142 : type === 'k' ? 0.145 : 0.13;
     g.translate(0, y, 0);

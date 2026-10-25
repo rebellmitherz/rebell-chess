@@ -32,8 +32,8 @@ Beim ersten Mal fragt Windows evtl. nach einer Firewall-Freigabe für Node.js (p
 npm test
 ```
 
-75 automatische Tests: Schachregeln, Uhr, Figuren-IDs, Erklärungen, Speichern/Laden, Spielfluss gegen eine Test-Engine
-und die **echte Stockfish-Engine** (WASM in Node.js).
+87 automatische Tests: Schachregeln, Uhr, Figuren-IDs, Erklärungen, Speichern/Laden, Drag & Drop, Figurengeometrie,
+Spielfluss gegen eine Test-Engine und die **echte Stockfish-Engine** (WASM in Node.js).
 
 ```bash
 npm run typecheck
@@ -59,8 +59,10 @@ Hinweis: `dist/index.html` per Doppelklick (file://) öffnen funktioniert nicht,
 
 ## Bedienung
 
-- Figur anklicken/antippen, dann Zielfeld. Punkte = legale Züge, Ringe = Schlagzüge.
-- Ziehen mit Maus/Finger dreht die Kamera, Mausrad/zwei Finger zoomen.
+- Figur anklicken/antippen, dann Zielfeld – oder die Figur direkt aufs Zielfeld ziehen (Drag & Drop).
+  Punkte = legale Züge, Ringe = Schlagzüge.
+- Ziehen auf freier Fläche dreht die Kamera, Mausrad/zwei Finger zoomen.
+- Ist das Spiel auf einem Gerät zu langsam: Menü → Einstellungen → Grafikqualität „Mittel“ oder „Niedrig“.
 - Tasten: `U` Zug zurück · `F` Brett drehen · `H` Hinweis (Training) · `P` Pause · `Esc` Menü.
 
 ## Dokumentation

@@ -5,6 +5,7 @@ import type { Square } from '../core/types';
 import { useGame } from '../game/instance';
 import { squareToWorld } from './boardMath';
 import { Burst } from './Effects';
+import { useDragUi } from './interaction';
 
 const Y = 0.006;
 
@@ -32,6 +33,7 @@ function buildShared() {
     selectedRing: overlayMaterial('#ffe29a', 0.95),
     target: overlayMaterial('#f2cf78', 0.88),
     capture: overlayMaterial('#ff8f5a', 0.92),
+    dropTarget: overlayMaterial('#ffe29a', 0.5),
   };
 }
 const getShared = () => (shared ??= buildShared());
@@ -114,6 +116,8 @@ export function Highlights() {
   const showLegal = useGame((st) => st.prefs.showLegalMoves);
   const showLast = useGame((st) => st.prefs.showLastMove);
   const result = useGame((st) => st.result);
+  const dragOver = useDragUi((st) => (st.draggingId ? st.over : null));
+  const dropLegal = dragOver !== null && targets.some((t) => t.to === dragOver);
 
   return (
     <group>
@@ -137,6 +141,12 @@ export function Highlights() {
             <Flat key={t.to} square={t.to} geometry={s.dot} material={s.target} order={5} />
           ),
         )}
+      {dropLegal && dragOver && (
+        <>
+          <Flat square={dragOver} geometry={s.square} material={s.dropTarget} order={5} />
+          <Flat square={dragOver} geometry={s.selectRing} material={s.selectedRing} order={6} />
+        </>
+      )}
       {checkSquare && <CheckGlow square={checkSquare} />}
       {hint?.status === 'ready' && hint.from && hint.to && <HintArrow from={hint.from} to={hint.to} />}
       {last?.promotion && <PromotionFlash key={`${last.to}-${last.fenAfter}`} square={last.to} />}

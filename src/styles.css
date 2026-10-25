@@ -1214,6 +1214,30 @@ input:focus-visible + .toggle-switch {
   background: #fff6dc;
 }
 
+.slider-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.slider-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold);
+}
+
+.slider-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 13px;
+  min-width: 42px;
+  text-align: right;
+}
+
 .menu-actions {
   display: flex;
   flex-direction: column;

@@ -1,19 +1,21 @@
 import { Environment, Lightformer, SoftShadows } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Suspense, useEffect } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import type { GraphicsQuality } from '../game/settings';
 import { Board } from './Board';
 import { CameraRig } from './CameraRig';
+import { DragController } from './DragController';
 import { GoldDust } from './Effects';
 import { Highlights } from './Highlights';
+import { AdaptiveResolution, FrameDriver, ShadowUpdater } from './Performance';
 import { Pieces } from './Pieces';
 
-const QUALITY: Record<GraphicsQuality, { dpr: [number, number]; shadowMap: number; soft: boolean; dust: number }> = {
-  high: { dpr: [1, 2], shadowMap: 2048, soft: true, dust: 160 },
-  medium: { dpr: [1, 1.5], shadowMap: 1024, soft: false, dust: 80 },
-  low: { dpr: [1, 1], shadowMap: 0, soft: false, dust: 0 },
+const QUALITY: Record<GraphicsQuality, { dpr: [number, number]; shadowMap: number; soft: boolean; dust: number; idleFps: number }> = {
+  high: { dpr: [1, 2], shadowMap: 2048, soft: true, dust: 160, idleFps: 30 },
+  medium: { dpr: [0.85, 1.5], shadowMap: 1024, soft: false, dust: 80, idleFps: 24 },
+  low: { dpr: [0.75, 1], shadowMap: 0, soft: false, dust: 0, idleFps: 15 },
 };
 
 /** Studio-Umgebung aus Leuchtflächen: sorgt für die Reflexionen auf Gold und Onyx – ohne HDR-Download. */
@@ -38,6 +40,16 @@ function StudioEnvironment() {
   );
 }
 
+/** Nur im Dev-Modus: Renderer für Messungen in der Browser-Konsole erreichbar. */
+function DevProbe() {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    (window as unknown as { __r3f?: unknown }).__r3f = { gl, scene };
+  }, [gl, scene]);
+  return null;
+}
+
 export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number; topInset: number; bottomInset: number }) {
   const graphics = useGame((s) => s.prefs.graphics);
   const q = QUALITY[graphics];
@@ -49,6 +61,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       className="scene-canvas"
       shadows={shadows ? { type: THREE.PCFSoftShadowMap } : false}
       dpr={q.dpr}
+      frameloop="demand"
       camera={{ fov: 40, position: [0, 12, 12], near: 0.1, far: 120 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
     >
@@ -78,10 +91,15 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
         <StudioEnvironment />
       </Suspense>
       <CameraRig sidebar={sidebar} topInset={topInset} bottomInset={bottomInset} />
+      <DragController />
       <Board />
       <Pieces />
       <Highlights />
-      <GoldDust count={q.dust} />
+      {q.dust > 0 && <GoldDust count={q.dust} />}
+      <FrameDriver idleFps={q.idleFps} />
+      {shadows && <ShadowUpdater />}
+      <AdaptiveResolution min={q.dpr[0]} max={q.dpr[1]} />
+      {import.meta.env.DEV && <DevProbe />}
     </Canvas>
   );
 }

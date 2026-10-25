@@ -44,6 +44,8 @@ export interface Preferences {
   showLegalMoves: boolean;
   showLastMove: boolean;
   sound: boolean;
+  /** Lautstärke 0–1 */
+  volume: number;
   graphics: GraphicsQuality;
   /** Lokales Spiel: Brett dreht sich zur Seite am Zug */
   autoRotate: boolean;
@@ -68,6 +70,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showLegalMoves: true,
   showLastMove: true,
   sound: true,
+  volume: 0.8,
   graphics: 'high',
   autoRotate: false,
   showCoordinates: true,
@@ -93,6 +96,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     showLegalMoves: bool(r.showLegalMoves, base.showLegalMoves),
     showLastMove: bool(r.showLastMove, base.showLastMove),
     sound: bool(r.sound, base.sound),
+    volume: typeof r.volume === 'number' && Number.isFinite(r.volume) ? Math.min(1, Math.max(0, r.volume)) : base.volume,
     graphics: r.graphics === 'high' || r.graphics === 'medium' || r.graphics === 'low' ? r.graphics : base.graphics,
     autoRotate: bool(r.autoRotate, base.autoRotate),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),

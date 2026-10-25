@@ -9,6 +9,7 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
 | three | MIT | 3D-Grafik |
 | @react-three/fiber, @react-three/drei | MIT | React-Anbindung, Kamera, Umgebungslicht |
 | camera-controls (über drei) | MIT | Kamerasteuerung |
+| three-bvh-csg, three-mesh-bvh | MIT | Läuferkerbe per Geometrie-Subtraktion |
 | react, react-dom | MIT | Oberfläche |
 | zustand | MIT | Spielzustand |
 | @fontsource/cinzel, @fontsource/inter | OFL-1.1 | Schriften (lokal gebündelt) |

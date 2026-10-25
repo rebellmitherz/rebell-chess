@@ -20,6 +20,7 @@ Speichern/Laden und einem hochwertigen Schwarz-Gold-Silber-Look.
 | Zustand | zustand 5 | MIT | Spielfluss-Store |
 | KI | stockfish (Stockfish.js 19, Lite, single-threaded) | GPL-3.0 | Gegner, Hinweise, Zugbewertung |
 | Schrift | @fontsource/cinzel, @fontsource/inter | OFL-1.1 | Lokal gebündelt, kein Netz nötig |
+| CSG | three-bvh-csg, three-mesh-bvh | MIT | Läuferkerbe (Geometrie-Subtraktion) |
 | Tests | Vitest | MIT | Regeln, Uhr, Speichern, Engine, Spielfluss |
 
 Keine kostenpflichtigen Dienste, kein Server, keine Laufzeit-Downloads von fremden CDNs.
@@ -50,6 +51,7 @@ src/
     engineService.ts  Zwei Stockfish-Instanzen (Spielen / Analysieren) hinter einer kleinen Schnittstelle
     persistence.ts    Spielstand serialisieren, prüfen, wiederherstellen (localStorage)
     settings.ts       Einstellungen + Zeitkontrollen
+    drop.ts           Regel für das Loslassen einer gezogenen Figur (Drag & Drop)
     instance.ts       Die eine Store-Instanz der App (echte Engine + Browser-Speicher)
   scene/     3D-Darstellung – liest nur den Store, schreibt nur über Actions
     ChessScene.tsx    Canvas, Licht, Umgebung, Schatten, Kamera
@@ -57,7 +59,10 @@ src/
     Pieces.tsx        Figuren mit Bewegungs- und Schlag-Animation
     pieceGeometry.ts  Prozedurale Staunton-Figuren (Lathe + Extrude, gemergt)
     materials.ts      PBR-Materialien (Gold, Onyx, Silber)
-    Highlights.tsx    Legale Züge, letzter Zug, Schach, Hinweis-Pfeil
+    Highlights.tsx    Legale Züge, letzter Zug, Schach, Hinweis-Pfeil, Zielfeld beim Ziehen
+    DragController.tsx  Drag & Drop: Zeiger → Brettebene, Ablegen über store.dropPiece
+    interaction.ts    Gemeinsamer Zieh-/Aktivitätszustand, Zugriff auf die Kamerasteuerung
+    Performance.tsx   Bildrate nach Bedarf, Schatten nur bei Bewegung, adaptive Pixeldichte
   ui/        React-Oberfläche – Menüs, HUD, Dialoge
   audio/     Soundeffekte (Web Audio, synthetisch erzeugt – keine Fremdlizenz)
 ```
@@ -98,6 +103,11 @@ src/
 ## Grafik-Leistung
 
 - Figuren-Geometrie einmal pro Figurtyp erzeugt und geteilt; Materialien geteilt.
-- Qualitätsstufen Hoch/Mittel/Niedrig (Pixeldichte, Schattenauflösung, weiche Schatten, Partikel).
+- Qualitätsstufen Hoch/Mittel/Niedrig (Pixeldichte, Schattenauflösung, weiche Schatten, Partikel, Ruhe-Bildrate).
+- `frameloop="demand"`: volle Bildrate nur bei Interaktion, Animation und Kamerafahrt, sonst 15–30 fps.
+- Schattenkarte wird nur neu berechnet, während sich Figuren bewegen.
+- Pixeldichte sinkt automatisch, wenn das Gerät in aktiven Phasen unter ~40 fps fällt.
+- Bibliotheken als eigene Build-Dateien (three, R3F, React, chess.js) – bleiben bei App-Updates im Cache.
+- Messwerte: `docs/FORTSCHRITT.md` → Abschnitt „Leistung“.
 - Automatische Voreinstellung „Mittel“ auf Touch-Geräten.
 - Effekte (Partikel, Glanz) liegen außerhalb des Bretts oder sind dezent – Lesbarkeit hat Vorrang.

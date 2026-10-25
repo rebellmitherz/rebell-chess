@@ -2,11 +2,14 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { TrackedPiece } from '../core/pieceTracking';
+import type { Square } from '../core/types';
 import { useGame } from '../game/instance';
+import { canHumanInteract } from '../game/store';
 import { squareToWorld } from './boardMath';
 import { getMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
 import { Burst } from './Effects';
+import { clickSuppressed, pointerDrag, sceneHandles } from './interaction';
 
 /** Springer schauen zum Gegner, leicht gedreht, damit das Profil aus Spielersicht erkennbar bleibt. */
 const KNIGHT_YAW = 0.75;
@@ -22,10 +25,21 @@ function setPointer(active: boolean) {
   document.body.style.cursor = active ? 'pointer' : '';
 }
 
-function Piece({ piece, lifted, interactive }: { piece: TrackedPiece; lifted: boolean; interactive: boolean }) {
+function Piece({
+  piece,
+  lifted,
+  interactive,
+  displaySquare,
+}: {
+  piece: TrackedPiece;
+  lifted: boolean;
+  interactive: boolean;
+  /** Feld, auf dem die Figur gezeigt wird (bei offener Umwandlungsauswahl schon das Zielfeld) */
+  displaySquare: Square;
+}) {
   const group = useRef<THREE.Group>(null!);
   const selectSquare = useGame((s) => s.selectSquare);
-  const [x, z] = squareToWorld(piece.square);
+  const [x, z] = squareToWorld(displaySquare);
   const anim = useRef({
     from: new THREE.Vector2(x, z),
     to: new THREE.Vector2(x, z),
@@ -35,6 +49,7 @@ function Piece({ piece, lifted, interactive }: { piece: TrackedPiece; lifted: bo
     lift: 0,
     scale: 0,
     pop: 0,
+    wasDragged: false,
   });
 
   useLayoutEffect(() => {
@@ -63,6 +78,26 @@ function Piece({ piece, lifted, interactive }: { piece: TrackedPiece; lifted: bo
   useFrame((_, dt) => {
     const a = anim.current;
     const g = group.current;
+    const dragged = pointerDrag.active && pointerDrag.pieceId === piece.id;
+    if (dragged) {
+      // Figur folgt dem Zeiger (leicht gedämpft), schwebt über dem Brett
+      g.position.x = THREE.MathUtils.damp(g.position.x, pointerDrag.x, 28, dt);
+      g.position.z = THREE.MathUtils.damp(g.position.z, pointerDrag.z, 28, dt);
+      g.position.y = THREE.MathUtils.damp(g.position.y, 0.42, 18, dt);
+      g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, 1.08, 14, dt));
+      a.wasDragged = true;
+      return;
+    }
+    if (a.wasDragged) {
+      // Losgelassen: vom aktuellen Punkt zum (neuen oder alten) Feld gleiten
+      a.wasDragged = false;
+      a.from.set(g.position.x, g.position.z);
+      a.to.set(x, z);
+      a.t = 0;
+      a.duration = 0.18 + a.from.distanceTo(a.to) * 0.03;
+      a.hop = 0;
+      a.lift = g.position.y;
+    }
     let y = 0;
     if (a.t < 1) {
       a.t = Math.min(1, a.t + dt / a.duration);
@@ -82,15 +117,34 @@ function Piece({ piece, lifted, interactive }: { piece: TrackedPiece; lifted: bo
   const yaw = pieceYaw(piece);
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (e.delta > 8) return;
+    if (e.delta > 8 || clickSuppressed()) return;
     e.stopPropagation();
     selectSquare(piece.square);
+  };
+
+  // Ziehen vorbereiten: Kamera sofort abschalten, damit sie die Geste nicht übernimmt
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!interactive) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.stopPropagation();
+    if (sceneHandles.controls) sceneHandles.controls.enabled = false;
+    Object.assign(pointerDrag, {
+      pointerId: e.pointerId,
+      pieceId: piece.id,
+      from: piece.square,
+      startX: e.nativeEvent.clientX,
+      startY: e.nativeEvent.clientY,
+      active: false,
+      x,
+      z,
+    });
   };
 
   return (
     <group
       ref={group}
       onClick={onClick}
+      onPointerDown={onPointerDown}
       onPointerOver={(e) => {
         e.stopPropagation();
         if (interactive) setPointer(true);
@@ -140,9 +194,8 @@ export function Pieces() {
   const pieces = useGame((s) => s.pieces);
   const selected = useGame((s) => s.selected);
   const turn = useGame((s) => s.status.turn);
-  const mode = useGame((s) => s.settings.mode);
-  const humanColor = useGame((s) => s.settings.humanColor);
-  const over = useGame((s) => s.result !== null);
+  const canInteract = useGame(canHumanInteract);
+  const pending = useGame((s) => s.pendingPromotion);
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece }>>([]);
@@ -158,16 +211,15 @@ export function Pieces() {
     prev.current = pieces;
   }, [pieces]);
 
-  const myTurnColor = mode === 'ai' ? humanColor : turn;
-
   return (
     <group>
       {pieces.map((p) => (
         <Piece
           key={p.id}
           piece={p}
-          lifted={p.square === selected}
-          interactive={!over && p.color === myTurnColor && p.color === turn}
+          lifted={p.square === selected && !pending}
+          interactive={canInteract && p.color === turn}
+          displaySquare={pending && pending.from === p.square ? pending.to : p.square}
         />
       ))}
       {ghosts.map((g) => (

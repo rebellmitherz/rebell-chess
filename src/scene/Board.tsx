@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILES, isLightSquare, RANKS, type Square } from '../core/types';
 import { useGame } from '../game/instance';
 import { FRAME_HALF, squareToWorld, worldToSquare } from './boardMath';
+import { clickSuppressed, useDragUi } from './interaction';
 import { getMaterials } from './materials';
 
 /** Felder als zwei gemergte Geometrien (hell/dunkel) – jedes Feld zeigt einen anderen Ausschnitt der Steintextur. */
@@ -87,6 +88,7 @@ export function Board() {
   const showCoordinates = useGame((s) => s.prefs.showCoordinates);
   const selectSquare = useGame((s) => s.selectSquare);
   const [hover, setHover] = useState<Square | null>(null);
+  const dragging = useDragUi((s) => s.draggingId !== null);
 
   const lightGeo = useMemo(() => buildSquares(true), []);
   const darkGeo = useMemo(() => buildSquares(false), []);
@@ -95,7 +97,7 @@ export function Board() {
   const coordTex = useCoordinateTexture();
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (e.delta > 8) return; // war ein Kamera-Ziehen
+    if (e.delta > 8 || clickSuppressed()) return; // war ein Kamera-Ziehen oder Drag & Drop
     e.stopPropagation();
     const sq = worldToSquare(e.point.x, e.point.z);
     if (sq) selectSquare(sq);
@@ -156,7 +158,7 @@ export function Board() {
         <planeGeometry args={[8, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      {hover && <HoverMarker square={hover} />}
+      {hover && !dragging && <HoverMarker square={hover} />}
     </group>
   );
 }

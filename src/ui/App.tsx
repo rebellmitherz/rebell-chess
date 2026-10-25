@@ -1,5 +1,5 @@
 import { Component, useEffect, type ReactNode } from 'react';
-import { playSfx, unlockAudio } from '../audio/sound';
+import { playSfx, setVolume, unlockAudio } from '../audio/sound';
 import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
@@ -27,13 +27,13 @@ class SceneErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
 }
 
 function useSoundBridge() {
-  useEffect(
-    () =>
-      gameStore.subscribe((s, prev) => {
-        if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) playSfx(s.sfx.kind);
-      }),
-    [],
-  );
+  useEffect(() => {
+    setVolume(gameStore.getState().prefs.volume);
+    return gameStore.subscribe((s, prev) => {
+      if (s.prefs.volume !== prev.prefs.volume) setVolume(s.prefs.volume);
+      if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) playSfx(s.sfx.kind);
+    });
+  }, []);
   useEffect(() => {
     const unlock = () => unlockAudio();
     window.addEventListener('pointerdown', unlock, { once: true });
