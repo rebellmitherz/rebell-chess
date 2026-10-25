@@ -11,11 +11,15 @@ import { GoldDust } from './Effects';
 import { Highlights } from './Highlights';
 import { AdaptiveResolution, FrameDriver, ShadowUpdater } from './Performance';
 import { Pieces } from './Pieces';
+import { PostEffects } from './PostEffects';
 
-const QUALITY: Record<GraphicsQuality, { dpr: [number, number]; shadowMap: number; soft: boolean; dust: number; idleFps: number }> = {
-  high: { dpr: [1, 2], shadowMap: 2048, soft: true, dust: 160, idleFps: 30 },
-  medium: { dpr: [0.85, 1.5], shadowMap: 1024, soft: false, dust: 80, idleFps: 24 },
-  low: { dpr: [0.75, 1], shadowMap: 0, soft: false, dust: 0, idleFps: 15 },
+const QUALITY: Record<
+  GraphicsQuality,
+  { dpr: [number, number]; shadowMap: number; soft: boolean; dust: number; idleFps: number; post: boolean }
+> = {
+  high: { dpr: [1, 2], shadowMap: 2048, soft: true, dust: 160, idleFps: 30, post: true },
+  medium: { dpr: [0.85, 1.5], shadowMap: 1024, soft: false, dust: 80, idleFps: 24, post: false },
+  low: { dpr: [0.75, 1], shadowMap: 0, soft: false, dust: 0, idleFps: 15, post: false },
 };
 
 /** Studio-Umgebung aus Leuchtflächen: sorgt für die Reflexionen auf Gold und Onyx – ohne HDR-Download. */
@@ -96,6 +100,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       <Pieces />
       <Highlights />
       {q.dust > 0 && <GoldDust count={q.dust} />}
+      {q.post && <PostEffects />}
       <FrameDriver idleFps={q.idleFps} />
       {shadows && <ShadowUpdater />}
       <AdaptiveResolution min={q.dpr[0]} max={q.dpr[1]} />
