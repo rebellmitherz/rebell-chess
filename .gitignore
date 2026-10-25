@@ -4,3 +4,5 @@ public/engine/
 *.log
 .vite/
 coverage/
+# Rohdaten (CC0) – neu laden mit: npm run assets:pieces
+assets-src/

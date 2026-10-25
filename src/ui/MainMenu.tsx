@@ -3,7 +3,7 @@ import { playSfx } from '../audio/sound';
 import type { Color } from '../core/types';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 import { gameStore, useGame } from '../game/instance';
-import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality } from '../game/settings';
+import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality, type PieceStyle } from '../game/settings';
 import { FIGURINE } from './format';
 
 type Panel = 'home' | 'new' | 'settings' | 'help';
@@ -140,6 +140,18 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           ]}
         />
         <p className="field-hint">Niedrig schaltet Schatten und Partikel ab – für ältere Smartphones.</p>
+      </div>
+      <div className="field">
+        <span className="field-label">Figurenstil</span>
+        <Segmented<PieceStyle>
+          value={prefs.pieceStyle}
+          onChange={(pieceStyle) => set({ pieceStyle })}
+          options={[
+            { value: 'classic', label: 'Klassisch' },
+            { value: 'rebell', label: 'Rebell' },
+          ]}
+        />
+        <p className="field-hint">Klassisch: detailreicher Staunton-Satz. Rebell: eigene, kantigere Figuren.</p>
       </div>
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
       {prefs.sound && (

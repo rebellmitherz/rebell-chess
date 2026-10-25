@@ -146,3 +146,22 @@ export function getMaterials() {
   if (!cached) cached = build();
   return cached;
 }
+
+const modelCache = new WeakMap<THREE.Texture, Record<Color, THREE.MeshPhysicalMaterial>>();
+
+/** Gold/Onyx für die Modell-Figuren: zusätzlich mit gebackener Verdeckung (Rillen, Krone, Mähne). */
+export function getModelMaterials(ao: THREE.Texture): Record<Color, THREE.MeshPhysicalMaterial> {
+  let m = modelCache.get(ao);
+  if (!m) {
+    const base = getMaterials().piece;
+    const gold = base.w.clone();
+    gold.aoMap = ao;
+    gold.aoMapIntensity = 0.85;
+    const onyx = base.b.clone();
+    onyx.aoMap = ao;
+    onyx.aoMapIntensity = 0.6;
+    m = { w: gold, b: onyx };
+    modelCache.set(ao, m);
+  }
+  return m;
+}

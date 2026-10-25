@@ -4,6 +4,7 @@ import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { PieceSymbol } from '../core/types';
+import { enableFastRaycast } from './raycast';
 
 /**
  * Prozedurale Staunton-Figuren: Drehkörper (Lathe) aus fein gesetzten Profilkurven,
@@ -339,6 +340,7 @@ export function getPieceGeometry(type: PieceSymbol): THREE.BufferGeometry {
     if (g.index) g = g.toNonIndexed(); // einheitlich: alle Figuren nicht-indiziert (Bauer ist ein reiner Drehkörper)
     g.computeBoundingBox();
     g.computeBoundingSphere();
+    enableFastRaycast(g);
     cache.set(type, g);
   }
   return g;

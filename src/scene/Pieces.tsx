@@ -6,8 +6,10 @@ import type { Square } from '../core/types';
 import { useGame } from '../game/instance';
 import { canHumanInteract } from '../game/store';
 import { squareToWorld } from './boardMath';
-import { getMaterials } from './materials';
+import type { PieceSymbol, Color } from '../core/types';
+import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
+import { useModelPieces } from './pieceModels';
 import { Burst } from './Effects';
 import { clickSuppressed, pointerDrag, sceneHandles } from './interaction';
 
@@ -25,15 +27,39 @@ function setPointer(active: boolean) {
   document.body.style.cursor = active ? 'pointer' : '';
 }
 
+/** Aussehen der Figuren: Geometrien und Materialien des gewählten Stils */
+interface PieceLook {
+  geometry: (type: PieceSymbol) => THREE.BufferGeometry;
+  accent: (type: PieceSymbol) => THREE.BufferGeometry;
+  material: Record<Color, THREE.MeshPhysicalMaterial>;
+}
+
+function usePieceLook(): PieceLook {
+  const style = useGame((s) => s.prefs.pieceStyle);
+  const model = useModelPieces(style === 'classic');
+  return useMemo(() => {
+    if (model) {
+      return {
+        geometry: (t) => model.geometries[t],
+        accent: (t) => model.accents[t],
+        material: getModelMaterials(model.ao),
+      };
+    }
+    return { geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials().piece };
+  }, [model]);
+}
+
 function Piece({
   piece,
   lifted,
   interactive,
   displaySquare,
+  look,
 }: {
   piece: TrackedPiece;
   lifted: boolean;
   interactive: boolean;
+  look: PieceLook;
   /** Feld, auf dem die Figur gezeigt wird (bei offener Umwandlungsauswahl schon das Zielfeld) */
   displaySquare: Square;
 }) {
@@ -152,22 +178,22 @@ function Piece({
       onPointerOut={() => setPointer(false)}
     >
       <group rotation-y={yaw}>
-        <mesh geometry={getPieceGeometry(piece.type)} material={mats.piece[piece.color]} castShadow receiveShadow />
-        <mesh geometry={getAccentGeometry(piece.type)} material={mats.accent[piece.color]} />
+        <mesh geometry={look.geometry(piece.type)} material={look.material[piece.color]} castShadow receiveShadow />
+        <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} />
       </group>
     </group>
   );
 }
 
 /** Geschlagene Figur: versinkt, wird transparent, Funken steigen auf. */
-function Ghost({ piece, onDone }: { piece: TrackedPiece; onDone: () => void }) {
+function Ghost({ piece, onDone, look }: { piece: TrackedPiece; onDone: () => void; look: PieceLook }) {
   const group = useRef<THREE.Group>(null!);
   const [x, z] = squareToWorld(piece.square);
   const material = useMemo(() => {
-    const m = getMaterials().piece[piece.color].clone();
+    const m = look.material[piece.color].clone();
     m.transparent = true;
     return m;
-  }, [piece.color]);
+  }, [piece.color, look]);
   const t = useRef(0);
   useEffect(() => () => material.dispose(), [material]);
   useFrame((_, dt) => {
@@ -183,7 +209,7 @@ function Ghost({ piece, onDone }: { piece: TrackedPiece; onDone: () => void }) {
   return (
     <group position={[x, 0, z]}>
       <group ref={group}>
-        <mesh geometry={getPieceGeometry(piece.type)} material={material} rotation-y={yaw} />
+        <mesh geometry={look.geometry(piece.type)} material={material} rotation-y={yaw} />
       </group>
       <Burst color={piece.color === 'w' ? '#ffd27a' : '#cfd6e6'} />
     </group>
@@ -196,6 +222,7 @@ export function Pieces() {
   const turn = useGame((s) => s.status.turn);
   const canInteract = useGame(canHumanInteract);
   const pending = useGame((s) => s.pendingPromotion);
+  const look = usePieceLook();
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece }>>([]);
@@ -220,10 +247,11 @@ export function Pieces() {
           lifted={p.square === selected && !pending}
           interactive={canInteract && p.color === turn}
           displaySquare={pending && pending.from === p.square ? pending.to : p.square}
+          look={look}
         />
       ))}
       {ghosts.map((g) => (
-        <Ghost key={g.key} piece={g.piece} onDone={() => setGhosts((all) => all.filter((x) => x.key !== g.key))} />
+        <Ghost key={g.key} piece={g.piece} look={look} onDone={() => setGhosts((all) => all.filter((x) => x.key !== g.key))} />
       ))}
     </group>
   );
