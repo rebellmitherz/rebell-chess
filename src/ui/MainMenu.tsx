@@ -228,7 +228,8 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
         Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
         3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
-        Figuren, Texturen und Klänge sind im Code erzeugt.
+        Klassische Figuren: „Chess Set“ von Riley Queen (Poly Haven, CC0). Aufnahmen: „Impact Sounds“ von Kenney
+        (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
       </p>
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

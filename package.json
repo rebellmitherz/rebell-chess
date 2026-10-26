@@ -1,7 +1,7 @@
 {
   "name": "rebell-chess-3d",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Rebell Chess 3D – Premium-3D-Schach im Browser",
   "type": "module",
   "scripts": {
@@ -16,7 +16,8 @@
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "npm run build && node scripts/deploy-pages.mjs"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

@@ -9,7 +9,9 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
 | three | MIT | 3D-Grafik |
 | @react-three/fiber, @react-three/drei | MIT | React-Anbindung, Kamera, Umgebungslicht |
 | camera-controls (über drei) | MIT | Kamerasteuerung |
-| three-bvh-csg, three-mesh-bvh | MIT | Läuferkerbe per Geometrie-Subtraktion |
+| three-bvh-csg, three-mesh-bvh | MIT | Läuferkerbe (Stil „Rebell“), schneller Treffertest |
+| @react-three/postprocessing, postprocessing, n8ao | MIT / Zlib / ISC | Kinoeffekte (Umgebungsverdeckung, Bloom, Vignette) |
+| @gltf-transform/*, meshoptimizer | MIT | nur Entwicklung: Aufbereitung des Figurenmodells |
 | react, react-dom | MIT | Oberfläche |
 | zustand | MIT | Spielzustand |
 | @fontsource/cinzel, @fontsource/inter | OFL-1.1 | Schriften (lokal gebündelt) |
@@ -27,8 +29,19 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
   hängt von der rechtlichen Bewertung ab (eigenständiges Programm im Worker vs. „kombiniertes Werk“). Für die private
   Nutzung spielt das keine Rolle; vor einem kommerziellen Vertrieb bitte rechtlich prüfen lassen.
 
+## Fremde Inhalte (alle CC0 – gemeinfrei, frei nutzbar auch kommerziell)
+
+| Inhalt | Quelle | Lizenz | Verwendung |
+|---|---|---|---|
+| „Chess Set“ von **Riley Queen** | [Poly Haven](https://polyhaven.com/a/chess_set) | CC0 | Formen der klassischen Figuren + Verdeckungskarte (`public/models/`) |
+| „Impact Sounds“ von **Kenney** | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 | Aufnahmen für Ziehen/Schlagen (`public/sounds/`, 20 von 130 Dateien) |
+
+Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces` (mit Prüfsummen) und `npm run assets:sounds`
+neu erzeugt. Eine Namensnennung ist nicht vorgeschrieben – sie steht trotzdem hier und in der Spielanleitung.
+
 ## Eigene Inhalte
 
-- Figuren: prozedural im Code erzeugt (Drehkörper und Extrusion) – keine fremden 3D-Modelle.
-- Texturen (Marmor, gebürstetes Metall, Koordinaten): zur Laufzeit im Canvas gezeichnet.
-- Soundeffekte: mit der Web Audio API synthetisiert – keine Audiodateien.
+- Figurenstil „Rebell“: prozedural im Code erzeugt (Drehkörper, Extrusion, CSG).
+- Materialien Gold/Onyx/Silber, Texturen (Marmor, gebürstetes Metall, Koordinaten): im Code erzeugt.
+- Glockentöne und Bedienklänge: mit der Web Audio API synthetisiert.
+- App-Symbole: mit `scripts/build-icons.py` erzeugt.

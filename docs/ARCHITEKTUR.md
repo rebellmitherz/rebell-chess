@@ -63,8 +63,18 @@ src/
     DragController.tsx  Drag & Drop: Zeiger → Brettebene, Ablegen über store.dropPiece
     interaction.ts    Gemeinsamer Zieh-/Aktivitätszustand, Zugriff auf die Kamerasteuerung
     Performance.tsx   Bildrate nach Bedarf, Schatten nur bei Bewegung, adaptive Pixeldichte
+    pieceModels.ts    Lädt die klassischen Figuren (GLB, meshopt) + Verdeckungskarte, Rückfall auf eigene Figuren
+    PostEffects.tsx   Umgebungsverdeckung, Bloom, ACES, Vignette (nur Grafikstufe „Hoch“)
+    raycast.ts        Schneller Treffertest über Hüllkörperbäume (three-mesh-bvh)
   ui/        React-Oberfläche – Menüs, HUD, Dialoge
-  audio/     Soundeffekte (Web Audio, synthetisch erzeugt – keine Fremdlizenz)
+  audio/     Soundeffekte: CC0-Aufnahmen (Kenney) + Synthese (Web Audio) als Rückfall und für Glocken
+  pwa.ts     Service Worker registrieren, „Als App installieren“
+public/
+  engine/    Stockfish (wird aus node_modules kopiert)
+  models/    pieces.glb + pieces_ao.jpg (aus scripts/build-pieces.mjs, build-ao.py)
+  sounds/    20 MP3 (aus scripts/build-sounds.py)
+  icons/     App-Symbole (aus scripts/build-icons.py)
+  sw.js      Service Worker (offline)
 ```
 
 **Abhängigkeitsrichtung:** `ui`/`scene` → `game` → `core` + `engine`.
