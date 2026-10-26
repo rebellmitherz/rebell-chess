@@ -88,12 +88,12 @@ interface Palette {
 
 export const PALETTES: Record<Theme, Palette> = {
   classic: {
-    pieceLight: { color: '#f2c45a', metalness: 1, roughness: 0.3, clearcoat: 0.25, env: 1.0 },
-    pieceDark: { color: '#0a9a5e', metalness: 0.1, roughness: 0.3, clearcoat: 0.5, env: 0.6 },
+    pieceLight: { color: '#e8b440', metalness: 1, roughness: 0.34, clearcoat: 0.2, env: 0.8 },
+    pieceDark: { color: '#04703f', metalness: 0.1, roughness: 0.38, clearcoat: 0.35, env: 0.4 },
     accentLight: '#0f3d2c',
     accentDark: '#e9bd5a',
-    lightSquare: { color: '#e4f3e0', stone: '#cfe8d2', vein: '#ffffff' },
-    darkSquare: { stone: '#04402a', vein: '#3fd194' },
+    lightSquare: { color: '#c4e3c8', stone: '#8fc79f', vein: '#d8ffe6' },
+    darkSquare: { stone: '#012a17', vein: '#1f9a60' },
     frame: '#052e1d',
     trim: '#e9bd5a',
     plinth: '#07281b',
@@ -101,12 +101,12 @@ export const PALETTES: Record<Theme, Palette> = {
     background: '#04140d',
   },
   rebell: {
-    pieceLight: { color: '#e4d2b8', metalness: 0.1, roughness: 0.34, clearcoat: 0.3, env: 0.55 },
-    pieceDark: { color: '#c4101f', metalness: 0.1, roughness: 0.3, clearcoat: 0.5, env: 0.6 },
+    pieceLight: { color: '#c9b595', metalness: 0.1, roughness: 0.4, clearcoat: 0.2, env: 0.4 },
+    pieceDark: { color: '#a50c1a', metalness: 0.1, roughness: 0.38, clearcoat: 0.35, env: 0.4 },
     accentLight: '#5a0c16',
     accentDark: '#e3b25a',
-    lightSquare: { color: '#f4e1d4', stone: '#ecd3c4', vein: '#ffffff' },
-    darkSquare: { stone: '#4a0610', vein: '#ff5d5d' },
+    lightSquare: { color: '#ecd2c2', stone: '#d9b4a2', vein: '#fff0e8' },
+    darkSquare: { stone: '#520510', vein: '#e0424a' },
     frame: '#2d0509',
     trim: '#e3b25a',
     plinth: '#220509',

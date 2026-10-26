@@ -67,7 +67,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
   const theme = useGame((s) => (s.prefs.pieceStyle === 'rebell' ? 'rebell' : 'classic'));
   const background = realStyle ? '#2a2420' : PALETTES[theme].background;
   // Farbige Stile (Smaragd, Rot) sind helle Flächen statt Gold und Onyx: weniger Licht, sonst wäscht alles aus
-  const k = realStyle ? 1 : 0.5;
+  const k = realStyle ? 1 : 0.42;
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
 
