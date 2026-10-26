@@ -1,26 +1,92 @@
 import { CameraControls, CameraControlsImpl } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import { sceneHandles } from './interaction';
 
 const { ACTION } = CameraControlsImpl;
-const FOV_HALF_TAN = Math.tan(((40 / 2) * Math.PI) / 180);
+const FOV = 40;
+const FOV_HALF_TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
 
-/** Abstand und Neigung so wählen, dass das ganze Brett in den freien Bereich (ohne HUD-Leisten) passt. */
-function framing(width: number, height: number, sidebar: number, topInset: number, bottomInset: number) {
-  const usableWidth = Math.max(240, width - sidebar);
-  const usableHeight = Math.max(200, height - topInset - bottomInset);
-  const portrait = usableWidth / usableHeight < 0.9;
-  // Neigung (0 = senkrecht von oben)
-  const polar = portrait ? 0.42 : 0.72;
-  const halfExtent = portrait ? 5.25 : 5.5;
-  // Durch die Neigung erscheint das Brett in der Tiefe kürzer – vertikal reicht etwas weniger Abstand.
-  const fitVertical = (halfExtent / (FOV_HALF_TAN * (usableHeight / height))) * (portrait ? 1 : 0.92);
-  // Die vordere Brettkante ist näher an der Kamera und erscheint breiter – daher Zuschlag.
-  const fitHorizontal = (halfExtent * 1.2) / (FOV_HALF_TAN * (usableWidth / height));
-  const distance = Math.max(fitVertical, fitHorizontal);
-  return { polar, distance: Math.min(Math.max(distance, 11), 40), portrait };
+/** Punkte, die immer sichtbar sein müssen: Spielfeld-Ecken und die Köpfe der hinteren Figuren. */
+const FIT_POINTS = [
+  new THREE.Vector3(-4.05, 0, 4.05),
+  new THREE.Vector3(4.05, 0, 4.05),
+  new THREE.Vector3(-4.05, 0, -4.05),
+  new THREE.Vector3(4.05, 0, -4.05),
+  new THREE.Vector3(-3.5, 1.45, -3.5),
+  new THREE.Vector3(3.5, 1.45, -3.5),
+  new THREE.Vector3(0, 1.45, -3.5),
+];
+
+interface Framing {
+  polar: number;
+  distance: number;
+  /** Bildversatz (Weltmaß), damit das Brett mittig im freien Bereich liegt */
+  offsetX: number;
+  offsetY: number;
+}
+
+/**
+ * Wie ein Spieler am Brett: flacher Blick (Figuren von der Seite erkennbar), so nah wie möglich.
+ * Sucht den kleinsten Abstand, bei dem Spielfeld und hintere Figuren in den freien Bereich (ohne HUD) passen.
+ */
+function framing(width: number, height: number, sidebar: number, topInset: number, bottomInset: number): Framing {
+  const usableW = Math.max(240, width - sidebar);
+  const usableH = Math.max(200, height - topInset - bottomInset);
+  const portrait = usableW / usableH < 0.9;
+  const polar = portrait ? 0.88 : 0.98;
+  const aspect = width / height;
+  // freier Bereich in NDC (-1..1)
+  const rect = {
+    x0: -1,
+    x1: 1 - (2 * sidebar) / width,
+    y0: -1 + (2 * bottomInset) / height,
+    y1: 1 - (2 * topInset) / height,
+  };
+  const margin = 0.94;
+  const cam = new THREE.PerspectiveCamera(FOV, aspect, 0.1, 200);
+  const v = new THREE.Vector3();
+  const bounds = (d: number) => {
+    cam.position.set(0, Math.cos(polar) * d, Math.sin(polar) * d);
+    cam.lookAt(0, 0, 0);
+    cam.updateMatrixWorld();
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const p of FIT_POINTS) {
+      v.copy(p).project(cam);
+      minX = Math.min(minX, v.x);
+      maxX = Math.max(maxX, v.x);
+      minY = Math.min(minY, v.y);
+      maxY = Math.max(maxY, v.y);
+    }
+    return { minX, maxX, minY, maxY };
+  };
+  const fits = (d: number) => {
+    const b = bounds(d);
+    return b.maxX - b.minX <= (rect.x1 - rect.x0) * margin && b.maxY - b.minY <= (rect.y1 - rect.y0) * margin;
+  };
+  let lo = 5;
+  let hi = 60;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  const distance = hi;
+  const b = bounds(distance);
+  const halfH = distance * FOV_HALF_TAN;
+  const halfW = halfH * aspect;
+  return {
+    polar,
+    distance,
+    // 1 NDC-Einheit entspricht der halben Bildbreite bzw. -höhe im Zielabstand
+    offsetX: ((b.minX + b.maxX) / 2 - (rect.x0 + rect.x1) / 2) * halfW,
+    offsetY: ((rect.y0 + rect.y1) / 2 - (b.minY + b.maxY) / 2) * halfH,
+  };
 }
 
 export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number; topInset: number; bottomInset: number }) {
@@ -47,12 +113,9 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    const worldPerPx = (2 * f.distance * FOV_HALF_TAN) / size.height;
-    const offsetX = (sidebar / 2) * worldPerPx;
-    const offsetY = ((bottomInset - topInset) / 2) * worldPerPx;
-    // camera-controls: positiver y-Versatz schiebt das Bild nach oben
-    void c.setFocalOffset(offsetX, offsetY, 0, true);
-  }, [sidebar, topInset, bottomInset, f.distance, size.height]);
+    // camera-controls: positiver x-Versatz schiebt das Bild nach links, positiver y-Versatz nach oben
+    void c.setFocalOffset(f.offsetX, f.offsetY, 0, true);
+  }, [f.offsetX, f.offsetY]);
 
   useFrame((_, dt) => {
     if (screen === 'menu' && controls.current) controls.current.azimuthAngle += dt * 0.06;
@@ -71,7 +134,7 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
     <CameraControls
       ref={controls}
       makeDefault
-      minDistance={7}
+      minDistance={4.5}
       maxDistance={44}
       minPolarAngle={0.05}
       maxPolarAngle={1.25}

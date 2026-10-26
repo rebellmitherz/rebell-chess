@@ -31,7 +31,10 @@ function useSoundBridge() {
     setVolume(gameStore.getState().prefs.volume);
     return gameStore.subscribe((s, prev) => {
       if (s.prefs.volume !== prev.prefs.volume) setVolume(s.prefs.volume);
-      if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) playSfx(s.sfx.kind);
+      if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) {
+        // Mit Kampf-Animation: Anlauf-Rauschen, Einschlag genau beim Treffer
+        playSfx(s.sfx.kind === 'capture' && s.prefs.battleAnimations ? 'strike' : s.sfx.kind);
+      }
     });
   }, []);
   useEffect(() => {

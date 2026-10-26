@@ -50,8 +50,10 @@ export interface Preferences {
   volume: number;
   graphics: GraphicsQuality;
   pieceStyle: PieceStyle;
-  /** Lokales Spiel: Brett dreht sich zur Seite am Zug */
-  autoRotate: boolean;
+  /** Schlagzüge als Angriff mit Einschlag, Splittern und Beben */
+  battleAnimations: boolean;
+  /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
+  turnBoard: boolean;
   showCoordinates: boolean;
 }
 
@@ -76,7 +78,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   volume: 0.8,
   graphics: 'high',
   pieceStyle: 'classic',
-  autoRotate: false,
+  battleAnimations: true,
+  turnBoard: true,
   showCoordinates: true,
 };
 
@@ -103,7 +106,8 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     volume: typeof r.volume === 'number' && Number.isFinite(r.volume) ? Math.min(1, Math.max(0, r.volume)) : base.volume,
     graphics: r.graphics === 'high' || r.graphics === 'medium' || r.graphics === 'low' ? r.graphics : base.graphics,
     pieceStyle: r.pieceStyle === 'classic' || r.pieceStyle === 'rebell' ? r.pieceStyle : base.pieceStyle,
-    autoRotate: bool(r.autoRotate, base.autoRotate),
+    battleAnimations: bool(r.battleAnimations, base.battleAnimations),
+    turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
   };
 }

@@ -9,6 +9,7 @@ import { CameraRig } from './CameraRig';
 import { DragController } from './DragController';
 import { GoldDust } from './Effects';
 import { Highlights } from './Highlights';
+import { ImpactFX, ShakeGroup } from './ImpactFX';
 import { AdaptiveResolution, FrameDriver, ShadowUpdater } from './Performance';
 import { Pieces } from './Pieces';
 import { PostEffects } from './PostEffects';
@@ -56,6 +57,7 @@ function DevProbe() {
 
 export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number; topInset: number; bottomInset: number }) {
   const graphics = useGame((s) => s.prefs.graphics);
+  const battle = useGame((s) => s.prefs.battleAnimations);
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
 
@@ -96,9 +98,12 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       </Suspense>
       <CameraRig sidebar={sidebar} topInset={topInset} bottomInset={bottomInset} />
       <DragController />
-      <Board />
-      <Pieces />
-      <Highlights />
+      <ShakeGroup enabled={battle}>
+        <Board />
+        <Pieces />
+        <Highlights />
+        <ImpactFX />
+      </ShakeGroup>
       {q.dust > 0 && <GoldDust count={q.dust} />}
       {q.post && <PostEffects />}
       <FrameDriver idleFps={q.idleFps} />

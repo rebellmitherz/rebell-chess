@@ -225,6 +225,25 @@ function bell(c: Chain, freq: number, start: number, gain: number, length = 1.4)
   for (const [r, level, d] of ratios) partial(c, freq * r, start, length * d, gain * level, 0.8);
 }
 
+/** Anlauf-Rauschen bis zum Einschlag */
+function whoosh(c: Chain, start: number, end: number) {
+  const src = c.ctx.createBufferSource();
+  src.buffer = c.noise;
+  src.loop = true;
+  const bp = c.ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 1.4;
+  bp.frequency.setValueAtTime(350, start);
+  bp.frequency.exponentialRampToValueAtTime(2600, end);
+  const g = c.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(0.32, end - 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, end + 0.03);
+  src.connect(bp).connect(g).connect(c.dry);
+  src.start(start);
+  src.stop(end + 0.06);
+}
+
 /** Leises „Abheben“ beim Auswählen */
 function lift(c: Chain, start: number) {
   const src = c.ctx.createBufferSource();
@@ -269,6 +288,16 @@ function renderInto(c: Chain, kind: SfxKind, t: number) {
     case 'capture':
       knock(c, t, 1, 1, true);
       break;
+    case 'strike': {
+      // Anlauf: anschwellendes Rauschen, dann Einschlag mit Metallklang (passend zu ATTACK_IMPACT = 0,46 s)
+      const hitAt = t + 0.45;
+      whoosh(c, t + 0.12, hitAt);
+      knock(c, hitAt, 1.15, 1, true);
+      bell(c, 1567.98, hitAt, 0.05, 0.7);
+      bell(c, 2349.3, hitAt + 0.005, 0.03, 0.5);
+      partial(c, 70, hitAt, 0.35, 0.22, 0.4); // tiefer Schlag
+      break;
+    }
     case 'castle':
       knock(c, t, 0.85, 1.0);
       knock(c, t + 0.13, 0.75, 1.08);
@@ -309,6 +338,7 @@ function renderInto(c: Chain, kind: SfxKind, t: number) {
 export const SFX_LENGTH: Record<SfxKind, number> = {
   move: 1.3,
   capture: 1.5,
+  strike: 2.0,
   castle: 1.5,
   check: 2.2,
   promote: 2.4,

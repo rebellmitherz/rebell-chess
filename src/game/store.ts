@@ -41,7 +41,7 @@ import {
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, getTimeControl, type GameSettings, type Preferences } from './settings';
 
 export type Screen = 'menu' | 'game';
-export type SfxKind = 'move' | 'capture' | 'castle' | 'check' | 'promote' | 'illegal' | 'select' | 'win' | 'loss' | 'draw' | 'ui';
+export type SfxKind = 'move' | 'capture' | 'strike' | 'castle' | 'check' | 'promote' | 'illegal' | 'select' | 'win' | 'loss' | 'draw' | 'ui';
 
 export interface HintState {
   ply: number;
@@ -155,6 +155,8 @@ export interface StoreDeps {
   storage: StorageLike | null;
   now: () => number;
   random: () => number;
+  /** Zwei Spieler: Verzögerung, bevor sich das Brett zum nächsten Spieler dreht */
+  boardTurnDelayMs: number;
   /** Mindestdenkzeit der KI, damit Züge nicht schlagartig erscheinen */
   aiDelayMs: number;
   defaultPrefs: Preferences;
@@ -273,6 +275,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
     now: () => Date.now(),
     random: Math.random,
     aiDelayMs: 450,
+    boardTurnDelayMs: 750,
     defaultPrefs: DEFAULT_PREFERENCES,
     ...partialDeps,
   };
@@ -455,7 +458,16 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       const snapshot = { w: timeLeft(s.clock, 'w', now), b: timeLeft(s.clock, 'b', now) };
       const clock = pressClock(s.clock, record.color, now, s.paused);
       const d = derive();
-      const viewSide = s.settings.mode === 'local' && s.prefs.autoRotate ? d.status.turn : s.viewSide;
+      // Zwei Spieler: Brett erst drehen, wenn die Figur gelandet ist – so sieht man den Zug noch
+      if (s.settings.mode === 'local' && s.prefs.turnBoard && !d.status.result) {
+        const gameId = s.gameId;
+        const ply = game.ply;
+        setTimeout(() => {
+          const cur = get();
+          if (cur.gameId === gameId && game.ply === ply && cur.prefs.turnBoard) set({ viewSide: cur.status.turn });
+        }, deps.boardTurnDelayMs);
+      }
+      const viewSide = s.viewSide;
       const kind: SfxKind = record.promotion
         ? 'promote'
         : record.isKingsideCastle || record.isQueensideCastle
@@ -536,7 +548,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         viewPly: null,
         view: null,
         analysis: null,
-        viewSide: settings.mode === 'ai' ? settings.humanColor : prefs.autoRotate ? d.status.turn : 'w',
+        viewSide: settings.mode === 'ai' ? settings.humanColor : prefs.turnBoard ? d.status.turn : 'w',
         ...sfx('ui'),
       });
       persist();
@@ -756,7 +768,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
           viewPly: null,
           view: null,
           engineThinking: false,
-          viewSide: s.settings.mode === 'local' && s.prefs.autoRotate ? d.status.turn : s.viewSide,
+          viewSide: s.settings.mode === 'local' && s.prefs.turnBoard ? d.status.turn : s.viewSide,
           ...sfx('move'),
         });
         persist();
@@ -898,7 +910,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         const s = get();
         const prefs = { ...s.prefs, ...partial };
         savePreferences(deps.storage, prefs);
-        const viewSide = partial.autoRotate && s.settings.mode === 'local' && s.active ? s.status.turn : s.viewSide;
+        const viewSide = partial.turnBoard && s.settings.mode === 'local' && s.active ? s.status.turn : s.viewSide;
         set({ prefs, viewSide });
       },
 

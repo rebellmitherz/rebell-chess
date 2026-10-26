@@ -154,6 +154,12 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
         />
         <p className="field-hint">Klassisch: detailreicher Staunton-Satz. Rebell: eigene, kantigere Figuren.</p>
       </div>
+      <Toggle
+        checked={prefs.battleAnimations}
+        onChange={(battleAnimations) => set({ battleAnimations })}
+        label="Kampf-Animationen"
+        hint="Beim Schlagen stürmt die Figur los, trifft, der Gegner zerspringt – aus für schnelle Blitzpartien"
+      />
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
       {prefs.sound && (
         <label className="slider-row">
@@ -175,10 +181,10 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
       <Toggle checked={prefs.showLastMove} onChange={(showLastMove) => set({ showLastMove })} label="Letzten Zug markieren" />
       <Toggle checked={prefs.showCoordinates} onChange={(showCoordinates) => set({ showCoordinates })} label="Koordinaten am Brettrand" />
       <Toggle
-        checked={prefs.autoRotate}
-        onChange={(autoRotate) => set({ autoRotate })}
-        label="Brett automatisch drehen"
-        hint="Zwei Spieler: Das Brett dreht sich zur Seite am Zug"
+        checked={prefs.turnBoard}
+        onChange={(turnBoard) => set({ turnBoard })}
+        label="Brett zum Spieler am Zug drehen"
+        hint="Zwei Spieler an einem Gerät: Nach jedem Zug dreht sich das Brett zum anderen Spieler"
       />
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

@@ -361,3 +361,25 @@ describe('Analyse-Modus', () => {
     expect(store.getState().analysis).toMatchObject({ status: 'ready', mate: -1 });
   });
 });
+
+describe('Zwei Spieler an einem Gerät', () => {
+  it('dreht das Brett nach jedem Zug zum Spieler am Zug (nach kurzer Verzögerung)', async () => {
+    const store = createGameStore({ storage: new MemoryStorage(), aiDelayMs: 0, boardTurnDelayMs: 5 });
+    store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local' });
+    expect(store.getState().viewSide).toBe('w');
+    store.getState().tryMove('e2', 'e4');
+    expect(store.getState().viewSide).toBe('w'); // erst Landung abwarten
+    await vi.waitFor(() => expect(store.getState().viewSide).toBe('b'));
+    store.getState().tryMove('e7', 'e5');
+    await vi.waitFor(() => expect(store.getState().viewSide).toBe('w'));
+  });
+
+  it('lässt das Brett stehen, wenn das Drehen abgeschaltet ist', async () => {
+    const store = createGameStore({ storage: new MemoryStorage(), aiDelayMs: 0, boardTurnDelayMs: 5 });
+    store.getState().setPrefs({ turnBoard: false });
+    store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local' });
+    store.getState().tryMove('e2', 'e4');
+    await new Promise((r) => setTimeout(r, 30));
+    expect(store.getState().viewSide).toBe('w');
+  });
+});
