@@ -2,7 +2,7 @@
 // - Startseite: erst Netz (Updates kommen sofort an), ohne Netz aus dem Speicher
 // - Dateien mit Hash im Namen (assets/…): einmal laden, dann aus dem Speicher (ändern sich nie)
 // - Engine, Figuren, Sounds, Symbole: aus dem Speicher, im Hintergrund auffrischen
-const CACHE = 'rebellchess-v3';
+const CACHE = 'rebellchess-v4';
 const CORE = [
   './',
   './manifest.webmanifest',
@@ -59,8 +59,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
+    // Am Browser-Zwischenspeicher vorbei (GitHub Pages erlaubt sonst 10 Minuten alte Startseiten)
     event.respondWith(
-      fetch(request)
+      fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put('./', copy));
