@@ -15,14 +15,22 @@ export interface Impact {
   victim: Color;
   /** performance.now() beim Einschlag */
   at: number;
+  /** Stärke von Blitz und Beben (1 = Schlagzug) */
+  power: number;
+  /** Druckwelle auf dem Brett */
+  ring: boolean;
+  /** Funkenregen */
+  burst: boolean;
 }
 
 let nextId = 1;
 let lastImpact: Impact | null = null;
 const listeners = new Set<(impact: Impact) => void>();
 
-export function emitImpact(impact: Omit<Impact, 'id' | 'at'>) {
-  const full = { ...impact, id: nextId++, at: performance.now() };
+type ImpactInput = Omit<Impact, 'id' | 'at' | 'power' | 'ring' | 'burst'> & Partial<Pick<Impact, 'power' | 'ring' | 'burst'>>;
+
+export function emitImpact(impact: ImpactInput) {
+  const full: Impact = { power: 1, ring: true, burst: true, ...impact, id: nextId++, at: performance.now() };
   lastImpact = full;
   markActive(1800);
   listeners.forEach((l) => l(full));
@@ -65,7 +73,7 @@ function FlashLight() {
       return;
     }
     light.current.position.set(imp.x, 0.9, imp.z);
-    light.current.intensity = 22 * Math.exp(-t * 9);
+    light.current.intensity = 22 * imp.power * Math.exp(-t * 9);
   });
   return <pointLight ref={light} intensity={0} distance={7} decay={2} color="#ffe2a0" />;
 }
@@ -80,7 +88,7 @@ export function ShakeGroup({ children, enabled }: { children: ReactNode; enabled
       group.current.position.set(0, 0, 0);
       return;
     }
-    const a = 0.055 * Math.exp(-t * 11);
+    const a = 0.055 * imp!.power * Math.exp(-t * 11);
     group.current.position.set(
       Math.sin(t * 95) * a + imp!.dirX * a * 0.6,
       Math.abs(Math.sin(t * 70)) * a * 0.4,
@@ -108,10 +116,12 @@ export function ImpactFX() {
       <FlashLight />
       {impacts.map((imp) => (
         <group key={imp.id}>
-          <Shockwave impact={imp} />
-          <group position={[imp.x, 0.35, imp.z]}>
-            <Burst color={imp.victim === 'w' ? '#ffd27a' : '#e4ebff'} count={80} />
-          </group>
+          {imp.ring && <Shockwave impact={imp} />}
+          {imp.burst && (
+            <group position={[imp.x, 0.35, imp.z]}>
+              <Burst color={imp.victim === 'w' ? '#ffd27a' : '#e4ebff'} count={80} />
+            </group>
+          )}
         </group>
       ))}
     </>

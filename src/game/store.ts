@@ -77,6 +77,19 @@ export interface AnalysisState {
   depth?: number;
 }
 
+/** Laufender Kriegerkampf nach einem Schlagzug – die Szene spielt ihn ab und meldet das Ende (endBattle). */
+export interface BattleState {
+  id: number;
+  /** Halbzug (Länge der Zugliste), der den Kampf ausgelöst hat */
+  ply: number;
+  from: Square;
+  to: Square;
+  /** Feld der geschlagenen Figur (bei en passant nicht das Zielfeld) */
+  victimSquare: Square;
+  attacker: { color: Color; type: PieceSymbol };
+  victim: { color: Color; type: PieceSymbol };
+}
+
 export interface GameData {
   screen: Screen;
   /** Es wurde eine Partie gestartet (für „Zurück zur Partie“) */
@@ -114,6 +127,8 @@ export interface GameData {
   viewSide: Color;
   sfx: { id: number; kind: SfxKind } | null;
   toast: { id: number; text: string } | null;
+  /** Kriegerkampf läuft: Uhr steht, Eingaben und KI warten */
+  battle: BattleState | null;
 }
 
 export interface GameActions {
@@ -145,6 +160,8 @@ export interface GameActions {
   /** Stellung nach `ply` Halbzügen zeigen (null = zurück zur Partie) */
   viewMove(ply: number | null): void;
   stepView(delta: number): void;
+  /** Kriegerkampf beendet oder übersprungen */
+  endBattle(): void;
 }
 
 export type GameStore = GameData & GameActions;
@@ -160,6 +177,10 @@ export interface StoreDeps {
   /** Mindestdenkzeit der KI, damit Züge nicht schlagartig erscheinen */
   aiDelayMs: number;
   defaultPrefs: Preferences;
+  /** Eine Szene spielt Kriegerkämpfe ab (ohne Szene, z. B. in Tests, gibt es keine) */
+  battleScenes: boolean;
+  /** Sicherheitsgrenze: so lange wartet die Partie höchstens auf das Ende eines Kampfes */
+  battleTimeoutMs: number;
 }
 
 const POSITIONAL: ResultReason[] = ['checkmate', 'stalemate', 'insufficient-material', 'threefold-repetition', 'fifty-move-rule'];
@@ -170,6 +191,7 @@ export function canHumanInteract(s: GameData): boolean {
   const humanToMove = s.settings.mode === 'local' || s.status.turn === s.settings.humanColor;
   return (
     s.viewPly === null &&
+    !s.battle &&
     s.screen === 'game' &&
     s.active &&
     !s.result &&
@@ -277,6 +299,8 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
     aiDelayMs: 450,
     boardTurnDelayMs: 750,
     defaultPrefs: DEFAULT_PREFERENCES,
+    battleScenes: false,
+    battleTimeoutMs: 15_000,
     ...partialDeps,
   };
 
@@ -286,6 +310,12 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
   let aiToken: { gameId: number; ply: number } | null = null;
   let pausedByMenu = false;
   let drawPending = false;
+  let battleId = 0;
+  /** Kampf-Zustand neben dem Store: Uhr angehalten, Brett soll danach drehen, Schlussklang aufgeschoben */
+  let battleHeldClock = false;
+  let turnAfterBattle = false;
+  let finishSfxAfterBattle: SfxKind | null = null;
+  let battleWaiters: Array<() => void> = [];
 
   return createStore<GameStore>()((set, get) => {
     const sfx = (kind: SfxKind) => ({ sfx: { id: ++sfxId, kind } });
@@ -346,6 +376,8 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       if (result.winner === null) kind = 'draw';
       else if (s.settings.mode === 'ai') kind = result.winner === s.settings.humanColor ? 'win' : 'loss';
       else kind = 'win';
+      // Während eines Kampfes erst danach jubeln (der Ergebnis-Dialog wartet ebenfalls)
+      if (s.battle) finishSfxAfterBattle = kind;
       set({
         result,
         clock: stopClock(s.clock, deps.now()),
@@ -354,10 +386,26 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         pendingPromotion: null,
         drawOffer: null,
         paused: false,
-        ...sfx(kind),
+        ...(s.battle ? {} : sfx(kind)),
         ...extra,
       });
       persist();
+    };
+
+    const releaseBattleWaiters = () => {
+      const waiters = battleWaiters;
+      battleWaiters = [];
+      waiters.forEach((w) => w());
+    };
+    const battleOver = () => (get().battle ? new Promise<void>((r) => battleWaiters.push(r)) : Promise.resolve());
+
+    /** Kampf ohne Nachwirkungen verwerfen (neue Partie, Rückgängig) – Uhr und Ansicht setzt der Aufrufer */
+    const dropBattle = () => {
+      battleHeldClock = false;
+      turnAfterBattle = false;
+      finishSfxAfterBattle = null;
+      if (get().battle) set({ battle: null });
+      releaseBattleWaiters();
     };
 
     const aiShouldMove = (s: GameData) =>
@@ -394,6 +442,11 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       void job.then(async ({ uci, error }) => {
         const wait = deps.aiDelayMs - (deps.now() - started);
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        // Läuft noch ein Kampf, zieht die KI erst danach (und lässt der Kamera Zeit zurückzufahren)
+        if (get().battle) {
+          await battleOver();
+          if (deps.aiDelayMs > 0) await new Promise((r) => setTimeout(r, deps.aiDelayMs));
+        }
         if (aiToken !== token) return;
         aiToken = null;
         const cur = get();
@@ -456,10 +509,35 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       const s = get();
       const now = deps.now();
       const snapshot = { w: timeLeft(s.clock, 'w', now), b: timeLeft(s.clock, 'b', now) };
-      const clock = pressClock(s.clock, record.color, now, s.paused);
+      let clock = pressClock(s.clock, record.color, now, s.paused);
       const d = derive();
+      const battle: BattleState | null =
+        deps.battleScenes && s.prefs.battleMode === 'warriors' && record.isCapture && s.screen === 'game'
+          ? {
+              id: ++battleId,
+              ply: d.history.length,
+              from: record.from,
+              to: record.to,
+              victimSquare: record.isEnPassant ? ((record.to[0] + record.from[1]) as Square) : record.to,
+              attacker: { color: record.color, type: record.piece },
+              victim: { color: opposite(record.color), type: record.captured ?? 'p' },
+            }
+          : null;
+      if (battle) {
+        // Die Uhr steht, solange gekämpft wird – der Kampf kostet keinem Spieler Bedenkzeit
+        battleHeldClock = clock.since !== null;
+        clock = pauseClock(clock, now);
+        turnAfterBattle = false;
+        finishSfxAfterBattle = null;
+        const id = battle.id;
+        setTimeout(() => {
+          if (get().battle?.id === id) get().endBattle();
+        }, deps.battleTimeoutMs);
+      }
       // Zwei Spieler: Brett erst drehen, wenn die Figur gelandet ist – so sieht man den Zug noch
-      if (s.settings.mode === 'local' && s.prefs.turnBoard && !d.status.result) {
+      // (nach einem Kampf erst, wenn er vorbei ist)
+      if (battle && s.settings.mode === 'local' && s.prefs.turnBoard && !d.status.result) turnAfterBattle = true;
+      else if (s.settings.mode === 'local' && s.prefs.turnBoard && !d.status.result) {
         const gameId = s.gameId;
         const ply = game.ply;
         setTimeout(() => {
@@ -487,7 +565,9 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         hint: null,
         drawOffer: null,
         viewSide,
-        ...sfx(kind),
+        battle,
+        // Beim Kampf kommen die Klänge aus der Szene (Schach und Umwandlung bleiben hörbar)
+        ...(battle && kind === 'capture' ? {} : sfx(kind)),
       });
       if (d.status.result) finish(d.status.result);
       else persist();
@@ -512,6 +592,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       restore?: { remaining: Record<Color, number>; snapshots: Array<Record<Color, number>>; result: GameResult | null; paused: boolean },
     ) => {
       cancelAi();
+      dropBattle();
       drawPending = false;
       pausedByMenu = false;
       game = ChessGame.fromUciMoves(startFen, moves);
@@ -590,6 +671,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       viewSide: 'w',
       sfx: null,
       toast: null,
+      battle: null,
 
       startGame(settings, startFen = START_FEN) {
         loadGame(settings, startFen, []);
@@ -652,6 +734,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       },
 
       openMenu() {
+        get().endBattle();
         const s = get();
         if (s.active && !s.result && !s.paused && s.clock.running && s.clock.since !== null) {
           set({ paused: true, clock: pauseClock(s.clock, deps.now()) });
@@ -746,6 +829,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
           plies = 2;
         }
         cancelAi();
+        dropBattle();
         const now = deps.now();
         const snaps = [...s.clockSnapshots];
         let snapshot: Record<Color, number> = { w: timeLeft(s.clock, 'w', now), b: timeLeft(s.clock, 'b', now) };
@@ -834,7 +918,8 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         const now = deps.now();
         set({
           paused,
-          clock: paused ? pauseClock(s.clock, now) : resumeClock(s.clock, now),
+          // Während eines Kampfes läuft die Uhr erst nach dessen Ende weiter
+          clock: paused ? pauseClock(s.clock, now) : s.battle ? s.clock : resumeClock(s.clock, now),
           selected: null,
           targets: [],
           ...sfx('ui'),
@@ -932,6 +1017,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       },
 
       viewMove(ply) {
+        get().endBattle();
         const s = get();
         if (!s.active) return;
         const total = s.history.length;
@@ -956,6 +1042,20 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       stepView(delta) {
         const s = get();
         get().viewMove(displayPly(s) + delta);
+      },
+
+      endBattle() {
+        const s = get();
+        if (!s.battle) return;
+        const now = deps.now();
+        const clock = battleHeldClock && !s.paused && !s.result ? resumeClock(s.clock, now) : s.clock;
+        const turn = turnAfterBattle && s.settings.mode === 'local' && s.prefs.turnBoard && !s.result;
+        const late = finishSfxAfterBattle;
+        battleHeldClock = false;
+        turnAfterBattle = false;
+        finishSfxAfterBattle = null;
+        set({ battle: null, clock, viewSide: turn ? s.status.turn : s.viewSide, ...(late ? sfx(late) : {}) });
+        releaseBattleWaiters();
       },
     };
   });

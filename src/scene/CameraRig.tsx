@@ -1,14 +1,17 @@
 import { CameraControls, CameraControlsImpl } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
+import { cinematicView, planBattle } from './battleScript';
 import { sceneHandles } from './interaction';
 
 const { ACTION } = CameraControlsImpl;
 /** Längere Brennweite: wenig Verzerrung – die hinteren Reihen bleiben fast so groß wie die vorderen */
 export const FOV = 28;
 const FOV_HALF_TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
+/** Höhe der Kino-Balken oben und unten während eines Kriegerkampfs (Anteil der Bildhöhe, wie in styles.css) */
+export const LETTERBOX = 0.1;
 
 /** Ansicht von oben: Spielfeld, Koordinaten am Rand und die nach hinten geneigten Köpfe der letzten Reihe */
 const FIT_POINTS_TOP = [
@@ -108,27 +111,52 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
   const resetToken = useGame((s) => s.gameId);
   const size = useThree((s) => s.size);
   const top = useGame((s) => s.prefs.viewMode === 'top');
+  const battle = useGame((s) => (s.screen === 'game' ? s.battle : null));
+  const cinematic = battle !== null;
   const f = framing(size.width, size.height, sidebar, topInset, bottomInset, top);
+  // Nach dem Kampf die Kamera-Grenzen erst lockern lassen, bis sie zurückgefahren ist (sonst springt sie)
+  const [relaxed, setRelaxed] = useState(false);
+  useEffect(() => {
+    if (cinematic) {
+      setRelaxed(true);
+      return;
+    }
+    const id = setTimeout(() => setRelaxed(false), 1600);
+    return () => clearTimeout(id);
+  }, [cinematic]);
+  const free = cinematic || relaxed;
 
-  // Ausrichtung auf die Seite, die unten sitzt (kürzester Drehweg)
+  // Ausrichtung auf die Seite, die unten sitzt (kürzester Drehweg) – im Kampf: Kamera zu den Kriegern
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
+    if (battle) {
+      const view = cinematicView(planBattle(battle), {
+        aspect: size.width / size.height,
+        fov: FOV,
+        viewSide,
+        usableHeight: 1 - 2 * LETTERBOX,
+      });
+      void c.setFocalOffset(0, 0, 0, true);
+      void c.setLookAt(...view.position, ...view.target, true);
+      return;
+    }
     const base = viewSide === 'w' ? 0 : Math.PI;
     const current = c.azimuthAngle;
     const target = base + Math.round((current - base) / (Math.PI * 2)) * Math.PI * 2;
     void c.moveTo(0, 0, 0, true);
     void c.rotateTo(target, f.polar, true);
     void c.dollyTo(f.distance, true);
-  }, [viewSide, f.polar, f.distance, screen, resetToken, top]);
+    // battle?.id genügt als Abhängigkeit: Inhalt eines Kampfes ändert sich nicht
+  }, [viewSide, f.polar, f.distance, screen, resetToken, top, battle?.id, size.width, size.height]);
 
   // Brett in die Mitte des freien Bereichs schieben (Seitenleiste / Leisten oben und unten)
   useEffect(() => {
     const c = controls.current;
-    if (!c) return;
+    if (!c || cinematic) return;
     // camera-controls: positiver x-Versatz schiebt das Bild nach links, positiver y-Versatz nach oben
     void c.setFocalOffset(f.offsetX, f.offsetY, 0, true);
-  }, [f.offsetX, f.offsetY]);
+  }, [f.offsetX, f.offsetY, cinematic]);
 
   useFrame((_, dt) => {
     if (screen === 'menu' && controls.current) controls.current.azimuthAngle += dt * 0.06;
@@ -147,10 +175,10 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
     <CameraControls
       ref={controls}
       makeDefault
-      minDistance={4.5}
+      minDistance={free ? 1 : 4.5}
       maxDistance={44}
-      minPolarAngle={top ? 0 : 0.05}
-      maxPolarAngle={top ? 0.001 : 1.25}
+      minPolarAngle={top || free ? 0 : 0.05}
+      maxPolarAngle={free ? 1.5 : top ? 0.001 : 1.25}
       smoothTime={0.35}
       draggingSmoothTime={0.12}
       dollySpeed={0.5}
@@ -165,7 +193,7 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
           ? { one: ACTION.NONE, two: ACTION.TOUCH_DOLLY_TRUCK, three: ACTION.NONE }
           : { one: ACTION.TOUCH_ROTATE, two: ACTION.TOUCH_DOLLY, three: ACTION.NONE }
       }
-      enabled={screen === 'game'}
+      enabled={screen === 'game' && !cinematic}
     />
   );
 }

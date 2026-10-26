@@ -12,6 +12,12 @@ SOURCES = {
     'move-click': 'impactGeneric_light',
     'capture-body': 'impactWood_medium',
     'capture-clink': 'impactGlass_light',
+    # Kriegerkampf: Klingen, Schild, Treffer, Sturz, Schritte
+    'battle-clash': 'impactMetal_heavy',
+    'battle-block': 'impactPlate_heavy',
+    'battle-hit': 'impactPunch_heavy',
+    'battle-fall': 'impactSoft_heavy',
+    'battle-step': 'footstep_wood',
 }
 
 zip_path, out_dir = sys.argv[1], sys.argv[2]

@@ -10,6 +10,8 @@ export const gameStore = createGameStore({
   engine: createStockfishService(() => createWorkerTransport()),
   storage: browserStorage(),
   defaultPrefs: { ...DEFAULT_PREFERENCES, graphics: detectDefaultGraphics() },
+  // Die 3D-Szene spielt Kriegerkämpfe ab und meldet ihr Ende
+  battleScenes: true,
 });
 
 export function useGame<T>(selector: (s: GameStore) => T): T {

@@ -34,13 +34,14 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
 | Inhalt | Quelle | Lizenz | Verwendung |
 |---|---|---|---|
 | „Chess Set“ von **Riley Queen** | [Poly Haven](https://polyhaven.com/a/chess_set) | CC0 | Formen der klassischen Figuren + Verdeckungskarte (`public/models/`) |
-| „Impact Sounds“ von **Kenney** | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 | Aufnahmen für Ziehen/Schlagen (`public/sounds/`, 20 von 130 Dateien) |
+| „Impact Sounds“ von **Kenney** | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 | Aufnahmen für Ziehen/Schlagen und den Kriegerkampf (`public/sounds/`, 45 von 130 Dateien) |
+| „KayKit : Adventurers Character Pack 1.0“ von **Kay Lousberg** | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0), [kaylousberg.com](https://kaylousberg.com) | CC0 | Krieger im Kriegerkampf: „Knight“ (Weiß) und „Barbarian“ (Schwarz), gekürzt auf benötigte Waffen und Animationen (`public/models/warrior_*.glb`) |
 | Marmor-/Brett-Texturen aus „Chess Set“ (**Riley Queen**) | [Poly Haven](https://polyhaven.com/a/chess_set) | CC0 | Stil „Echt“: Figuren, Brett (`public/textures/`, `public/models/board.glb`) |
 | Raumlicht „Lebombo“ (**Greg Zaal**) | [Poly Haven](https://polyhaven.com/a/lebombo) | CC0 | Beleuchtung/Hintergrund im Stil „Echt“ (`public/env/`) |
 | Tischplatte „Wood Table 001“ (**Dimitrios Savva, Rico Cilliers**) | [Poly Haven](https://polyhaven.com/a/wood_table_001) | CC0 | Tisch unter dem Brett (`public/textures/table_*`) |
 
-Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces` (mit Prüfsummen) und `npm run assets:sounds`
-neu erzeugt. Eine Namensnennung ist nicht vorgeschrieben – sie steht trotzdem hier und in der Spielanleitung.
+Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces`, `npm run assets:real`, `npm run assets:warriors`
+(alle mit Prüfsummen) und `npm run assets:sounds` neu erzeugt. Eine Namensnennung ist nicht vorgeschrieben – sie steht trotzdem hier und in der Spielanleitung.
 
 ## Eigene Inhalte
 

@@ -23,6 +23,15 @@ interface SampleBank {
   captureClink: AudioBuffer[];
 }
 
+/** Kriegerkampf: Klingen, Schild, Faustschlag, Sturz, Schritte (ebenfalls Kenney CC0) */
+interface BattleBank {
+  clash: AudioBuffer[];
+  block: AudioBuffer[];
+  hit: AudioBuffer[];
+  fall: AudioBuffer[];
+  step: AudioBuffer[];
+}
+
 const SAMPLE_FILES: Record<keyof SampleBank, string> = {
   moveBody: 'move-body',
   moveClick: 'move-click',
@@ -30,7 +39,15 @@ const SAMPLE_FILES: Record<keyof SampleBank, string> = {
   captureClink: 'capture-clink',
 };
 
-async function loadSampleBank(ctx: BaseAudioContext): Promise<SampleBank> {
+const BATTLE_FILES: Record<keyof BattleBank, string> = {
+  clash: 'battle-clash',
+  block: 'battle-block',
+  hit: 'battle-hit',
+  fall: 'battle-fall',
+  step: 'battle-step',
+};
+
+async function loadBank<K extends string>(ctx: BaseAudioContext, files: Record<K, string>): Promise<Record<K, AudioBuffer[]>> {
   const base = typeof document !== 'undefined' ? document.baseURI : '/';
   const load = (prefix: string) =>
     Promise.all(
@@ -40,11 +57,12 @@ async function loadSampleBank(ctx: BaseAudioContext): Promise<SampleBank> {
         return ctx.decodeAudioData(await res.arrayBuffer());
       }),
     );
-  const entries = await Promise.all(
-    (Object.keys(SAMPLE_FILES) as Array<keyof SampleBank>).map(async (k) => [k, await load(SAMPLE_FILES[k])] as const),
-  );
-  return Object.fromEntries(entries) as unknown as SampleBank;
+  const entries = await Promise.all((Object.keys(files) as K[]).map(async (k) => [k, await load(files[k])] as const));
+  return Object.fromEntries(entries) as Record<K, AudioBuffer[]>;
 }
+
+const loadSampleBank = (ctx: BaseAudioContext): Promise<SampleBank> => loadBank(ctx, SAMPLE_FILES);
+const loadBattleBank = (ctx: BaseAudioContext): Promise<BattleBank> => loadBank(ctx, BATTLE_FILES);
 
 interface Chain {
   ctx: BaseAudioContext;
@@ -54,6 +72,7 @@ interface Chain {
   wet: AudioNode;
   noise: AudioBuffer;
   samples?: SampleBank;
+  battle?: BattleBank;
 }
 
 function createNoise(ctx: BaseAudioContext): AudioBuffer {
@@ -279,6 +298,94 @@ function deny(c: Chain, start: number) {
   osc.stop(start + 0.25);
 }
 
+/** Rauschen durch einen wandernden Bandpass – Schwung einer Waffe, Verwandlung */
+function sweep(c: Chain, start: number, length: number, f0: number, f1: number, gain: number, q = 1.6) {
+  const src = c.ctx.createBufferSource();
+  src.buffer = c.noise;
+  src.loop = true;
+  const bp = c.ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = q;
+  bp.frequency.setValueAtTime(f0, start);
+  bp.frequency.exponentialRampToValueAtTime(f1, start + length);
+  const g = c.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(gain, start + length * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + length + 0.04);
+  src.connect(bp).connect(g).connect(c.dry);
+  const send = c.ctx.createGain();
+  send.gain.value = 0.3;
+  g.connect(send).connect(c.wet);
+  src.start(start);
+  src.stop(start + length + 0.08);
+}
+
+/** Klänge des Kriegerkampfs (ausgelöst von der Szene im Takt der Animation) */
+export type BattleSfx = 'transform' | 'step' | 'swing' | 'clash' | 'block' | 'hit' | 'death' | 'fall' | 'cheer' | 'vanish';
+
+function renderBattle(c: Chain, kind: BattleSfx, t: number) {
+  const bank = c.battle;
+  switch (kind) {
+    case 'transform':
+      // Verwandlung: aufsteigendes Rauschen, tiefer Stoß, heller Glanz
+      sweep(c, t, 0.38, 260, 3200, 0.3, 1.2);
+      partial(c, 58, t + 0.3, 0.6, 0.3, 0.5);
+      [1568, 2093, 2637].forEach((f, i) => bell(c, f, t + 0.26 + i * 0.05, 0.018, 0.9));
+      break;
+    case 'step':
+      if (bank) playBuffer(c, pick(bank.step), t, 0.32, vary(1.1, 0.06), 0.15);
+      else placement(c, t, 0.35, 0.6);
+      break;
+    case 'swing':
+      sweep(c, t, 0.17, 500, 2600, 0.22, 1.8);
+      break;
+    case 'clash':
+      // Klinge auf Klinge: Aufnahme + metallisches Nachklingen
+      if (bank) playBuffer(c, pick(bank.clash), t, 0.75, vary(1, 0.05), 0.5);
+      else placement(c, t, 1, 2.2);
+      bell(c, vary(2637, 0.03), t, 0.035, 0.8);
+      bell(c, vary(3951, 0.03), t + 0.004, 0.02, 0.6);
+      break;
+    case 'block':
+      // Schlag auf den Schild
+      if (bank) {
+        playBuffer(c, pick(bank.block), t, 0.8, vary(0.95, 0.05), 0.45);
+        playBuffer(c, pick(bank.clash), t + 0.01, 0.25, vary(0.8, 0.05), 0.3);
+      } else placement(c, t, 1, 1.6);
+      partial(c, 95, t, 0.25, 0.18, 0.3);
+      break;
+    case 'hit':
+      if (bank) playBuffer(c, pick(bank.hit), t, 0.85, vary(1, 0.05), 0.35);
+      else placement(c, t, 1, 0.7);
+      partial(c, 78, t, 0.3, 0.26, 0.3);
+      break;
+    case 'death':
+      // Todesstoß: härter, tiefer, mit Klingenklang
+      if (bank) {
+        playBuffer(c, pick(bank.hit), t, 1, vary(0.85, 0.04), 0.4);
+        playBuffer(c, pick(bank.clash), t + 0.005, 0.45, vary(0.9, 0.04), 0.5);
+      } else placement(c, t, 1.1, 0.6);
+      partial(c, 52, t, 0.7, 0.34, 0.6);
+      bell(c, 1975.5, t, 0.03, 0.9);
+      break;
+    case 'fall':
+      if (bank) playBuffer(c, pick(bank.fall), t, 0.9, vary(0.9, 0.05), 0.35);
+      if (c.samples) playBuffer(c, pick(c.samples.captureBody), t + 0.01, 0.5, 0.7, 0.3);
+      else placement(c, t, 0.9, 0.55);
+      partial(c, 60, t, 0.35, 0.22, 0.3);
+      break;
+    case 'cheer':
+      // kurze Siegesfanfare
+      [392, 523.25, 659.25].forEach((f, i) => bell(c, f, t + i * 0.09, 0.045, 1.3));
+      bell(c, 783.99, t + 0.3, 0.05, 1.8);
+      break;
+    case 'vanish':
+      sweep(c, t, 0.3, 2800, 420, 0.16, 1.4);
+      [2093, 1568].forEach((f, i) => bell(c, f, t + i * 0.06, 0.014, 0.7));
+      break;
+  }
+}
+
 /** Schreibt den Effekt `kind` ab Zeitpunkt `t` in die Klangkette. */
 function renderInto(c: Chain, kind: SfxKind, t: number) {
   switch (kind) {
@@ -376,6 +483,12 @@ function liveChain() {
       },
       (err) => console.warn('Aufgenommene Sounds nicht verfügbar – nutze Synthese.', err),
     );
+    loadBattleBank(ctx).then(
+      (bank) => {
+        chain.battle = bank;
+      },
+      (err) => console.warn('Kampf-Sounds nicht verfügbar – nutze Synthese.', err),
+    );
   }
   if (live.ctx.state === 'suspended') void live.ctx.resume();
   return live;
@@ -395,6 +508,12 @@ export function playSfx(kind: SfxKind) {
   const l = liveChain();
   if (!l || volume <= 0) return;
   renderInto(l.chain, kind, l.ctx.currentTime + 0.005);
+}
+
+export function playBattleSfx(kind: BattleSfx) {
+  const l = liveChain();
+  if (!l || volume <= 0) return;
+  renderBattle(l.chain, kind, l.ctx.currentTime + 0.005);
 }
 
 // ---------- Offline-Prüfung ----------

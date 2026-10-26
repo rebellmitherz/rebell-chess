@@ -5,6 +5,7 @@ import { Suspense, useEffect } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import type { GraphicsQuality } from '../game/settings';
+import { BattleStage } from './Battle';
 import { Board } from './Board';
 import { CameraRig, FOV } from './CameraRig';
 import { DragController } from './DragController';
@@ -50,15 +51,17 @@ function StudioEnvironment() {
 function DevProbe() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
+  // advance: einzelne Bilder von Hand rechnen (Prüfungen in Umgebungen, die requestAnimationFrame drosseln)
+  const advance = useThree((s) => s.advance);
   useEffect(() => {
-    (window as unknown as { __r3f?: unknown }).__r3f = { gl, scene };
-  }, [gl, scene]);
+    (window as unknown as { __r3f?: unknown }).__r3f = { gl, scene, advance };
+  }, [gl, scene, advance]);
   return null;
 }
 
 export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number; topInset: number; bottomInset: number }) {
   const graphics = useGame((s) => s.prefs.graphics);
-  const battle = useGame((s) => s.prefs.battleAnimations);
+  const battle = useGame((s) => s.prefs.battleMode !== 'off');
   const realStyle = useGame((s) => s.prefs.pieceStyle === 'real');
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
@@ -115,6 +118,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
         <Board />
         <Pieces />
         <Highlights />
+        <BattleStage />
         <ImpactFX />
       </ShakeGroup>
       {q.dust > 0 && !realStyle && <GoldDust count={q.dust} />}

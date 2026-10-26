@@ -7,6 +7,8 @@ export type GraphicsQuality = 'high' | 'medium' | 'low';
 export type PieceStyle = 'real' | 'classic' | 'rebell';
 /** top = Brett gerade von oben, Figuren zum Spieler geneigt · perspective = schräge 3D-Ansicht */
 export type ViewMode = 'top' | 'perspective';
+/** Schlagzüge: warriors = Figuren werden zu Kriegern und kämpfen · quick = kurzer Stoß mit Splittern · off = schlicht */
+export type BattleMode = 'warriors' | 'quick' | 'off';
 
 export interface TimeControl {
   id: string;
@@ -53,8 +55,8 @@ export interface Preferences {
   graphics: GraphicsQuality;
   pieceStyle: PieceStyle;
   viewMode: ViewMode;
-  /** Schlagzüge als Angriff mit Einschlag, Splittern und Beben */
-  battleAnimations: boolean;
+  /** Darstellung von Schlagzügen */
+  battleMode: BattleMode;
   /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
   turnBoard: boolean;
   showCoordinates: boolean;
@@ -82,7 +84,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   graphics: 'high',
   pieceStyle: 'real',
   viewMode: 'top',
-  battleAnimations: true,
+  battleMode: 'warriors',
   turnBoard: true,
   showCoordinates: true,
 };
@@ -119,7 +121,13 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
         : r.pieceStyle === 'real' || r.pieceStyle === 'classic' || r.pieceStyle === 'rebell'
           ? r.pieceStyle
           : base.pieceStyle,
-    battleAnimations: bool(r.battleAnimations, base.battleAnimations),
+    // Bis 0.5 gab es nur an/aus („battleAnimations“) – „aus“ bleibt aus, „an“ wird zum Kriegerkampf
+    battleMode:
+      r.battleMode === 'warriors' || r.battleMode === 'quick' || r.battleMode === 'off'
+        ? r.battleMode
+        : r.battleAnimations === false
+          ? 'off'
+          : base.battleMode,
     viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' ? r.viewMode : base.viewMode,
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),

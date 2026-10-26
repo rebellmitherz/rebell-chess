@@ -59,3 +59,22 @@ export function resultScore(result: GameResult | null): string {
   if (!result) return '*';
   return result.winner === 'w' ? '1–0' : result.winner === 'b' ? '0–1' : '½–½';
 }
+
+/** Figurennamen für Überschriften: Nominativ, Akkusativ, weiblich? */
+const PIECE_WORDS: Record<PieceSymbol, { nom: string; acc: string; female: boolean }> = {
+  p: { nom: 'Bauer', acc: 'Bauern', female: false },
+  n: { nom: 'Springer', acc: 'Springer', female: false },
+  b: { nom: 'Läufer', acc: 'Läufer', female: false },
+  r: { nom: 'Turm', acc: 'Turm', female: false },
+  q: { nom: 'Dame', acc: 'Dame', female: true },
+  k: { nom: 'König', acc: 'König', female: false },
+};
+
+/** Überschrift eines Kriegerkampfs, z. B. „Weißer Springer schlägt schwarzen Bauern“ */
+export function battleTitle(b: { attacker: { color: Color; type: PieceSymbol }; victim: { color: Color; type: PieceSymbol } }): string {
+  const a = PIECE_WORDS[b.attacker.type];
+  const v = PIECE_WORDS[b.victim.type];
+  const aColor = b.attacker.color === 'w' ? 'Weiß' : 'Schwarz';
+  const vColor = b.victim.color === 'w' ? 'weiß' : 'schwarz';
+  return `${aColor}${a.female ? 'e' : 'er'} ${a.nom} schlägt ${vColor}${v.female ? 'e' : 'en'} ${v.acc}`;
+}

@@ -308,6 +308,15 @@ describe('Speichern und Laden', () => {
     const chosen = createGameStore({ storage });
     chosen.getState().setPrefs({ pieceStyle: 'classic' });
     expect(createGameStore({ storage }).getState().prefs.pieceStyle).toBe('classic');
+    // Bis 0.5 gab es Kampf-Animationen nur an/aus: „aus“ bleibt aus, „an“ wird zum Kriegerkampf
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ battleAnimations: false }));
+    expect(createGameStore({ storage }).getState().prefs.battleMode).toBe('off');
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ battleAnimations: true }));
+    expect(createGameStore({ storage }).getState().prefs.battleMode).toBe('warriors');
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ battleMode: 'quick', battleAnimations: false }));
+    expect(createGameStore({ storage }).getState().prefs.battleMode).toBe('quick');
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ battleMode: 'gigantisch' }));
+    expect(createGameStore({ storage }).getState().prefs.battleMode).toBe('warriors');
   });
 });
 
@@ -387,5 +396,142 @@ describe('Zwei Spieler an einem Gerät', () => {
     store.getState().tryMove('e2', 'e4');
     await new Promise((r) => setTimeout(r, 30));
     expect(store.getState().viewSide).toBe('w');
+  });
+});
+
+describe('Kriegerkampf beim Schlagen', () => {
+  function battleSetup(settings: Partial<GameSettings> = {}, fen?: string, extra: Partial<Parameters<typeof createGameStore>[0]> = {}) {
+    let time = 1_000_000;
+    const engine = fakeEngine();
+    const store = createGameStore({
+      engine,
+      storage: new MemoryStorage(),
+      now: () => time,
+      random: () => 0.99,
+      aiDelayMs: 0,
+      boardTurnDelayMs: 5,
+      battleScenes: true,
+      ...extra,
+    });
+    store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local', timeControlId: '5+0', ...settings }, fen);
+    return {
+      store,
+      engine,
+      advance: (ms: number) => {
+        time += ms;
+      },
+    };
+  }
+
+  it('startet einen Kampf, hält die Uhr an und sperrt Eingaben bis zum Ende', async () => {
+    const { store, advance } = battleSetup();
+    const s0 = store.getState();
+    s0.tryMove('e2', 'e4');
+    store.getState().tryMove('d7', 'd5');
+    const sfxBefore = store.getState().sfx;
+    advance(2000);
+    store.getState().tryMove('e4', 'd5');
+    const s = store.getState();
+    expect(s.battle).toMatchObject({
+      ply: 3,
+      from: 'e4',
+      to: 'd5',
+      victimSquare: 'd5',
+      attacker: { color: 'w', type: 'p' },
+      victim: { color: 'b', type: 'p' },
+    });
+    // Klänge kommen aus der Szene, nicht der normale Schlagklang
+    expect(s.sfx).toBe(sfxBefore);
+    // Uhr steht: Schwarz verliert während des Kampfes keine Zeit
+    expect(s.clock.since).toBeNull();
+    const black = s.clock.remaining.b;
+    advance(5000);
+    store.getState().tick();
+    expect(store.getState().clock.remaining.b).toBe(black);
+    // Niemand kann ziehen, das Brett dreht sich noch nicht
+    store.getState().selectSquare('d8');
+    expect(store.getState().selected).toBeNull();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(store.getState().viewSide).toBe('w');
+
+    store.getState().endBattle();
+    const after = store.getState();
+    expect(after.battle).toBeNull();
+    expect(after.clock.since).not.toBeNull();
+    expect(after.viewSide).toBe('b');
+    after.selectSquare('d8');
+    expect(store.getState().selected).toBe('d8');
+  });
+
+  it('kennt das Feld der geschlagenen Figur bei en passant', () => {
+    const { store } = battleSetup({}, 'rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3');
+    store.getState().tryMove('e5', 'f6');
+    expect(store.getState().battle).toMatchObject({ to: 'f6', victimSquare: 'f5', victim: { type: 'p' } });
+  });
+
+  it('kämpft nicht ohne Szene, bei „Kurz“ oder „Aus“', () => {
+    for (const [extra, mode] of [
+      [{ battleScenes: false }, 'warriors'],
+      [{}, 'quick'],
+      [{}, 'off'],
+    ] as const) {
+      const { store } = battleSetup({}, undefined, extra);
+      store.getState().setPrefs({ battleMode: mode });
+      store.getState().tryMove('e2', 'e4');
+      store.getState().tryMove('d7', 'd5');
+      store.getState().tryMove('e4', 'd5');
+      expect(store.getState().battle).toBeNull();
+      expect(store.getState().sfx?.kind).toBe('capture');
+    }
+  });
+
+  it('lässt die KI erst nach dem Kampf ziehen', async () => {
+    const { store, engine } = battleSetup(
+      { mode: 'ai', humanColor: 'w' },
+      'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2',
+    );
+    store.getState().tryMove('e4', 'd5');
+    expect(store.getState().battle).not.toBeNull();
+    // Die KI rechnet schon, zieht aber nicht
+    await vi.waitFor(() => expect(engine.playMove).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 30));
+    expect(store.getState().history).toHaveLength(1);
+    store.getState().endBattle();
+    await vi.waitFor(() => expect(store.getState().history).toHaveLength(2));
+  });
+
+  it('Rückgängig und neue Partie verwerfen einen laufenden Kampf', () => {
+    const { store } = battleSetup();
+    store.getState().tryMove('e2', 'e4');
+    store.getState().tryMove('d7', 'd5');
+    store.getState().tryMove('e4', 'd5');
+    store.getState().undo();
+    expect(store.getState().battle).toBeNull();
+    expect(store.getState().history).toHaveLength(2);
+    store.getState().tryMove('e4', 'd5');
+    expect(store.getState().battle).not.toBeNull();
+    store.getState().restart();
+    expect(store.getState().battle).toBeNull();
+  });
+
+  it('beendet einen Kampf spätestens nach der Sicherheitsgrenze', async () => {
+    const { store } = battleSetup({}, undefined, { battleTimeoutMs: 20 });
+    store.getState().tryMove('e2', 'e4');
+    store.getState().tryMove('d7', 'd5');
+    store.getState().tryMove('e4', 'd5');
+    expect(store.getState().battle).not.toBeNull();
+    await vi.waitFor(() => expect(store.getState().battle).toBeNull());
+  });
+
+  it('Matt durch Schlagen: Siegesklang erst nach dem Kampf', () => {
+    // Schäfermatt: Dh5xf7#
+    const { store } = battleSetup({}, 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4');
+    store.getState().tryMove('h5', 'f7');
+    const s = store.getState();
+    expect(s.result).toMatchObject({ winner: 'w', reason: 'checkmate' });
+    expect(s.battle).toMatchObject({ attacker: { type: 'q' }, victim: { type: 'p' } });
+    expect(s.sfx?.kind).not.toBe('win');
+    store.getState().endBattle();
+    expect(store.getState().sfx?.kind).toBe('win');
   });
 });

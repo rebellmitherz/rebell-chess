@@ -2,6 +2,7 @@ import { Component, useEffect, type ReactNode } from 'react';
 import { playSfx, setVolume, unlockAudio } from '../audio/sound';
 import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
+import { BattleOverlay } from './BattleOverlay';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
 import { Hud } from './Hud';
 import { MainMenu } from './MainMenu';
@@ -33,7 +34,7 @@ function useSoundBridge() {
       if (s.prefs.volume !== prev.prefs.volume) setVolume(s.prefs.volume);
       if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) {
         // Mit Kampf-Animation: Anlauf-Rauschen, Einschlag genau beim Treffer
-        playSfx(s.sfx.kind === 'capture' && s.prefs.battleAnimations ? 'strike' : s.sfx.kind);
+        playSfx(s.sfx.kind === 'capture' && s.prefs.battleMode !== 'off' ? 'strike' : s.sfx.kind);
       }
     });
   }, []);
@@ -63,6 +64,12 @@ function useKeyboard() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const s = gameStore.getState();
       const ui = useUi.getState();
+      // Kriegerkampf: Leertaste, Enter oder Esc überspringen ihn
+      if (s.battle && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) {
+        e.preventDefault();
+        s.endBattle();
+        return;
+      }
       if (e.key === 'Escape') {
         if (ui.sheet) ui.openSheet(null);
         else if (s.screen === 'game') s.openMenu();
@@ -101,6 +108,7 @@ export function App() {
   const layout = useLayout();
   const screen = useGame((s) => s.screen);
   const measured = useUi((s) => s.insets);
+  const fighting = useGame((s) => s.battle !== null);
   useSoundBridge();
   useClockTicker();
   useKeyboard();
@@ -113,7 +121,13 @@ export function App() {
       <SceneErrorBoundary>
         <ChessScene sidebar={inGame ? layout.sidebar : 0} topInset={topInset} bottomInset={bottomInset} />
       </SceneErrorBoundary>
-      {inGame && <Hud layout={layout} />}
+      {/* Während eines Kriegerkampfs treten die Leisten zurück – volle Bühne für die Kamera */}
+      {inGame && (
+        <div className={fighting ? 'hud-layer cinematic' : 'hud-layer'}>
+          <Hud layout={layout} />
+        </div>
+      )}
+      {inGame && <BattleOverlay />}
       {screen === 'menu' && <MainMenu />}
       <PromotionDialog />
       <GameOverDialog />

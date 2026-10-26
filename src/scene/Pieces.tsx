@@ -5,6 +5,7 @@ import type { TrackedPiece } from '../core/pieceTracking';
 import type { Color, MoveRecord, PieceSymbol, Square } from '../core/types';
 import { gameStore, useGame } from '../game/instance';
 import { canHumanInteract, displayPly } from '../game/store';
+import { battleRuntime } from './Battle';
 import { squareToWorld } from './boardMath';
 import { ATTACK_IMPACT, KNOCK_TOTAL, knockPose, moveDuration, movePose, type MoveProfile, type Pose } from './choreography';
 import { Burst } from './Effects';
@@ -14,6 +15,7 @@ import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
 import { useModelPieces } from './pieceModels';
 import { useRealAssets } from './realAssets';
+import { warriorsReady } from './warriors';
 
 /** Springer schauen zum Gegner, leicht gedreht, damit das Profil aus Spielersicht erkennbar bleibt. */
 const KNIGHT_YAW = 0.75;
@@ -90,9 +92,11 @@ interface PieceProps {
   viewScale: number;
   /** Figur selbst anklickbar (3D-Ansicht); von oben zählt nur das Feld */
   pickable: boolean;
+  /** Kämpft gerade als Krieger – erscheint erst bei der Rückverwandlung wieder */
+  hidden: boolean;
 }
 
-function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated, viewTilt, viewScale, pickable }: PieceProps) {
+function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated, viewTilt, viewScale, pickable, hidden }: PieceProps) {
   const group = useRef<THREE.Group>(null!);
   const selectSquare = useGame((s) => s.selectSquare);
   const [x, z] = squareToWorld(displaySquare);
@@ -115,6 +119,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     topple: 0,
     viewTilt: viewTilt,
     viewScale: viewScale,
+    wasHidden: false,
   });
 
   useLayoutEffect(() => {
@@ -172,6 +177,22 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
       a.profile = Math.hypot(a.fromX - x, a.fromZ - z) > 0.3 ? profileRef.current : 'glide';
       a.start = -1;
       a.lift = 0;
+    }
+    if (hidden && !battleRuntime.reveal) {
+      // Kampf läuft: Figur steht unsichtbar auf dem Zielfeld bereit
+      a.start = null;
+      a.scale = 0;
+      a.lift = 0;
+      a.wasHidden = true;
+      g.position.set(x, 0, z);
+      g.scale.setScalar(0.001);
+      return;
+    }
+    if (a.wasHidden) {
+      a.wasHidden = false;
+      a.fromX = a.toX = x;
+      a.fromZ = a.toZ = z;
+      a.pop = 0.6;
     }
     if (a.start === -1) a.start = now;
     if (a.trembleStart === -1) a.trembleStart = now;
@@ -377,7 +398,10 @@ export function Pieces() {
   const turn = useGame((s) => s.status.turn);
   const canInteract = useGame(canHumanInteract);
   const pending = useGame((s) => s.pendingPromotion);
-  const battleOn = useGame((s) => s.prefs.battleAnimations);
+  const battleOn = useGame((s) => s.prefs.battleMode !== 'off');
+  const battle = useGame((s) => s.battle);
+  // Kriegerkampf: Figuren stehen aufrecht (Kamera von der Seite), der Angreifer ist solange Krieger
+  const fighting = battle !== null && warriorsReady() !== null;
   const last = useGame((s) => {
     const ply = displayPly(s);
     return ply > 0 ? s.history[ply - 1] : undefined;
@@ -391,8 +415,8 @@ export function Pieces() {
   const topView = useGame((s) => s.prefs.viewMode === 'top');
   const viewSide = useGame((s) => s.viewSide);
   // Kopf zeigt vom Spieler weg (Bildschirm oben): Weiß unten → nach -z, Schwarz unten → nach +z
-  const viewTilt = topView ? (viewSide === 'w' ? -TOP_VIEW_TILT : TOP_VIEW_TILT) : 0;
-  const viewScale = topView ? TOP_VIEW_SCALE : 1;
+  const viewTilt = topView && !fighting ? (viewSide === 'w' ? -TOP_VIEW_TILT : TOP_VIEW_TILT) : 0;
+  const viewScale = topView && !fighting ? TOP_VIEW_SCALE : 1;
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece; battle: { dirX: number; dirZ: number } | null }>>([]);
@@ -401,7 +425,10 @@ export function Pieces() {
     const ids = new Set(pieces.map((p) => p.id));
     const removed = prev.current.filter((p) => !ids.has(p.id));
     // Nur echte Schlagzüge animieren (nicht das Zurücksetzen auf eine neue Partie)
-    if (removed.length > 0 && removed.length <= 2) {
+    const s = gameStore.getState();
+    const warriorFight = s.battle !== null && s.battle.ply === s.history.length && warriorsReady() !== null;
+    // Beim Kriegerkampf übernehmen die Krieger – keine zerspringende Figur
+    if (removed.length > 0 && removed.length <= 2 && !warriorFight) {
       const move = shownLastMove();
       let battle: { dirX: number; dirZ: number } | null = null;
       if (battleOn && move?.isCapture) {
@@ -434,6 +461,7 @@ export function Pieces() {
           viewTilt={viewTilt}
           viewScale={viewScale}
           pickable={!topView}
+          hidden={fighting && battle.to === p.square && battle.attacker.color === p.color}
         />
       ))}
       {ghosts.map((g) => (

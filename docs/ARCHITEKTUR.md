@@ -57,6 +57,9 @@ src/
     ChessScene.tsx    Canvas, Licht, Umgebung, Schatten, Kamera
     Board.tsx         Brett, Rahmen, Koordinaten, Feld-Klicks
     Pieces.tsx        Figuren mit Bewegungs- und Schlag-Animation
+    Battle.tsx        Kriegerkampf: Krieger, Animationen, Effekte und Klänge im Takt des Drehbuchs
+    battleScript.ts   Drehbuch des Kampfes als reine Funktionen (Ablauf, Wege, Kamera) – getestet
+    warriors.ts       Lädt die Krieger (GLB mit Skelett-Animationen, meshopt)
     pieceGeometry.ts  Prozedurale Staunton-Figuren (Lathe + Extrude, gemergt)
     materials.ts      PBR-Materialien (Gold, Onyx, Silber)
     Highlights.tsx    Legale Züge, letzter Zug, Schach, Hinweis-Pfeil, Zielfeld beim Ziehen
@@ -71,8 +74,8 @@ src/
   pwa.ts     Service Worker registrieren, „Als App installieren“
 public/
   engine/    Stockfish (wird aus node_modules kopiert)
-  models/    pieces.glb + pieces_ao.jpg (aus scripts/build-pieces.mjs, build-ao.py)
-  sounds/    20 MP3 (aus scripts/build-sounds.py)
+  models/    pieces.glb + pieces_ao.jpg, board.glb (build-pieces.mjs, build-ao.py), warrior_*.glb (build-warriors.mjs)
+  sounds/    45 MP3 (aus scripts/build-sounds.py)
   icons/     App-Symbole (aus scripts/build-icons.py)
   sw.js      Service Worker (offline)
 ```
@@ -89,6 +92,9 @@ public/
 5. Ist danach die KI am Zug, ruft der Store `engineService.playMove(fen, stufe)` auf und führt den Zug aus
    (veraltete Antworten nach Rückgängig/Neustart werden verworfen).
 6. Szene und HUD rendern aus dem Store neu; Figuren animieren über stabile IDs.
+7. Schlagzug mit „Kriegerkampf“: Der Store setzt `battle` (Uhr angehalten, Eingaben gesperrt, KI-Zug wartet,
+   Brett dreht erst danach). Die Szene spielt das Drehbuch ab und meldet `endBattle()` – oder der Spieler überspringt.
+   Eine Sicherheitsgrenze (15 s) beendet den Kampf auch, wenn keine Szene läuft.
 
 ## Regeln und Entscheidungen
 

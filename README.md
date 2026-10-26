@@ -76,6 +76,8 @@ Baut das Spiel und lädt den Ordner `dist/` in den Zweig `gh-pages` von `rebellm
 - Ziehen auf freier Fläche dreht die Kamera, Mausrad/zwei Finger zoomen.
 - Ist das Spiel auf einem Gerät zu langsam: Menü → Einstellungen → Grafikqualität „Mittel“ oder „Niedrig“.
 - Tasten: `U` Zug zurück · `F` Brett drehen · `H` Hinweis (Training) · `P` Pause · `Esc` Menü · `←` `→` blättern.
+- Schlagen: Beide Figuren werden zu Kriegern und kämpfen (die Uhr steht so lange). Tippen, Klick, Leertaste oder
+  Esc überspringen den Kampf. Menü → Einstellungen → „Beim Schlagen“: Kriegerkampf, Kurz oder Aus.
 - Analyse: Klick auf einen Zug in der Zugliste zeigt die Stellung danach (mit Stockfish-Bewertung im Training und
   nach Partieende).
 - Als App: Android/Chrome/Edge „Als App installieren“, iPhone Safari: Teilen → „Zum Home-Bildschirm“.

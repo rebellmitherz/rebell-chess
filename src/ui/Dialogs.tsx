@@ -57,10 +57,12 @@ export function GameOverDialog() {
   const gameId = useGame((s) => s.gameId);
   const plies = useGame((s) => s.history.length);
   const screen = useGame((s) => s.screen);
+  // Endet die Partie mit einem Schlagzug, kommt das Ergebnis erst nach dem Kampf
+  const fighting = useGame((s) => s.battle !== null);
   const dismissed = useUi((s) => s.dismissedResultKey);
   const dismiss = useUi((s) => s.dismissResult);
   const openDialog = useUi((s) => s.openDialog);
-  if (!result || screen !== 'game') return null;
+  if (!result || screen !== 'game' || fighting) return null;
   const key = `${gameId}-${plies}-${result.reason}`;
   if (dismissed === key) return null;
   const won = settings.mode === 'ai' && result.winner === settings.humanColor;

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 let spriteTexture: THREE.Texture | null = null;
 
 /** Weiches, rundes Partikel-Sprite (zur Laufzeit gezeichnet). */
-function getSprite(): THREE.Texture {
+export function getSprite(): THREE.Texture {
   if (spriteTexture) return spriteTexture;
   const c = document.createElement('canvas');
   c.width = c.height = 64;

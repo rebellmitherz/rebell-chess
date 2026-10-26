@@ -4,7 +4,7 @@ import { playSfx } from '../audio/sound';
 import type { Color } from '../core/types';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 import { gameStore, useGame } from '../game/instance';
-import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality, type PieceStyle, type ViewMode } from '../game/settings';
+import { TIME_CONTROLS, type GameMode, type GameSettings, type BattleMode, type GraphicsQuality, type PieceStyle, type ViewMode } from '../game/settings';
 import { FIGURINE } from './format';
 
 type Panel = 'home' | 'new' | 'settings' | 'help';
@@ -170,12 +170,22 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           Figuren.
         </p>
       </div>
-      <Toggle
-        checked={prefs.battleAnimations}
-        onChange={(battleAnimations) => set({ battleAnimations })}
-        label="Kampf-Animationen"
-        hint="Beim Schlagen stürmt die Figur los, trifft, der Gegner zerspringt – aus für schnelle Blitzpartien"
-      />
+      <div className="field">
+        <span className="field-label">Beim Schlagen</span>
+        <Segmented<BattleMode>
+          value={prefs.battleMode}
+          onChange={(battleMode) => set({ battleMode })}
+          options={[
+            { value: 'warriors', label: 'Kriegerkampf' },
+            { value: 'quick', label: 'Kurz' },
+            { value: 'off', label: 'Aus' },
+          ]}
+        />
+        <p className="field-hint">
+          Kriegerkampf: Beide Figuren werden zu Kriegern und kämpfen (Tippen überspringt, die Uhr steht so lange). Kurz:
+          Die Figur stürmt los, der Gegner zerspringt. Aus: für schnelle Blitzpartien.
+        </p>
+      </div>
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
       {prefs.sound && (
         <label className="slider-row">
@@ -220,8 +230,17 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         Figur antippen oder anklicken, dann das Zielfeld – oder die Figur direkt aufs Zielfeld ziehen. Punkte zeigen legale
         Züge, Ringe zeigen Schlagzüge.
       </p>
+      <h3>Schlagen</h3>
+      <p>
+        Beim Schlagen werden beide Figuren zu Kriegern – Weiß kämpft als Ritter, Schwarz als Barbar. Die Uhr steht, bis
+        der Kampf vorbei ist. Antippen, Klick, Leertaste oder <kbd>Esc</kbd> überspringen ihn; unter Einstellungen →
+        „Beim Schlagen“ gibt es auch „Kurz“ und „Aus“.
+      </p>
       <h3>Kamera</h3>
-      <p>Ziehen auf freier Fläche dreht das Brett, Mausrad oder zwei Finger zoomen. „Drehen“ wechselt die Seite.</p>
+      <p>
+        Mausrad oder zwei Finger zoomen, rechte Maustaste oder zwei Finger verschieben. In der Ansicht „3D schräg“ dreht
+        Ziehen auf freier Fläche das Brett. „Drehen“ wechselt die Seite.
+      </p>
       <h3>Tastatur</h3>
       <p>
         <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü ·
@@ -251,7 +270,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
         3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
         Figuren und Brett: „Chess Set“ von Riley Queen, Raumlicht „Lebombo“, Tisch „Wood Table 001“ (alle Poly Haven,
-        CC0). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
+        CC0). Krieger: „KayKit Adventurers“ von Kay Lousberg (CC0). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
       </p>
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

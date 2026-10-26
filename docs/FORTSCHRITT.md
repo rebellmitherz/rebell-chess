@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.5.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.6.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -56,6 +56,9 @@ ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = 
 | **Zwei Spieler**: Brett dreht sich nach jedem Zug zum Spieler am Zug (nach der Landung) | getestet (2 Tests); Standard an |
 | **Stil „Echt“ (Standard)**: polierte Marmorfiguren und Marmorbrett mit echten Texturen, Holztisch, Wohnraum-Licht (HDRI), unscharfer Raum im Hintergrund; „Edel“ (Gold/Onyx) und „Rebell“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
 | **Größeres Brett**: längere Brennweite (28°), knappe Einpassung, schmale Handy-Leisten, Hochformat steiler | im Browser geprüft; im Hochformat begrenzt die Bildschirmbreite die Größe |
+| **Ansicht „Gerade von oben“ (Standard)**: Brett exakt von oben, jede Figur zum Spieler geneigt (Form erkennbar), angetippt/gezogen wird das Feld; „3D schräg“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
+| **Kriegerkampf beim Schlagen (Standard)**: beide Figuren verwandeln sich in Krieger (Weiß = Ritter mit Schwert und Schild, Schwarz = Barbar mit Zweihandaxt), der Angreifer stürmt los, Hieb gegen Abwehr, Konter, Treffer, Todesstoß in Zeitlupe, Jubel, Rückverwandlung; Kamera fährt seitlich heran und kreist, Kino-Balken mit Titel („Weißer Bauer schlägt schwarzen Bauern“), Funken, Lichtblitze, Druckwelle, Beben, eigene Kampfklänge (Klingen, Schild, Treffer, Sturz, Schritte) | getestet (Drehbuch 8 Tests, Store 7 Tests: Uhr steht, Eingaben gesperrt, KI wartet, Rückgängig/Neustart, Sicherheitsgrenze, Matt durch Schlagen; Modelldateien 2 Tests); im Browser als Bildfolge geprüft (PC 1280×720, Smartphone 375×812, gegen die KI) |
+| Kampf überspringen (Tippen, Klick, Leertaste, Enter, Esc), Einstellung „Beim Schlagen: Kriegerkampf / Kurz / Aus“ | im Browser geprüft (Tippen beendet den Kampf, Uhr läuft weiter, Brett dreht sich) |
 
 ## Leistung (gemessen 25.10.2026, Chromium im Desktop-PC, 766×646, Partie in Grundstellung)
 
@@ -93,7 +96,10 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - **Echtes Smartphone** wurde noch nicht getestet (nur emulierte Größen im Desktop-Browser). Insbesondere
   **Drag & Drop per Finger** ist nur mit Maus geprüft – die Touch-Logik nutzt dieselben Pointer-Events, ist aber
   ungetestet.
-- **Sounds** wurden nur technisch gemessen, nicht angehört.
+- **Sounds** wurden nur technisch gemessen, nicht angehört – das gilt auch für die neuen Kampfklänge.
+- **Kriegerkampf**: Die Krieger sind bewusst verspielte Comic-Figuren (KayKit, CC0) – realistische, frei nutzbare
+  Kämpfer mit passenden Animationen gibt es kaum. Der Ablauf wurde im Browser Bild für Bild geprüft, aber nicht in
+  Echtzeit auf einem echten Gerät angesehen (die Testumgebung drosselt die Bildrate).
 - **Offline im WLAN-Test** (http://192.168…) gibt es keinen Service Worker (Browser verlangt https) – online über
   GitHub Pages (https) funktioniert er.
 - **Elo-Angaben** der Stufen sind Richtwerte (Stockfish-Kalibrierung gilt für das volle Netz, hier läuft das Lite-Netz).
