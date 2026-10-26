@@ -302,6 +302,12 @@ describe('Speichern und Laden', () => {
     // Kaputte Werte werden begrenzt bzw. ersetzt
     storage.setItem('rebellchess.prefs.v1', JSON.stringify({ volume: 7, graphics: 'ultra' }));
     expect(createGameStore({ storage }).getState().prefs).toMatchObject({ volume: 1, graphics: 'high' });
+    // Alte Einstellungen (vor 0.5) mit Gold-Stil werden einmalig auf „Echt“ gehoben, neue Wahl bleibt erhalten
+    storage.setItem('rebellchess.prefs.v1', JSON.stringify({ pieceStyle: 'classic' }));
+    expect(createGameStore({ storage }).getState().prefs.pieceStyle).toBe('real');
+    const chosen = createGameStore({ storage });
+    chosen.getState().setPrefs({ pieceStyle: 'classic' });
+    expect(createGameStore({ storage }).getState().prefs.pieceStyle).toBe('classic');
   });
 });
 

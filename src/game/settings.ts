@@ -97,6 +97,9 @@ export function sanitizeSettings(raw: unknown): GameSettings {
   };
 }
 
+/** Version des gespeicherten Einstellungsformats */
+export const PREFS_VERSION = 2;
+
 export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PREFERENCES): Preferences {
   const r = isObj(raw) ? raw : {};
   return {
@@ -105,7 +108,13 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     sound: bool(r.sound, base.sound),
     volume: typeof r.volume === 'number' && Number.isFinite(r.volume) ? Math.min(1, Math.max(0, r.volume)) : base.volume,
     graphics: r.graphics === 'high' || r.graphics === 'medium' || r.graphics === 'low' ? r.graphics : base.graphics,
-    pieceStyle: r.pieceStyle === 'real' || r.pieceStyle === 'classic' || r.pieceStyle === 'rebell' ? r.pieceStyle : base.pieceStyle,
+    // Bis 0.4 war „classic“ (Gold/Onyx) der Standard – gespeicherte Einstellungen von damals einmalig auf „Echt“ heben
+    pieceStyle:
+      r.prefsVersion !== PREFS_VERSION && r.pieceStyle === 'classic'
+        ? 'real'
+        : r.pieceStyle === 'real' || r.pieceStyle === 'classic' || r.pieceStyle === 'rebell'
+          ? r.pieceStyle
+          : base.pieceStyle,
     battleAnimations: bool(r.battleAnimations, base.battleAnimations),
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),

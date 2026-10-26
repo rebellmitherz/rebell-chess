@@ -1,6 +1,6 @@
 import { ChessGame, isValidFen } from '../core/chessGame';
 import type { Color, GameResult, ResultReason } from '../core/types';
-import { sanitizePreferences, sanitizeSettings, type GameSettings, type Preferences } from './settings';
+import { PREFS_VERSION, sanitizePreferences, sanitizeSettings, type GameSettings, type Preferences } from './settings';
 
 export const SAVE_KEY = 'rebellchess.save.v1';
 export const PREFS_KEY = 'rebellchess.prefs.v1';
@@ -95,7 +95,7 @@ export function loadPreferences(storage: StorageLike | null, base: Preferences):
 
 export function savePreferences(storage: StorageLike | null, prefs: Preferences): void {
   try {
-    storage?.setItem(PREFS_KEY, JSON.stringify(prefs));
+    storage?.setItem(PREFS_KEY, JSON.stringify({ ...prefs, prefsVersion: PREFS_VERSION }));
   } catch {
     /* Speicher voll oder gesperrt – Einstellungen gelten dann nur für diese Sitzung */
   }
