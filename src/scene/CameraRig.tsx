@@ -22,11 +22,18 @@ const FIT_POINTS_TOP = [
 
 /** Hochformat von oben: nur das Spielfeld (Koordinaten stehen dann in den Feldern), der Rahmen darf aus dem Bild */
 const FIT_POINTS_TOP_TIGHT = [
-  new THREE.Vector3(-4.02, 0, 4.02),
-  new THREE.Vector3(4.02, 0, 4.02),
-  new THREE.Vector3(-4.02, 0, -4.35),
-  new THREE.Vector3(4.02, 0, -4.35),
+  // ein schmaler Streifen Rahmen bleibt links und rechts sichtbar – sonst wirkt das Brett abgeschnitten
+  new THREE.Vector3(-4.16, 0, 4.12),
+  new THREE.Vector3(4.16, 0, 4.12),
+  new THREE.Vector3(-4.16, 0, -4.4),
+  new THREE.Vector3(4.16, 0, -4.4),
 ];
+
+/**
+ * Hochformat von oben: das Bild leicht in die Höhe ziehen (Felder 8 % höher als breit). Das quadratische Brett
+ * nutzt so mehr vom hohen Handybildschirm; so wenig, dass es kaum auffällt. Im Kriegerkampf aus.
+ */
+export const PORTRAIT_STRETCH = 1.08;
 
 /** Punkte, die immer sichtbar sein müssen: Spielfeld-Ecken und die Köpfe der hinteren Figuren. */
 const FIT_POINTS = [
@@ -40,6 +47,8 @@ const FIT_POINTS = [
 ];
 
 interface Framing {
+  /** Streckung in die Höhe (1 = keine) */
+  stretch: number;
   polar: number;
   distance: number;
   /** Bildversatz (Weltmaß), damit das Brett mittig im freien Bereich liegt */
@@ -59,7 +68,9 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
   // 3D: Hochformat steiler, damit das Brett auch die Höhe nutzt
   const polar = top ? 0.0001 : portrait ? 0.66 : 0.98;
   const points = top ? (portrait ? FIT_POINTS_TOP_TIGHT : FIT_POINTS_TOP) : FIT_POINTS;
-  const aspect = width / height;
+  const stretch = top && portrait ? PORTRAIT_STRETCH : 1;
+  // Die Kamera „denkt“ ein breiteres Bild: alles erscheint um `stretch` höher als breit
+  const aspect = (width / height) * stretch;
   // freier Bereich in NDC (-1..1)
   const rect = {
     x0: -1,
@@ -103,6 +114,7 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
   const halfH = distance * FOV_HALF_TAN;
   const halfW = halfH * aspect;
   return {
+    stretch,
     polar,
     distance,
     // 1 NDC-Einheit entspricht der halben Bildbreite bzw. -höhe im Zielabstand
@@ -156,8 +168,15 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
     void c.setFocalOffset(f.offsetX, f.offsetY, 0, true);
   }, [f.offsetX, f.offsetY, cinematic]);
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     if (screen === 'menu' && controls.current) controls.current.azimuthAngle += dt * 0.06;
+    // Streckung anwenden (R3F setzt das Seitenverhältnis nur bei Größenänderung – hier jedes Bild prüfen)
+    const cam = state.camera as THREE.PerspectiveCamera;
+    const aspect = (size.width / size.height) * (cinematic || screen !== 'game' ? 1 : f.stretch);
+    if (Math.abs(cam.aspect - aspect) > 1e-6) {
+      cam.aspect = aspect;
+      cam.updateProjectionMatrix();
+    }
   });
 
   useEffect(() => {
