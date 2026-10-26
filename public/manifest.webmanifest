@@ -1,7 +1,7 @@
 {
   "name": "Rebell Chess 3D",
   "short_name": "Rebell Chess",
-  "description": "Premium-3D-Schach in Gold, Silber und Schwarz – gegen Stockfish oder zu zweit.",
+  "description": "3D-Schach mit echten Marmorfiguren, die beim Schlagen als Krieger kämpfen – gegen Stockfish oder zu zweit.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

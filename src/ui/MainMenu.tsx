@@ -298,7 +298,7 @@ export function MainMenu() {
           <h1>
             <span className="brand-mark">REBELL</span> <span className="brand-chess">CHESS</span>
           </h1>
-          <p className="tagline">Schach in Gold, Silber und Schwarz</p>
+          <p className="tagline">3D-Schach, in dem die Figuren kämpfen</p>
         </header>
         {panel === 'home' && (
           <nav className="menu-list">
