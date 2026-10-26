@@ -42,7 +42,7 @@ import {
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, getTimeControl, type GameSettings, type Preferences } from './settings';
 
 export type Screen = 'menu' | 'game';
-export type SfxKind = 'move' | 'capture' | 'strike' | 'castle' | 'check' | 'promote' | 'illegal' | 'select' | 'win' | 'loss' | 'draw' | 'ui';
+export type SfxKind = 'move' | 'capture' | 'strike' | 'castle' | 'check' | 'promote' | 'illegal' | 'select' | 'mate' | 'win' | 'loss' | 'draw' | 'ui';
 
 export interface HintState {
   ply: number;
@@ -375,7 +375,9 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       cancelAi();
       const s = get();
       let kind: SfxKind;
-      if (result.winner === null) kind = 'draw';
+      // Schachmatt hat sein eigenes Finale (Aufbau, Wums, Glocke) – danach kommt das Ergebnisfenster
+      if (result.reason === 'checkmate') kind = 'mate';
+      else if (result.winner === null) kind = 'draw';
       else if (s.settings.mode === 'ai') kind = result.winner === s.settings.humanColor ? 'win' : 'loss';
       else kind = 'win';
       // Während eines Kampfes erst danach jubeln (der Ergebnis-Dialog wartet ebenfalls)

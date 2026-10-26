@@ -5,6 +5,7 @@ import { ChessScene } from '../scene/ChessScene';
 import { BattleOverlay } from './BattleOverlay';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
 import { toggleFullscreen } from './fullscreen';
+import { MateStamp } from './MateStamp';
 import { Hud } from './Hud';
 import { MainMenu } from './MainMenu';
 import { useLayout } from './useLayout';
@@ -136,6 +137,7 @@ export function App() {
         </div>
       )}
       {inGame && <BattleOverlay />}
+      <MateStamp />
       {screen === 'menu' && <MainMenu />}
       <PromotionDialog />
       <GameOverDialog />

@@ -59,10 +59,11 @@ export function GameOverDialog() {
   const screen = useGame((s) => s.screen);
   // Endet die Partie mit einem Schlagzug, kommt das Ergebnis erst nach dem Kampf
   const fighting = useGame((s) => s.battle !== null);
+  const stamping = useUi((s) => s.stamping);
   const dismissed = useUi((s) => s.dismissedResultKey);
   const dismiss = useUi((s) => s.dismissResult);
   const openDialog = useUi((s) => s.openDialog);
-  if (!result || screen !== 'game' || fighting) return null;
+  if (!result || screen !== 'game' || fighting || stamping) return null;
   const key = `${gameId}-${plies}-${result.reason}`;
   if (dismissed === key) return null;
   const won = settings.mode === 'ai' && result.winner === settings.humanColor;

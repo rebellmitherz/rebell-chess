@@ -405,6 +405,21 @@ function renderInto(c: Chain, kind: SfxKind, t: number) {
       partial(c, 70, hitAt, 0.35, 0.22, 0.4); // tiefer Schlag
       break;
     }
+    case 'mate': {
+      // Schachmatt: Spannung baut sich auf, dann der Stempel – tiefer Schlag, Aufprall, Glocke
+      const hit = t + 1.1;
+      sweep(c, t + 0.3, 0.8, 140, 2200, 0.3, 1.1);
+      partial(c, 40, hit, 1.6, 0.62, 0.5);
+      partial(c, 80, hit, 0.9, 0.34, 0.4);
+      partial(c, 160, hit, 0.4, 0.2, 0.3);
+      knock(c, hit, 1.7, 0.75, true);
+      if (c.battle) playBuffer(c, pick(c.battle.fall), hit, 0.95, vary(0.8, 0.04), 0.4);
+      renderBattle(c, 'death', hit + 0.02);
+      bell(c, 196, hit + 0.05, 0.1, 3.4);
+      bell(c, 293.66, hit + 0.14, 0.07, 3.0);
+      bell(c, 392, hit + 0.26, 0.05, 2.8);
+      break;
+    }
     case 'castle':
       knock(c, t, 0.85, 1.0);
       knock(c, t + 0.13, 0.75, 1.08);
@@ -446,6 +461,7 @@ export const SFX_LENGTH: Record<SfxKind, number> = {
   move: 1.3,
   capture: 1.5,
   strike: 2.0,
+  mate: 5.2,
   castle: 1.5,
   check: 2.2,
   promote: 2.4,

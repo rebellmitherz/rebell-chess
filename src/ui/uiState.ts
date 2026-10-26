@@ -8,12 +8,15 @@ interface UiState {
   sheet: SheetKind;
   /** Ergebnisfenster für diese Stellung weggeklickt („Brett ansehen“) */
   dismissedResultKey: string | null;
+  /** Das Schachmatt-Finale läuft – das Ergebnisfenster wartet */
+  stamping: boolean;
   /** Gemessene Höhe der HUD-Leisten auf Smartphones (für die Kamera) */
   insets: { top: number; bottom: number } | null;
   openDialog(d: DialogKind): void;
   openSheet(s: SheetKind): void;
   dismissResult(key: string): void;
   setInsets(insets: { top: number; bottom: number } | null): void;
+  setStamping(on: boolean): void;
 }
 
 /** Reiner Oberflächenzustand (welche Dialoge offen sind) – getrennt vom Spielzustand. */
@@ -22,6 +25,8 @@ export const useUi = create<UiState>((set) => ({
   sheet: null,
   dismissedResultKey: null,
   insets: null,
+  stamping: false,
+  setStamping: (stamping) => set({ stamping }),
   openDialog: (dialog) => set({ dialog, sheet: null }),
   openSheet: (sheet) => set({ sheet }),
   dismissResult: (key) => set({ dismissedResultKey: key }),

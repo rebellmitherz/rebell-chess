@@ -532,9 +532,9 @@ describe('Kriegerkampf beim Schlagen', () => {
     const s = store.getState();
     expect(s.result).toMatchObject({ winner: 'w', reason: 'checkmate' });
     expect(s.battle).toMatchObject({ attacker: { type: 'q' }, victim: { type: 'p' } });
-    expect(s.sfx?.kind).not.toBe('win');
+    expect(s.sfx?.kind).not.toBe('mate');
     store.getState().endBattle();
-    expect(store.getState().sfx?.kind).toBe('win');
+    expect(store.getState().sfx?.kind).toBe('mate');
   });
 });
 

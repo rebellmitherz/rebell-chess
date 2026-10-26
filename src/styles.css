@@ -1646,3 +1646,90 @@ kbd {
   padding: 3px 8px;
   min-width: 64px;
 }
+
+/* ---------- Schachmatt-Finale ---------- */
+
+.mate-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.mate-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, #ffe9b0 35%, rgba(255, 210, 120, 0) 75%);
+  animation: mate-flash 0.55s ease-out both;
+  pointer-events: none;
+}
+
+.mate-stamp {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: clamp(10px, 2.4vmin, 22px) clamp(18px, 5vmin, 56px) clamp(10px, 2vmin, 18px);
+  color: #e11d2b;
+  border: clamp(5px, 1vmin, 11px) solid #e11d2b;
+  border-radius: 14px;
+  outline: clamp(2px, 0.4vmin, 4px) solid #e11d2b;
+  outline-offset: clamp(4px, 0.8vmin, 8px);
+  background: rgba(14, 4, 6, 0.55);
+  text-shadow: 0 0 26px rgba(255, 40, 50, 0.7);
+  box-shadow: 0 0 60px rgba(225, 29, 43, 0.55), inset 0 0 30px rgba(225, 29, 43, 0.3);
+  transform: rotate(-7deg);
+  animation: mate-slam 0.42s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+}
+
+.mate-word {
+  font-family: var(--font-brand);
+  font-weight: 800;
+  font-size: clamp(34px, 11vmin, 120px);
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.mate-sub {
+  font: 700 clamp(13px, 2.4vmin, 24px) var(--font-ui);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ffd9a0;
+  text-shadow: none;
+}
+
+@keyframes mate-slam {
+  0% {
+    opacity: 0;
+    transform: rotate(-7deg) scale(5);
+  }
+  55% {
+    opacity: 1;
+    transform: rotate(-7deg) scale(0.9);
+  }
+  75% {
+    transform: rotate(-7deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(-7deg) scale(1);
+  }
+}
+
+@keyframes mate-flash {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mate-stamp {
+    animation-duration: 0.01s;
+  }
+}
