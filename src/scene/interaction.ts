@@ -51,6 +51,12 @@ export const sceneHandles = {
   controls: null as CameraControlsImpl | null,
 };
 
+/** Ziehen vorbereiten: Kamera sofort abschalten, damit sie die Geste nicht übernimmt. */
+export function beginDrag(pieceId: string, from: Square, pointerId: number, clientX: number, clientY: number, x: number, z: number) {
+  if (sceneHandles.controls) sceneHandles.controls.enabled = false;
+  Object.assign(pointerDrag, { pointerId, pieceId, from, startX: clientX, startY: clientY, active: false, x, z });
+}
+
 export function clickSuppressed(): boolean {
   return performance.now() < pointerDrag.suppressClickUntil;
 }

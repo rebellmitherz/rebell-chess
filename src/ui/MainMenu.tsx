@@ -4,7 +4,7 @@ import { playSfx } from '../audio/sound';
 import type { Color } from '../core/types';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 import { gameStore, useGame } from '../game/instance';
-import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality, type PieceStyle } from '../game/settings';
+import { TIME_CONTROLS, type GameMode, type GameSettings, type GraphicsQuality, type PieceStyle, type ViewMode } from '../game/settings';
 import { FIGURINE } from './format';
 
 type Panel = 'home' | 'new' | 'settings' | 'help';
@@ -141,6 +141,18 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           ]}
         />
         <p className="field-hint">Niedrig schaltet Schatten und Partikel ab – für ältere Smartphones.</p>
+      </div>
+      <div className="field">
+        <span className="field-label">Ansicht</span>
+        <Segmented<ViewMode>
+          value={prefs.viewMode}
+          onChange={(viewMode) => set({ viewMode })}
+          options={[
+            { value: 'top', label: 'Gerade von oben' },
+            { value: 'perspective', label: '3D schräg' },
+          ]}
+        />
+        <p className="field-hint">Gerade: Brett von oben, Figuren zu dir geneigt – angetippt wird das Feld.</p>
       </div>
       <div className="field">
         <span className="field-label">Figurenstil</span>

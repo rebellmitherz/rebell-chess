@@ -9,7 +9,7 @@ import { squareToWorld } from './boardMath';
 import { ATTACK_IMPACT, KNOCK_TOTAL, knockPose, moveDuration, movePose, type MoveProfile, type Pose } from './choreography';
 import { Burst } from './Effects';
 import { emitImpact } from './ImpactFX';
-import { clickSuppressed, pointerDrag, sceneHandles } from './interaction';
+import { beginDrag, clickSuppressed, pointerDrag } from './interaction';
 import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
 import { useModelPieces } from './pieceModels';
@@ -31,7 +31,13 @@ function setPointer(active: boolean) {
 const tiltAxis = new THREE.Vector3();
 const qTilt = new THREE.Quaternion();
 const qTopple = new THREE.Quaternion();
+const qView = new THREE.Quaternion();
 const X_AXIS = new THREE.Vector3(1, 0, 0);
+
+/** Ansicht von oben: Figuren um ihren Fuß zum Spieler neigen, damit man ihre Form sieht */
+export const TOP_VIEW_TILT = 1.0;
+export const TOP_VIEW_SCALE = 1.08;
+const noRaycast = () => null;
 
 /** Neigt eine Figur um ihren Fußpunkt in Richtung (dirX, dirZ); positiv = Kopf nach vorn. */
 function tiltQuaternion(target: THREE.Quaternion, dirX: number, dirZ: number, angle: number) {
@@ -78,9 +84,15 @@ interface PieceProps {
   inCheck: boolean;
   /** König ist mattgesetzt */
   mated: boolean;
+  /** Neigung zum Spieler (Ansicht von oben), um die x-Achse; 0 = stehend */
+  viewTilt: number;
+  /** Größe (Ansicht von oben etwas kleiner, damit sich geneigte Figuren weniger überdecken) */
+  viewScale: number;
+  /** Figur selbst anklickbar (3D-Ansicht); von oben zählt nur das Feld */
+  pickable: boolean;
 }
 
-function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated }: PieceProps) {
+function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated, viewTilt, viewScale, pickable }: PieceProps) {
   const group = useRef<THREE.Group>(null!);
   const selectSquare = useGame((s) => s.selectSquare);
   const [x, z] = squareToWorld(displaySquare);
@@ -101,6 +113,8 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     trembleStart: -10,
     mateStart: -10,
     topple: 0,
+    viewTilt: viewTilt,
+    viewScale: viewScale,
   });
 
   useLayoutEffect(() => {
@@ -143,8 +157,8 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
       g.position.x = THREE.MathUtils.damp(g.position.x, pointerDrag.x, 28, dt);
       g.position.z = THREE.MathUtils.damp(g.position.z, pointerDrag.z, 28, dt);
       g.position.y = THREE.MathUtils.damp(g.position.y, 0.42, 18, dt);
-      g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, 1.08, 14, dt));
-      g.quaternion.identity();
+      g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, 1.08 * a.viewScale, 14, dt));
+      g.quaternion.setFromAxisAngle(X_AXIS, a.viewTilt * 0.6);
       a.wasDragged = true;
       return;
     }
@@ -185,11 +199,15 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     // Umkippen leicht übertrieben, dann zurückfedern (Werte > 1 nach dem Dämpfen gibt es nicht – Bogen über sin)
     const fall = a.topple * 1.5 + Math.sin(a.topple * Math.PI) * 0.12;
     qTopple.setFromAxisAngle(X_AXIS, piece.color === 'w' ? fall : -fall);
-    g.quaternion.copy(qTilt).multiply(qTopple);
+    // Neigung zum Spieler weich nachführen (das Brett dreht sich bei zwei Spielern)
+    a.viewTilt = THREE.MathUtils.damp(a.viewTilt, viewTilt, 6, dt);
+    a.viewScale = THREE.MathUtils.damp(a.viewScale, viewScale, 6, dt);
+    qView.setFromAxisAngle(X_AXIS, a.viewTilt * (1 - a.topple));
+    g.quaternion.copy(qView).multiply(qTilt).multiply(qTopple);
 
     a.scale = THREE.MathUtils.damp(a.scale, 1, 9, dt);
     a.pop = THREE.MathUtils.damp(a.pop, 0, 5, dt);
-    const s = Math.max(0.001, a.scale * (1 + a.pop * 0.3));
+    const s = Math.max(0.001, a.scale * (1 + a.pop * 0.3) * a.viewScale);
     const wide = 1 / Math.sqrt(pose.squash);
     g.scale.set(s * wide, s * pose.squash, s * wide);
   });
@@ -203,22 +221,12 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     selectSquare(piece.square);
   };
 
-  // Ziehen vorbereiten: Kamera sofort abschalten, damit sie die Geste nicht übernimmt
+  // Ziehen vorbereiten (3D-Ansicht; von oben startet das Ziehen über das Feld)
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!interactive) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.stopPropagation();
-    if (sceneHandles.controls) sceneHandles.controls.enabled = false;
-    Object.assign(pointerDrag, {
-      pointerId: e.pointerId,
-      pieceId: piece.id,
-      from: piece.square,
-      startX: e.nativeEvent.clientX,
-      startY: e.nativeEvent.clientY,
-      active: false,
-      x,
-      z,
-    });
+    beginDrag(piece.id, piece.square, e.pointerId, e.nativeEvent.clientX, e.nativeEvent.clientY, x, z);
   };
 
   return (
@@ -233,8 +241,14 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
       onPointerOut={() => setPointer(false)}
     >
       <group rotation-y={yaw}>
-        <mesh geometry={look.geometry(piece.type)} material={look.material[piece.color]} castShadow receiveShadow />
-        {look.accent && <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} />}
+        <mesh
+          geometry={look.geometry(piece.type)}
+          material={look.material[piece.color]}
+          castShadow
+          receiveShadow
+          raycast={pickable ? undefined : noRaycast}
+        />
+        {look.accent && <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} raycast={noRaycast} />}
       </group>
     </group>
   );
@@ -252,10 +266,14 @@ function Ghost({
   onDone,
   look,
   battle,
+  viewTilt,
+  viewScale,
 }: {
   piece: TrackedPiece;
   onDone: () => void;
   look: PieceLook;
+  viewTilt: number;
+  viewScale: number;
   /** Schlagrichtung (vom Angreifer weg) – null = einfaches Verschwinden */
   battle: { dirX: number; dirZ: number } | null;
 }) {
@@ -327,9 +345,9 @@ function Ghost({
 
   const yaw = pieceYaw(piece);
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation-x={viewTilt} scale={viewScale}>
       <group ref={group}>
-        <mesh geometry={look.geometry(piece.type)} material={material} rotation-y={yaw} castShadow={!!battle && !hit} />
+        <mesh geometry={look.geometry(piece.type)} material={material} rotation-y={yaw} castShadow={!!battle && !hit} raycast={noRaycast} />
       </group>
       {battle ? (
         hit && (
@@ -370,6 +388,11 @@ export function Pieces() {
     return ply > 0 && s.history[ply - 1].isCheckmate ? checkSquareOf(s) : null;
   });
   const look = usePieceLook();
+  const topView = useGame((s) => s.prefs.viewMode === 'top');
+  const viewSide = useGame((s) => s.viewSide);
+  // Kopf zeigt vom Spieler weg (Bildschirm oben): Weiß unten → nach -z, Schwarz unten → nach +z
+  const viewTilt = topView ? (viewSide === 'w' ? -TOP_VIEW_TILT : TOP_VIEW_TILT) : 0;
+  const viewScale = topView ? TOP_VIEW_SCALE : 1;
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece; battle: { dirX: number; dirZ: number } | null }>>([]);
@@ -408,6 +431,9 @@ export function Pieces() {
           profile={profileFor(p)}
           inCheck={p.type === 'k' && p.square === checkSquare}
           mated={p.type === 'k' && p.square === mateSquare}
+          viewTilt={viewTilt}
+          viewScale={viewScale}
+          pickable={!topView}
         />
       ))}
       {ghosts.map((g) => (
@@ -416,6 +442,8 @@ export function Pieces() {
           piece={g.piece}
           look={look}
           battle={g.battle}
+          viewTilt={viewTilt}
+          viewScale={viewScale}
           onDone={() => setGhosts((all) => all.filter((x) => x.key !== g.key))}
         />
       ))}

@@ -5,6 +5,8 @@ export type GameMode = 'local' | 'ai';
 export type GraphicsQuality = 'high' | 'medium' | 'low';
 /** real = Marmorfiguren + Holzbrett mit echten Texturen, classic = Modell in Gold/Onyx („Edel“), rebell = eigene Figuren */
 export type PieceStyle = 'real' | 'classic' | 'rebell';
+/** top = Brett gerade von oben, Figuren zum Spieler geneigt · perspective = schräge 3D-Ansicht */
+export type ViewMode = 'top' | 'perspective';
 
 export interface TimeControl {
   id: string;
@@ -50,6 +52,7 @@ export interface Preferences {
   volume: number;
   graphics: GraphicsQuality;
   pieceStyle: PieceStyle;
+  viewMode: ViewMode;
   /** Schlagzüge als Angriff mit Einschlag, Splittern und Beben */
   battleAnimations: boolean;
   /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
@@ -78,6 +81,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   volume: 0.8,
   graphics: 'high',
   pieceStyle: 'real',
+  viewMode: 'top',
   battleAnimations: true,
   turnBoard: true,
   showCoordinates: true,
@@ -116,6 +120,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
           ? r.pieceStyle
           : base.pieceStyle,
     battleAnimations: bool(r.battleAnimations, base.battleAnimations),
+    viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' ? r.viewMode : base.viewMode,
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
   };

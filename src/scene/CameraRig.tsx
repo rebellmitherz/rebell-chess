@@ -10,6 +10,14 @@ const { ACTION } = CameraControlsImpl;
 export const FOV = 28;
 const FOV_HALF_TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
 
+/** Ansicht von oben: Spielfeld, Koordinaten am Rand und die nach hinten geneigten Köpfe der letzten Reihe */
+const FIT_POINTS_TOP = [
+  new THREE.Vector3(-4.4, 0, 4.45),
+  new THREE.Vector3(4.4, 0, 4.45),
+  new THREE.Vector3(-4.4, 0, -4.75),
+  new THREE.Vector3(4.4, 0, -4.75),
+];
+
 /** Punkte, die immer sichtbar sein müssen: Spielfeld-Ecken und die Köpfe der hinteren Figuren. */
 const FIT_POINTS = [
   new THREE.Vector3(-4.05, 0, 4.05),
@@ -33,12 +41,14 @@ interface Framing {
  * Wie ein Spieler am Brett: flacher Blick (Figuren von der Seite erkennbar), so nah wie möglich.
  * Sucht den kleinsten Abstand, bei dem Spielfeld und hintere Figuren in den freien Bereich (ohne HUD) passen.
  */
-function framing(width: number, height: number, sidebar: number, topInset: number, bottomInset: number): Framing {
+function framing(width: number, height: number, sidebar: number, topInset: number, bottomInset: number, top: boolean): Framing {
   const usableW = Math.max(240, width - sidebar);
   const usableH = Math.max(200, height - topInset - bottomInset);
   const portrait = usableW / usableH < 0.9;
-  // Hochformat: steiler, damit das Brett auch die Höhe nutzt (Breite ist hier die Grenze)
-  const polar = portrait ? 0.66 : 0.98;
+  // Von oben: senkrecht (minimal schräg, damit „oben“ auf dem Bildschirm eindeutig ist)
+  // 3D: Hochformat steiler, damit das Brett auch die Höhe nutzt
+  const polar = top ? 0.0001 : portrait ? 0.66 : 0.98;
+  const points = top ? FIT_POINTS_TOP : FIT_POINTS;
   const aspect = width / height;
   // freier Bereich in NDC (-1..1)
   const rect = {
@@ -58,7 +68,7 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
     let maxX = -Infinity;
     let minY = Infinity;
     let maxY = -Infinity;
-    for (const p of FIT_POINTS) {
+    for (const p of points) {
       v.copy(p).project(cam);
       minX = Math.min(minX, v.x);
       maxX = Math.max(maxX, v.x);
@@ -97,7 +107,8 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
   const screen = useGame((s) => s.screen);
   const resetToken = useGame((s) => s.gameId);
   const size = useThree((s) => s.size);
-  const f = framing(size.width, size.height, sidebar, topInset, bottomInset);
+  const top = useGame((s) => s.prefs.viewMode === 'top');
+  const f = framing(size.width, size.height, sidebar, topInset, bottomInset, top);
 
   // Ausrichtung auf die Seite, die unten sitzt (kürzester Drehweg)
   useEffect(() => {
@@ -109,7 +120,7 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
     void c.moveTo(0, 0, 0, true);
     void c.rotateTo(target, f.polar, true);
     void c.dollyTo(f.distance, true);
-  }, [viewSide, f.polar, f.distance, screen, resetToken]);
+  }, [viewSide, f.polar, f.distance, screen, resetToken, top]);
 
   // Brett in die Mitte des freien Bereichs schieben (Seitenleiste / Leisten oben und unten)
   useEffect(() => {
@@ -138,13 +149,22 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
       makeDefault
       minDistance={4.5}
       maxDistance={44}
-      minPolarAngle={0.05}
-      maxPolarAngle={1.25}
+      minPolarAngle={top ? 0 : 0.05}
+      maxPolarAngle={top ? 0.001 : 1.25}
       smoothTime={0.35}
       draggingSmoothTime={0.12}
       dollySpeed={0.5}
-      mouseButtons={{ left: ACTION.ROTATE, middle: ACTION.DOLLY, right: ACTION.NONE, wheel: ACTION.DOLLY }}
-      touches={{ one: ACTION.TOUCH_ROTATE, two: ACTION.TOUCH_DOLLY, three: ACTION.NONE }}
+      // Von oben: nicht kippbar – nur zoomen und verschieben
+      mouseButtons={
+        top
+          ? { left: ACTION.NONE, middle: ACTION.DOLLY, right: ACTION.TRUCK, wheel: ACTION.DOLLY }
+          : { left: ACTION.ROTATE, middle: ACTION.DOLLY, right: ACTION.NONE, wheel: ACTION.DOLLY }
+      }
+      touches={
+        top
+          ? { one: ACTION.NONE, two: ACTION.TOUCH_DOLLY_TRUCK, three: ACTION.NONE }
+          : { one: ACTION.TOUCH_ROTATE, two: ACTION.TOUCH_DOLLY, three: ACTION.NONE }
+      }
       enabled={screen === 'game'}
     />
   );

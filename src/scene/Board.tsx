@@ -6,7 +6,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILES, isLightSquare, RANKS, type Square } from '../core/types';
 import { useGame } from '../game/instance';
 import { FRAME_HALF, squareToWorld, worldToSquare } from './boardMath';
-import { clickSuppressed, useDragUi } from './interaction';
+import { beginDrag, clickSuppressed, useDragUi } from './interaction';
+import { gameStore } from '../game/instance';
+import { canHumanInteract } from '../game/store';
 import { getMaterials } from './materials';
 import { useRealAssets } from './realAssets';
 
@@ -105,9 +107,26 @@ export function Board() {
     const sq = worldToSquare(e.point.x, e.point.z);
     if (sq) selectSquare(sq);
   };
+  /** Eigene Figur auf dem Feld unter dem Zeiger (für Ziehen und Mauszeiger) */
+  const ownPieceAt = (sq: Square | null) => {
+    const s = gameStore.getState();
+    if (!sq || !canHumanInteract(s)) return null;
+    return s.pieces.find((p) => p.square === sq && p.color === s.status.turn) ?? null;
+  };
+  // Ziehen beginnt auf dem Feld – auch wenn die (geneigte) Figur optisch woanders hinragt
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const sq = worldToSquare(e.point.x, e.point.z);
+    const piece = ownPieceAt(sq);
+    if (!piece || !sq) return;
+    e.stopPropagation();
+    const [x, z] = squareToWorld(sq);
+    beginDrag(piece.id, sq, e.pointerId, e.nativeEvent.clientX, e.nativeEvent.clientY, x, z);
+  };
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     if (e.pointerType !== 'mouse') return;
     const sq = worldToSquare(e.point.x, e.point.z);
+    document.body.style.cursor = ownPieceAt(sq) ? 'pointer' : '';
     if (sq !== hover) setHover(sq);
   };
 
@@ -167,8 +186,12 @@ export function Board() {
         rotation-x={-Math.PI / 2}
         position={[0, 0.003, 0]}
         onClick={onClick}
+        onPointerDown={onPointerDown}
         onPointerMove={onMove}
-        onPointerOut={() => setHover(null)}
+        onPointerOut={() => {
+          setHover(null);
+          document.body.style.cursor = '';
+        }}
       >
         <planeGeometry args={[8, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />

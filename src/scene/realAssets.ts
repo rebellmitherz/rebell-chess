@@ -48,6 +48,17 @@ function pbr(map: THREE.Texture, normal: THREE.Texture, arm: THREE.Texture, extr
   });
 }
 
+/** Rauheit aus der Textur ersetzen: gleichmäßig seidenmatt statt Hochglanz */
+function satin(m: THREE.MeshPhysicalMaterial): THREE.MeshPhysicalMaterial {
+  // helle Felder etwas wärmer und dunkler, damit weiße Figuren sich abheben
+  m.color.set('#d6d0c6');
+  m.roughnessMap = null;
+  m.roughness = 0.62;
+  m.metalnessMap = null;
+  m.metalness = 0;
+  return m;
+}
+
 export function loadRealAssets(): Promise<RealAssets> {
   if (!pending) {
     pending = (async () => {
@@ -99,10 +110,11 @@ export function loadRealAssets(): Promise<RealAssets> {
       return {
         // polierter Marmor: leichte Klarlackschicht, aber matt genug, dass von oben nichts blendet
         pieces: {
-          w: pbr(wd, wn, wa, { clearcoat: 0.35, clearcoatRoughness: 0.22, envMapIntensity: 1 }),
-          b: pbr(bd, bn, ba, { clearcoat: 0.45, clearcoatRoughness: 0.18, envMapIntensity: 1.1 }),
+          w: pbr(wd, wn, wa, { clearcoat: 0.15, clearcoatRoughness: 0.35, envMapIntensity: 0.9 }),
+          b: pbr(bd, bn, ba, { clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 1 }),
         },
-        board: { geometry, material: pbr(od, on, oa, { clearcoat: 0.25, clearcoatRoughness: 0.28, envMapIntensity: 0.85 }) },
+        // Brett seidenmatt: von oben spiegeln sich sonst Fenster und Decke des Raumlichts
+        board: { geometry, material: satin(pbr(od, on, oa, { envMapIntensity: 0.55 })) },
         table: new THREE.MeshStandardMaterial({
           map: td,
           normalMap: tn,
