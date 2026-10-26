@@ -8,9 +8,43 @@ import type { SfxKind } from '../game/store';
  * und ein kleiner Raumhall. Jeder Zug klingt leicht anders (Zufallsvariation), damit nichts mechanisch wirkt.
  * Glockentöne (Schach, Umwandlung, Partieende) bestehen aus unharmonischen Teiltönen.
  *
- * Alle Klänge werden über `renderSfx` in einen beliebigen AudioContext geschrieben – auch in einen
+ * Figur setzen und Schlagen nutzen bevorzugt echte Aufnahmen (CC0, Kenney „Impact Sounds“, aufbereitet von
+ * scripts/build-sounds.py): Holzkörper + heller Anschlag, je 5 Varianten, zufällig kombiniert und leicht verstimmt.
+ * Solange die Aufnahmen nicht geladen sind (oder fehlen), klingt die Synthese.
+ *
+ * Alle Klänge werden über `renderInto` in einen beliebigen AudioContext geschrieben – auch in einen
  * OfflineAudioContext, damit sich Pegel und Länge ohne Lautsprecher prüfen lassen.
  */
+
+interface SampleBank {
+  moveBody: AudioBuffer[];
+  moveClick: AudioBuffer[];
+  captureBody: AudioBuffer[];
+  captureClink: AudioBuffer[];
+}
+
+const SAMPLE_FILES: Record<keyof SampleBank, string> = {
+  moveBody: 'move-body',
+  moveClick: 'move-click',
+  captureBody: 'capture-body',
+  captureClink: 'capture-clink',
+};
+
+async function loadSampleBank(ctx: BaseAudioContext): Promise<SampleBank> {
+  const base = typeof document !== 'undefined' ? document.baseURI : '/';
+  const load = (prefix: string) =>
+    Promise.all(
+      [0, 1, 2, 3, 4].map(async (i) => {
+        const res = await fetch(new URL(`sounds/${prefix}-${i}.mp3`, base).href);
+        if (!res.ok) throw new Error(`Sound ${prefix}-${i}: HTTP ${res.status}`);
+        return ctx.decodeAudioData(await res.arrayBuffer());
+      }),
+    );
+  const entries = await Promise.all(
+    (Object.keys(SAMPLE_FILES) as Array<keyof SampleBank>).map(async (k) => [k, await load(SAMPLE_FILES[k])] as const),
+  );
+  return Object.fromEntries(entries) as unknown as SampleBank;
+}
 
 interface Chain {
   ctx: BaseAudioContext;
@@ -19,6 +53,7 @@ interface Chain {
   /** Hall-Eingang */
   wet: AudioNode;
   noise: AudioBuffer;
+  samples?: SampleBank;
 }
 
 function createNoise(ctx: BaseAudioContext): AudioBuffer {
@@ -138,6 +173,45 @@ function placement(c: Chain, start: number, force = 1, pitch = 1) {
   body.stop(start + 0.15);
 }
 
+const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
+
+function playBuffer(c: Chain, buffer: AudioBuffer, start: number, gain: number, rate: number, toWet = 0.3) {
+  const src = c.ctx.createBufferSource();
+  src.buffer = buffer;
+  src.playbackRate.value = rate;
+  const g = c.ctx.createGain();
+  g.gain.value = gain;
+  src.connect(g).connect(c.dry);
+  if (toWet > 0) {
+    const send = c.ctx.createGain();
+    send.gain.value = toWet;
+    g.connect(send).connect(c.wet);
+  }
+  src.start(start);
+}
+
+/** Aufsetzen einer Figur – Aufnahme, wenn geladen, sonst Synthese. `heavy` = Schlagen. */
+function knock(c: Chain, start: number, force = 1, pitch = 1, heavy = false) {
+  const bank = c.samples;
+  if (!bank) {
+    if (heavy) {
+      placement(c, start, 0.7 * force, 1.45 * pitch); // Anschlagen an der geschlagenen Figur
+      placement(c, start + 0.07, force, 0.95 * pitch); // Aufsetzen
+      bell(c, 2093, start + 0.02, 0.022, 0.6); // feiner Goldklang
+    } else placement(c, start, force, pitch);
+    return;
+  }
+  const rate = vary(pitch, 0.04);
+  if (heavy) {
+    playBuffer(c, pick(bank.moveClick), start, 0.45 * force, vary(1.15, 0.04)); // Anschlagen
+    playBuffer(c, pick(bank.captureBody), start + 0.06, 0.75 * force, rate);
+    playBuffer(c, pick(bank.captureClink), start + 0.065, 0.16 * force, vary(1, 0.05), 0.6);
+  } else {
+    playBuffer(c, pick(bank.moveBody), start, 0.62 * force, rate);
+    playBuffer(c, pick(bank.moveClick), start + 0.002, 0.5 * force, rate);
+  }
+}
+
 /** Glockenton mit unharmonischen Teiltönen (Gold/Kristall) */
 function bell(c: Chain, freq: number, start: number, gain: number, length = 1.4) {
   const ratios: Array<[number, number, number]> = [
@@ -190,24 +264,22 @@ function deny(c: Chain, start: number) {
 function renderInto(c: Chain, kind: SfxKind, t: number) {
   switch (kind) {
     case 'move':
-      placement(c, t, 0.85);
+      knock(c, t, 0.85);
       break;
     case 'capture':
-      placement(c, t, 0.7, 1.45); // Anschlagen an der geschlagenen Figur
-      placement(c, t + 0.07, 1.0, 0.95); // Aufsetzen
-      bell(c, 2093, t + 0.02, 0.022, 0.6); // feiner Goldklang
+      knock(c, t, 1, 1, true);
       break;
     case 'castle':
-      placement(c, t, 0.85, 1.0);
-      placement(c, t + 0.13, 0.75, 1.12);
+      knock(c, t, 0.85, 1.0);
+      knock(c, t + 0.13, 0.75, 1.08);
       break;
     case 'check':
-      placement(c, t, 0.9);
+      knock(c, t, 0.9);
       bell(c, 1318.5, t + 0.05, 0.05, 1.3);
       bell(c, 1760, t + 0.17, 0.035, 1.1);
       break;
     case 'promote':
-      placement(c, t, 0.85);
+      knock(c, t, 0.85);
       [1046.5, 1318.5, 1568, 2093].forEach((f, i) => bell(c, f, t + 0.06 + i * 0.075, 0.028, 1.2));
       break;
     case 'select':
@@ -267,6 +339,13 @@ function liveChain() {
     limiter.ratio.value = 12;
     master.connect(limiter).connect(ctx.destination);
     live = { ctx, master, chain: buildChain(ctx, master) };
+    const chain = live.chain;
+    loadSampleBank(ctx).then(
+      (bank) => {
+        chain.samples = bank;
+      },
+      (err) => console.warn('Aufgenommene Sounds nicht verfügbar – nutze Synthese.', err),
+    );
   }
   if (live.ctx.state === 'suspended') void live.ctx.resume();
   return live;
@@ -300,13 +379,15 @@ export interface SfxStats {
 }
 
 /** Rendert einen Effekt ohne Lautsprecher und misst Spitzenpegel, Lautheit und hörbare Länge. */
-export async function analyseSfx(kind: SfxKind, sampleRate = 44100): Promise<SfxStats> {
+export async function analyseSfx(kind: SfxKind, sampleRate = 44100, withSamples = true): Promise<SfxStats> {
   const length = SFX_LENGTH[kind];
   const ctx = new OfflineAudioContext(2, Math.ceil(sampleRate * length), sampleRate);
   const master = ctx.createGain();
   master.gain.value = 1;
   master.connect(ctx.destination);
-  renderInto(buildChain(ctx, master), kind, 0.01);
+  const chain = buildChain(ctx, master);
+  if (withSamples) chain.samples = await loadSampleBank(ctx);
+  renderInto(chain, kind, 0.01);
   const buffer = await ctx.startRendering();
   let peak = 0;
   let sum = 0;

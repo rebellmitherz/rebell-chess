@@ -7,6 +7,7 @@
   "scripts": {
     "engine:copy": "node scripts/copy-engine.mjs",
     "assets:pieces": "node scripts/fetch-polyhaven.mjs && node scripts/build-pieces.mjs assets-src/polyhaven-chess-set/chess_set_1k.gltf public/models/pieces.glb && python -I scripts/build-ao.py assets-src/polyhaven-chess-set/textures/chess_set_pieces_white_arm_1k.jpg public/models/pieces_ao.jpg",
+    "assets:sounds": "python -I scripts/build-sounds.py assets-src/kenney-impact-sounds/kenney_impact-sounds.zip public/sounds",
     "predev": "npm run engine:copy",
     "dev": "vite",
     "dev:lan": "npm run engine:copy && vite --host",
