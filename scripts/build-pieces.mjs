@@ -1,13 +1,14 @@
 // Bereitet das CC0-Schachset von Poly Haven („Chess Set“ von Riley Queen) für das Spiel auf:
 // je Figurtyp eine Geometrie, Sockelmitte im Ursprung, Feldmaß 1, Springer schaut nach +x,
 // quantisiert und meshopt-komprimiert. Aufruf:
-//   node scripts/build-pieces.mjs <chess_set_1k.gltf> <ausgabe.glb>
+//   node scripts/build-pieces.mjs <chess_set_1k.gltf> <figuren.glb> [<brett.glb>]
+// Das Brett wird auf Feldmaß 1 skaliert, Oberkante y = 0, und in der Tiefe gespiegelt (im Modell steht Weiß bei -z).
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { meshopt, quantize, weld } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 
-const [input, output] = process.argv.slice(2);
+const [input, output, boardOutput] = process.argv.slice(2);
 if (!input || !output) {
   console.error('Aufruf: node scripts/build-pieces.mjs <chess_set_1k.gltf> <ausgabe.glb>');
   process.exit(1);
@@ -99,6 +100,53 @@ for (const [type, nodeName] of Object.entries(SOURCES)) {
   console.log(`${type}: ${prim.getIndices().getCount() / 3} Dreiecke, Höhe ${maxY.toFixed(3)} Felder`);
 }
 
-await out.transform(weld(), quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+await out.transform(weld(), quantize({ pattern: /^(POSITION|NORMAL)$/ }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
 await io.write(output, out);
 console.log(`geschrieben: ${output}`);
+
+if (boardOutput) {
+  const BOARD_SCALE = 1 / 0.0579; // ein Feld im Modell = 0,0579 m → 1
+  const node = src.getRoot().listNodes().find((n) => n.getName() === 'board');
+  if (!node) throw new Error('Knoten board fehlt im Modell');
+  const prim = node.getMesh().listPrimitives()[0];
+  const m = node.getWorldMatrix();
+  const pos = prim.getAttribute('POSITION');
+  const nor = prim.getAttribute('NORMAL');
+  const uv = prim.getAttribute('TEXCOORD_0');
+  const count = pos.getCount();
+  let maxY = -Infinity;
+  const p = [0, 0, 0];
+  const world = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pos.getElement(i, p);
+    world[i * 3] = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12];
+    world[i * 3 + 1] = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13];
+    world[i * 3 + 2] = m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14];
+    maxY = Math.max(maxY, world[i * 3 + 1]);
+  }
+  const positions = new Float32Array(count * 3);
+  const normals = new Float32Array(count * 3);
+  const uvs = new Float32Array(count * 2);
+  for (let i = 0; i < count; i++) {
+    positions.set([world[i * 3] * BOARD_SCALE, (world[i * 3 + 1] - maxY) * BOARD_SCALE, -world[i * 3 + 2] * BOARD_SCALE], i * 3);
+    nor.getElement(i, p);
+    normals.set([p[0], p[1], -p[2]], i * 3);
+    uv.getElement(i, p);
+    uvs.set([p[0], p[1]], i * 2);
+  }
+  // Spiegelung dreht die Umlaufrichtung der Dreiecke – Indizes tauschen, damit die Außenseiten sichtbar bleiben
+  const idx = new Uint32Array(prim.getIndices().getArray());
+  for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+  const bdoc = new Document();
+  bdoc.createBuffer();
+  const prim2 = bdoc
+    .createPrimitive()
+    .setAttribute('POSITION', bdoc.createAccessor().setType('VEC3').setArray(positions))
+    .setAttribute('NORMAL', bdoc.createAccessor().setType('VEC3').setArray(normals))
+    .setAttribute('TEXCOORD_0', bdoc.createAccessor().setType('VEC2').setArray(uvs))
+    .setIndices(bdoc.createAccessor().setType('SCALAR').setArray(idx));
+  bdoc.createScene('board').addChild(bdoc.createNode('board').setMesh(bdoc.createMesh('board').addPrimitive(prim2)));
+  await bdoc.transform(weld(), quantize({ pattern: /^(POSITION|NORMAL)$/ }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  await io.write(boardOutput, bdoc);
+  console.log(`geschrieben: ${boardOutput} (${idx.length / 3} Dreiecke)`);
+}

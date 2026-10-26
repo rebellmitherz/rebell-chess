@@ -1,7 +1,7 @@
 {
   "name": "rebell-chess-3d",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Rebell Chess 3D – Premium-3D-Schach im Browser",
   "type": "module",
   "scripts": {
@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "npm run build && node scripts/deploy-pages.mjs"
+    "deploy": "npm run build && node scripts/deploy-pages.mjs",
+    "assets:real": "node scripts/fetch-polyhaven.mjs && node scripts/build-pieces.mjs assets-src/polyhaven-chess-set/chess_set_1k.gltf public/models/pieces.glb public/models/board.glb && python -I scripts/build-real-textures.py assets-src public"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

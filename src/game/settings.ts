@@ -3,8 +3,8 @@ import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 
 export type GameMode = 'local' | 'ai';
 export type GraphicsQuality = 'high' | 'medium' | 'low';
-/** classic = CC0-Modell (Poly Haven), rebell = eigene, im Code erzeugte Figuren */
-export type PieceStyle = 'classic' | 'rebell';
+/** real = Marmorfiguren + Holzbrett mit echten Texturen, classic = Modell in Gold/Onyx („Edel“), rebell = eigene Figuren */
+export type PieceStyle = 'real' | 'classic' | 'rebell';
 
 export interface TimeControl {
   id: string;
@@ -77,7 +77,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   sound: true,
   volume: 0.8,
   graphics: 'high',
-  pieceStyle: 'classic',
+  pieceStyle: 'real',
   battleAnimations: true,
   turnBoard: true,
   showCoordinates: true,
@@ -105,7 +105,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     sound: bool(r.sound, base.sound),
     volume: typeof r.volume === 'number' && Number.isFinite(r.volume) ? Math.min(1, Math.max(0, r.volume)) : base.volume,
     graphics: r.graphics === 'high' || r.graphics === 'medium' || r.graphics === 'low' ? r.graphics : base.graphics,
-    pieceStyle: r.pieceStyle === 'classic' || r.pieceStyle === 'rebell' ? r.pieceStyle : base.pieceStyle,
+    pieceStyle: r.pieceStyle === 'real' || r.pieceStyle === 'classic' || r.pieceStyle === 'rebell' ? r.pieceStyle : base.pieceStyle,
     battleAnimations: bool(r.battleAnimations, base.battleAnimations),
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),

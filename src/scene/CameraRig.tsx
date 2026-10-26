@@ -6,7 +6,8 @@ import { useGame } from '../game/instance';
 import { sceneHandles } from './interaction';
 
 const { ACTION } = CameraControlsImpl;
-const FOV = 40;
+/** Längere Brennweite: wenig Verzerrung – die hinteren Reihen bleiben fast so groß wie die vorderen */
+export const FOV = 28;
 const FOV_HALF_TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
 
 /** Punkte, die immer sichtbar sein müssen: Spielfeld-Ecken und die Köpfe der hinteren Figuren. */
@@ -36,7 +37,8 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
   const usableW = Math.max(240, width - sidebar);
   const usableH = Math.max(200, height - topInset - bottomInset);
   const portrait = usableW / usableH < 0.9;
-  const polar = portrait ? 0.88 : 0.98;
+  // Hochformat: steiler, damit das Brett auch die Höhe nutzt (Breite ist hier die Grenze)
+  const polar = portrait ? 0.66 : 0.98;
   const aspect = width / height;
   // freier Bereich in NDC (-1..1)
   const rect = {
@@ -45,7 +47,7 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
     y0: -1 + (2 * bottomInset) / height,
     y1: 1 - (2 * topInset) / height,
   };
-  const margin = 0.94;
+  const margin = 0.985;
   const cam = new THREE.PerspectiveCamera(FOV, aspect, 0.1, 200);
   const v = new THREE.Vector3();
   const bounds = (d: number) => {

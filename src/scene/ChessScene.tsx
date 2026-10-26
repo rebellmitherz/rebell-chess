@@ -1,11 +1,12 @@
 import { Environment, Lightformer, SoftShadows } from '@react-three/drei';
+import { assetUrl, ENV_FILE } from './realAssets';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Suspense, useEffect } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import type { GraphicsQuality } from '../game/settings';
 import { Board } from './Board';
-import { CameraRig } from './CameraRig';
+import { CameraRig, FOV } from './CameraRig';
 import { DragController } from './DragController';
 import { GoldDust } from './Effects';
 import { Highlights } from './Highlights';
@@ -58,6 +59,7 @@ function DevProbe() {
 export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number; topInset: number; bottomInset: number }) {
   const graphics = useGame((s) => s.prefs.graphics);
   const battle = useGame((s) => s.prefs.battleAnimations);
+  const realStyle = useGame((s) => s.prefs.pieceStyle === 'real');
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
 
@@ -68,11 +70,11 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       shadows={shadows ? { type: THREE.PCFSoftShadowMap } : false}
       dpr={q.dpr}
       frameloop="demand"
-      camera={{ fov: 40, position: [0, 12, 12], near: 0.1, far: 120 }}
+      camera={{ fov: FOV, position: [0, 16, 16], near: 0.1, far: 160 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
     >
-      <color attach="background" args={['#07080b']} />
-      <fog attach="fog" args={['#07080b', 22, 55]} />
+      <color attach="background" args={[realStyle ? '#2a2420' : '#07080b']} />
+      {!realStyle && <fog attach="fog" args={['#07080b', 22, 55]} />}
       {q.soft && <SoftShadows size={22} samples={12} focus={0.7} />}
       <ambientLight intensity={0.22} />
       <hemisphereLight args={['#fff4dc', '#08090c', 0.35]} />
@@ -94,7 +96,18 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       <spotLight position={[0, 13, 0]} angle={0.55} penumbra={0.9} intensity={1.4} decay={0} color="#ffe2ad" />
       <directionalLight position={[6, 4, -8]} intensity={0.6} color="#a9c4ff" />
       <Suspense fallback={null}>
-        <StudioEnvironment />
+        {realStyle ? (
+          // Echtes Raumlicht (Wohnraum mit Fenstern), unscharf im Hintergrund
+          <Environment
+            files={assetUrl(ENV_FILE)}
+            background
+            backgroundBlurriness={0.55}
+            backgroundIntensity={0.55}
+            environmentIntensity={0.95}
+          />
+        ) : (
+          <StudioEnvironment />
+        )}
       </Suspense>
       <CameraRig sidebar={sidebar} topInset={topInset} bottomInset={bottomInset} />
       <DragController />
@@ -104,7 +117,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
         <Highlights />
         <ImpactFX />
       </ShakeGroup>
-      {q.dust > 0 && <GoldDust count={q.dust} />}
+      {q.dust > 0 && !realStyle && <GoldDust count={q.dust} />}
       {q.post && <PostEffects />}
       <FrameDriver idleFps={q.idleFps} />
       {shadows && <ShadowUpdater />}

@@ -8,6 +8,7 @@ import { useGame } from '../game/instance';
 import { FRAME_HALF, squareToWorld, worldToSquare } from './boardMath';
 import { clickSuppressed, useDragUi } from './interaction';
 import { getMaterials } from './materials';
+import { useRealAssets } from './realAssets';
 
 /** Felder als zwei gemergte Geometrien (hell/dunkel) – jedes Feld zeigt einen anderen Ausschnitt der Steintextur. */
 function buildSquares(light: boolean): THREE.BufferGeometry {
@@ -89,6 +90,8 @@ export function Board() {
   const selectSquare = useGame((s) => s.selectSquare);
   const [hover, setHover] = useState<Square | null>(null);
   const dragging = useDragUi((s) => s.draggingId !== null);
+  const style = useGame((s) => s.prefs.pieceStyle);
+  const real = useRealAssets(style === 'real');
 
   const lightGeo = useMemo(() => buildSquares(true), []);
   const darkGeo = useMemo(() => buildSquares(false), []);
@@ -125,27 +128,39 @@ export function Board() {
 
   return (
     <group>
-      <mesh geometry={lightGeo} material={mats.lightSquare} receiveShadow />
-      <mesh geometry={darkGeo} material={mats.darkSquare} receiveShadow />
-      <mesh geometry={frameGeo} material={mats.frame} position={[0, -0.19, 0]} receiveShadow castShadow />
-      <mesh geometry={plinthGeo} material={mats.plinth} position={[0, -0.55, 0]} castShadow />
-      {trims.map(([x, z, w, d], i) => (
-        <mesh key={`t${i}`} position={[x, -0.012, z]} material={mats.trim} receiveShadow>
-          <boxGeometry args={[w, 0.03, d]} />
-        </mesh>
-      ))}
-      {outerTrims.map(([x, z, w, d], i) => (
-        <mesh key={`o${i}`} position={[x, -0.024, z]} material={mats.trim}>
-          <boxGeometry args={[w, 0.012, d]} />
-        </mesh>
-      ))}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.0275, 0]} visible={showCoordinates} renderOrder={1}>
+      {real ? (
+        <>
+          {/* Echtes Brett (Poly Haven) auf einer Holztischplatte */}
+          <mesh geometry={real.board.geometry} material={real.board.material} receiveShadow castShadow />
+          <mesh rotation-x={-Math.PI / 2} position={[0, -0.3, 0]} material={real.table} receiveShadow>
+            <planeGeometry args={[18, 18]} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh geometry={lightGeo} material={mats.lightSquare} receiveShadow />
+          <mesh geometry={darkGeo} material={mats.darkSquare} receiveShadow />
+          <mesh geometry={frameGeo} material={mats.frame} position={[0, -0.19, 0]} receiveShadow castShadow />
+          <mesh geometry={plinthGeo} material={mats.plinth} position={[0, -0.55, 0]} castShadow />
+          {trims.map(([x, z, w, d], i) => (
+            <mesh key={`t${i}`} position={[x, -0.012, z]} material={mats.trim} receiveShadow>
+              <boxGeometry args={[w, 0.03, d]} />
+            </mesh>
+          ))}
+          {outerTrims.map(([x, z, w, d], i) => (
+            <mesh key={`o${i}`} position={[x, -0.024, z]} material={mats.trim}>
+              <boxGeometry args={[w, 0.012, d]} />
+            </mesh>
+          ))}
+          {/* Boden mit sanftem Lichtkegel */}
+          <mesh rotation-x={-Math.PI / 2} position={[0, -0.8, 0]} material={mats.floor} receiveShadow>
+            <circleGeometry args={[40, 64]} />
+          </mesh>
+        </>
+      )}
+      <mesh rotation-x={-Math.PI / 2} position={[0, real ? 0.003 : -0.0275, 0]} visible={showCoordinates} renderOrder={1}>
         <planeGeometry args={[FRAME_HALF * 2, FRAME_HALF * 2]} />
         <meshBasicMaterial map={coordTex} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
-      {/* Boden mit sanftem Lichtkegel */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.8, 0]} material={mats.floor} receiveShadow>
-        <circleGeometry args={[40, 64]} />
       </mesh>
       {/* Unsichtbare Klickfläche über dem Brett */}
       <mesh

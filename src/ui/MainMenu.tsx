@@ -148,11 +148,15 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           value={prefs.pieceStyle}
           onChange={(pieceStyle) => set({ pieceStyle })}
           options={[
-            { value: 'classic', label: 'Klassisch' },
+            { value: 'real', label: 'Echt' },
+            { value: 'classic', label: 'Edel' },
             { value: 'rebell', label: 'Rebell' },
           ]}
         />
-        <p className="field-hint">Klassisch: detailreicher Staunton-Satz. Rebell: eigene, kantigere Figuren.</p>
+        <p className="field-hint">
+          Echt: polierte Marmorfiguren auf lackiertem Holzbrett im Wohnzimmerlicht. Edel: Gold und Onyx. Rebell: eigene
+          Figuren.
+        </p>
       </div>
       <Toggle
         checked={prefs.battleAnimations}
@@ -234,8 +238,8 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
         Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
         3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
-        Klassische Figuren: „Chess Set“ von Riley Queen (Poly Haven, CC0). Aufnahmen: „Impact Sounds“ von Kenney
-        (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
+        Figuren und Brett: „Chess Set“ von Riley Queen, Raumlicht „Lebombo“, Tisch „Wood Table 001“ (alle Poly Haven,
+        CC0). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
       </p>
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

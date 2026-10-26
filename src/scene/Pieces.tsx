@@ -13,6 +13,7 @@ import { clickSuppressed, pointerDrag, sceneHandles } from './interaction';
 import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
 import { useModelPieces } from './pieceModels';
+import { useRealAssets } from './realAssets';
 
 /** Springer schauen zum Gegner, leicht gedreht, damit das Profil aus Spielersicht erkennbar bleibt. */
 const KNIGHT_YAW = 0.75;
@@ -42,14 +43,17 @@ function tiltQuaternion(target: THREE.Quaternion, dirX: number, dirZ: number, an
 /** Aussehen der Figuren: Geometrien und Materialien des gewählten Stils */
 interface PieceLook {
   geometry: (type: PieceSymbol) => THREE.BufferGeometry;
-  accent: (type: PieceSymbol) => THREE.BufferGeometry;
+  /** Zierring am Fuß (null = keiner, z. B. bei echten Marmorfiguren) */
+  accent: ((type: PieceSymbol) => THREE.BufferGeometry) | null;
   material: Record<Color, THREE.MeshPhysicalMaterial>;
 }
 
 function usePieceLook(): PieceLook {
   const style = useGame((s) => s.prefs.pieceStyle);
-  const model = useModelPieces(style === 'classic');
+  const model = useModelPieces(style !== 'rebell');
+  const real = useRealAssets(style === 'real');
   return useMemo(() => {
+    if (model && real) return { geometry: (t) => model.geometries[t], accent: null, material: real.pieces };
     if (model) {
       return {
         geometry: (t) => model.geometries[t],
@@ -58,7 +62,7 @@ function usePieceLook(): PieceLook {
       };
     }
     return { geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials().piece };
-  }, [model]);
+  }, [model, real]);
 }
 
 interface PieceProps {
@@ -230,7 +234,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     >
       <group rotation-y={yaw}>
         <mesh geometry={look.geometry(piece.type)} material={look.material[piece.color]} castShadow receiveShadow />
-        <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} />
+        {look.accent && <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} />}
       </group>
     </group>
   );

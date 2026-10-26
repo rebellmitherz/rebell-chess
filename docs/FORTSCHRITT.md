@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.4.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.5.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -54,6 +54,8 @@ ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = 
 | **Lebendige Züge**: Neigen in Zugrichtung, federnde Landung; Auswahl schwebt; Schach: König zittert; Matt: König kippt um | im Browser geprüft (Matt-Umkippen nur im Code geprüft, nicht gefilmt) |
 | **Kamera wie am echten Brett**: flacher Blick (≈56° PC, ≈50° Handy), so nah wie möglich, Figuren von der Seite erkennbar | im Browser geprüft (PC-Fenster und Smartphone 375×812) |
 | **Zwei Spieler**: Brett dreht sich nach jedem Zug zum Spieler am Zug (nach der Landung) | getestet (2 Tests); Standard an |
+| **Stil „Echt“ (Standard)**: polierte Marmorfiguren und Marmorbrett mit echten Texturen, Holztisch, Wohnraum-Licht (HDRI), unscharfer Raum im Hintergrund; „Edel“ (Gold/Onyx) und „Rebell“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
+| **Größeres Brett**: längere Brennweite (28°), knappe Einpassung, schmale Handy-Leisten, Hochformat steiler | im Browser geprüft; im Hochformat begrenzt die Bildschirmbreite die Größe |
 
 ## Leistung (gemessen 25.10.2026, Chromium im Desktop-PC, 766×646, Partie in Grundstellung)
 
