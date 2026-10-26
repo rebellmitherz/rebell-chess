@@ -217,7 +217,7 @@ function Ghost({ piece, onDone, look }: { piece: TrackedPiece; onDone: () => voi
 }
 
 export function Pieces() {
-  const pieces = useGame((s) => s.pieces);
+  const pieces = useGame((s) => s.view?.pieces ?? s.pieces);
   const selected = useGame((s) => s.selected);
   const turn = useGame((s) => s.status.turn);
   const canInteract = useGame(canHumanInteract);

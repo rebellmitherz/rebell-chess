@@ -3,6 +3,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { Square } from '../core/types';
 import { useGame } from '../game/instance';
+import { displayPly } from '../game/store';
 import { squareToWorld } from './boardMath';
 import { Burst } from './Effects';
 import { useDragUi } from './interaction';
@@ -110,8 +111,12 @@ export function Highlights() {
   const s = getShared();
   const selected = useGame((st) => st.selected);
   const targets = useGame((st) => st.targets);
-  const last = useGame((st) => st.history[st.history.length - 1]);
-  const checkSquare = useGame((st) => st.status.checkSquare);
+  const last = useGame((st) => {
+    const ply = displayPly(st);
+    return ply > 0 ? st.history[ply - 1] : undefined;
+  });
+  const viewing = useGame((st) => st.viewPly !== null);
+  const checkSquare = useGame((st) => (st.viewPly !== null ? (st.view?.checkSquare ?? null) : st.status.checkSquare));
   const hint = useGame((st) => st.hint);
   const showLegal = useGame((st) => st.prefs.showLegalMoves);
   const showLast = useGame((st) => st.prefs.showLastMove);
@@ -150,7 +155,7 @@ export function Highlights() {
       {checkSquare && <CheckGlow square={checkSquare} />}
       {hint?.status === 'ready' && hint.from && hint.to && <HintArrow from={hint.from} to={hint.to} />}
       {last?.promotion && <PromotionFlash key={`${last.to}-${last.fenAfter}`} square={last.to} />}
-      {result?.reason === 'checkmate' && checkSquare && <MateBurst key={`mate-${checkSquare}`} square={checkSquare} />}
+      {!viewing && result?.reason === 'checkmate' && checkSquare && <MateBurst key={`mate-${checkSquare}`} square={checkSquare} />}
     </group>
   );
 }

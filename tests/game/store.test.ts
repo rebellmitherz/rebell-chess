@@ -304,3 +304,60 @@ describe('Speichern und Laden', () => {
     expect(createGameStore({ storage }).getState().prefs).toMatchObject({ volume: 1, graphics: 'high' });
   });
 });
+
+describe('Analyse-Modus', () => {
+  it('zeigt frühere Stellungen und sperrt dabei Eingaben', () => {
+    const { store, click } = setup();
+    click('e2', 'e4', 'e7', 'e5', 'g1', 'f3');
+    store.getState().viewMove(1);
+    const s = store.getState();
+    expect(s.viewPly).toBe(1);
+    expect(s.view!.pieces.find((p) => p.id === 'wp-e2')?.square).toBe('e4');
+    expect(s.view!.pieces.find((p) => p.id === 'bp-e7')?.square).toBe('e7');
+    expect(s.view!.pieces.find((p) => p.id === 'wn-g1')?.square).toBe('g1');
+    // Live-Stellung bleibt unverändert
+    expect(s.pieces.find((p) => p.id === 'wn-g1')?.square).toBe('f3');
+    click('b8');
+    expect(store.getState().selected).toBeNull();
+    store.getState().stepView(-5);
+    expect(store.getState().viewPly).toBe(0);
+    store.getState().stepView(+10); // über das Ende hinaus = zurück zur Partie
+    expect(store.getState().viewPly).toBeNull();
+    click('b8');
+    expect(store.getState().selected).toBe('b8');
+  });
+
+  it('Rückgängig beendet die Analyse-Ansicht', () => {
+    const { store, click } = setup();
+    click('e2', 'e4', 'e7', 'e5');
+    store.getState().viewMove(0);
+    store.getState().undo();
+    expect(store.getState().viewPly).toBeNull();
+    expect(store.getState().history).toHaveLength(1);
+  });
+
+  it('bewertet die gezeigte Stellung nur im Training oder nach Partieende', async () => {
+    // Engine meldet +50 aus Sicht der Seite am Zug
+    const engine = fakeEngine({ analyse: () => ({ scoreCp: 50, bestMove: null }) });
+    const normal = setup({ training: false }, engine);
+    normal.click('e2', 'e4');
+    normal.store.getState().viewMove(0);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(normal.store.getState().analysis).toBeNull();
+
+    const training = setup({ training: true }, fakeEngine({ analyse: () => ({ scoreCp: 50, bestMove: 'e7e5' }) }));
+    training.click('e2', 'e4');
+    // Schwarz am Zug, +50 für Schwarz = -50 aus Sicht von Weiß
+    await vi.waitFor(() => expect(training.store.getState().analysis?.status).toBe('ready'));
+    expect(training.store.getState().analysis).toMatchObject({ cp: -50, best: 'e5' });
+    training.store.getState().viewMove(0);
+    await vi.waitFor(() => expect(training.store.getState().analysis?.cp).toBe(50));
+  });
+
+  it('zeigt nach Matt die Mattbewertung ohne Engine-Aufruf', () => {
+    const engine = fakeEngine();
+    const { store, click } = setup({}, engine);
+    click('f2', 'f3', 'e7', 'e5', 'g2', 'g4', 'd8', 'h4');
+    expect(store.getState().analysis).toMatchObject({ status: 'ready', mate: -1 });
+  });
+});

@@ -64,6 +64,19 @@ export interface FeedbackState {
   evalText?: string;
 }
 
+export interface AnalysisState {
+  /** analysierte Stellung */
+  fen: string;
+  status: 'loading' | 'ready' | 'error';
+  /** Bewertung aus Sicht von Weiß in Centipawns */
+  cp?: number;
+  /** Matt in n Zügen aus Sicht von Weiß (positiv = Weiß setzt matt) */
+  mate?: number;
+  /** bester Zug in SAN */
+  best?: string;
+  depth?: number;
+}
+
 export interface GameData {
   screen: Screen;
   /** Es wurde eine Partie gestartet (für „Zurück zur Partie“) */
@@ -90,6 +103,12 @@ export interface GameData {
   hint: HintState | null;
   feedback: FeedbackState | null;
   drawOffer: { by: Color } | null;
+  /** Analyse-Ansicht: Anzahl gezeigter Halbzüge (null = aktuelle Stellung) */
+  viewPly: number | null;
+  /** Figuren und Schach der Analyse-Stellung (nur wenn viewPly gesetzt) */
+  view: { pieces: TrackedPiece[]; checkSquare: Square | null } | null;
+  /** Engine-Bewertung der gezeigten Stellung (nur im Training oder nach Partieende) */
+  analysis: AnalysisState | null;
   hasSave: boolean;
   /** Welche Farbe unten steht (Kamera) */
   viewSide: Color;
@@ -123,6 +142,9 @@ export interface GameActions {
   flipView(): void;
   saveNow(): void;
   showToast(text: string): void;
+  /** Stellung nach `ply` Halbzügen zeigen (null = zurück zur Partie) */
+  viewMove(ply: number | null): void;
+  stepView(delta: number): void;
 }
 
 export type GameStore = GameData & GameActions;
@@ -145,6 +167,7 @@ const isPositional = (r: GameResult) => POSITIONAL.includes(r.reason);
 export function canHumanInteract(s: GameData): boolean {
   const humanToMove = s.settings.mode === 'local' || s.status.turn === s.settings.humanColor;
   return (
+    s.viewPly === null &&
     s.screen === 'game' &&
     s.active &&
     !s.result &&
@@ -156,7 +179,24 @@ export function canHumanInteract(s: GameData): boolean {
   );
 }
 
+/** Anzahl der gezeigten Halbzüge (Analyse-Ansicht oder aktuelle Stellung) */
+export function displayPly(s: Pick<GameData, 'viewPly' | 'history'>): number {
+  return s.viewPly ?? s.history.length;
+}
+
+/** FEN der gezeigten Stellung */
+export function displayFen(s: Pick<GameData, 'viewPly' | 'history' | 'startFen'>): string {
+  const ply = displayPly(s);
+  return ply === 0 ? s.startFen : s.history[ply - 1].fenAfter;
+}
+
+/** Bewertung nur im Training oder nach Partieende – sonst wäre sie gegen die KI eine Hilfe */
+export function analysisAllowed(s: Pick<GameData, 'active' | 'settings' | 'result'>): boolean {
+  return s.active && (s.settings.training || s.result !== null);
+}
+
 const HINT_DEPTH = 14;
+const EVAL_DEPTH = 13;
 const FEEDBACK_DEPTH = 12;
 
 /** Bewertung aus Sicht von Weiß als Text */
@@ -170,7 +210,63 @@ function sanOf(fen: string, uci: string): string {
   return new ChessGame(fen).moveUci(uci)?.san ?? uci;
 }
 
+/**
+ * Bewertet die gezeigte Stellung mit der Analyse-Engine, sobald sie sich ändert (nur wenn erlaubt).
+ * Antworten für eine inzwischen andere Stellung werden verworfen.
+ */
+function attachAnalysis(api: GameStoreApi, engine: EngineService) {
+  let lastKey = '';
+  api.subscribe((s) => {
+    const allowed = analysisAllowed(s) && s.screen === 'game';
+    const fen = displayFen(s);
+    const key = allowed ? fen : '';
+    if (key === lastKey) return;
+    lastKey = key;
+    if (!allowed) {
+      if (s.analysis) api.setState({ analysis: null });
+      return;
+    }
+    const position = new ChessGame(fen);
+    const result = position.status().result;
+    if (result) {
+      // Endstellung: kein Zug mehr – Ergebnis direkt anzeigen
+      api.setState({
+        analysis: result.reason === 'checkmate'
+          ? { fen, status: 'ready', mate: result.winner === 'w' ? 1 : -1, depth: 0 }
+          : { fen, status: 'ready', cp: 0, depth: 0 },
+      });
+      return;
+    }
+    api.setState({ analysis: { fen, status: 'loading' } });
+    const sign = position.turn === 'w' ? 1 : -1;
+    engine.analyse(fen, EVAL_DEPTH).then(
+      (res) => {
+        if (api.getState().analysis?.fen !== fen) return;
+        api.setState({
+          analysis: {
+            fen,
+            status: 'ready',
+            cp: res.scoreCp !== undefined ? res.scoreCp * sign : undefined,
+            mate: res.mate !== undefined ? res.mate * sign : undefined,
+            best: res.bestMove ? sanOf(fen, res.bestMove) : undefined,
+            depth: res.depth,
+          },
+        });
+      },
+      () => {
+        if (api.getState().analysis?.fen === fen) api.setState({ analysis: { fen, status: 'error' } });
+      },
+    );
+  });
+}
+
 export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStoreApi {
+  const api = createGameStoreCore(partialDeps);
+  if (partialDeps.engine) attachAnalysis(api, partialDeps.engine);
+  return api;
+}
+
+function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
   const deps: StoreDeps = {
     engine: null,
     storage: null,
@@ -437,6 +533,9 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
         hint: null,
         feedback: null,
         drawOffer: null,
+        viewPly: null,
+        view: null,
+        analysis: null,
         viewSide: settings.mode === 'ai' ? settings.humanColor : prefs.autoRotate ? d.status.turn : 'w',
         ...sfx('ui'),
       });
@@ -472,6 +571,9 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
       hint: null,
       feedback: null,
       drawOffer: null,
+      viewPly: null,
+      view: null,
+      analysis: null,
       hasSave: initialHasSave,
       viewSide: 'w',
       sfx: null,
@@ -651,6 +753,8 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
           hint: null,
           feedback: null,
           drawOffer: null,
+          viewPly: null,
+          view: null,
           engineThinking: false,
           viewSide: s.settings.mode === 'local' && s.prefs.autoRotate ? d.status.turn : s.viewSide,
           ...sfx('move'),
@@ -813,6 +917,33 @@ export function createGameStore(partialDeps: Partial<StoreDeps> = {}): GameStore
 
       showToast(text) {
         set(toast(text));
+      },
+
+      viewMove(ply) {
+        const s = get();
+        if (!s.active) return;
+        const total = s.history.length;
+        if (ply === null || ply >= total) {
+          if (s.viewPly !== null) set({ viewPly: null, view: null, ...sfx('select') });
+          return;
+        }
+        const target = Math.max(0, ply);
+        if (target === s.viewPly) return;
+        const history = s.history.slice(0, target);
+        const fen = target === 0 ? s.startFen : history[target - 1].fenAfter;
+        set({
+          viewPly: target,
+          view: { pieces: trackPieces(s.startFen, history).pieces, checkSquare: new ChessGame(fen).status().checkSquare },
+          selected: null,
+          targets: [],
+          hint: null,
+          ...sfx('move'),
+        });
+      },
+
+      stepView(delta) {
+        const s = get();
+        get().viewMove(displayPly(s) + delta);
       },
     };
   });

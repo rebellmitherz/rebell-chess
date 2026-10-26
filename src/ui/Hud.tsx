@@ -3,6 +3,7 @@ import { formatClock, timeLeft } from '../core/clock';
 import { materialScore } from '../core/material';
 import { opposite, PIECE_VALUES, type Color } from '../core/types';
 import { gameStore, useGame } from '../game/instance';
+import { displayPly } from '../game/store';
 import { COLOR_NAME, FIGURINE, figurineSan, playerName, resultTitle } from './format';
 import {
   IconClose,
@@ -113,14 +114,93 @@ function StatusLine() {
   );
 }
 
+/** Bewertungsbalken: weißer Anteil nach Engine-Bewertung (aus Sicht von Weiß) */
+export function EvalBar() {
+  const analysis = useGame((s) => s.analysis);
+  if (!analysis) return null;
+  let share = 50;
+  let label = '…';
+  if (analysis.status === 'ready') {
+    if (analysis.mate !== undefined) {
+      share = analysis.mate > 0 ? 100 : 0;
+      label = analysis.mate > 0 ? `Weiß setzt matt${analysis.mate > 1 ? ` in ${analysis.mate}` : ''}` : `Schwarz setzt matt${analysis.mate < -1 ? ` in ${-analysis.mate}` : ''}`;
+    } else if (analysis.cp !== undefined) {
+      share = 100 / (1 + Math.exp(-analysis.cp / 250));
+      label = `${analysis.cp > 0 ? '+' : ''}${(analysis.cp / 100).toFixed(1)}`;
+    }
+  } else if (analysis.status === 'error') label = 'keine Bewertung';
+  return (
+    <div className="eval" aria-label={`Bewertung ${label}`}>
+      <div className="eval-bar">
+        <div className="eval-white" style={{ width: `${share}%` }} />
+      </div>
+      <div className="eval-text">
+        <strong>{label}</strong>
+        {analysis.best && <span> · bester Zug {figurineSan(analysis.best)}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** Hinweisleiste in der Analyse-Ansicht */
+export function AnalysisBar({ compact = false }: { compact?: boolean }) {
+  const viewPly = useGame((s) => s.viewPly);
+  const history = useGame((s) => s.history);
+  if (viewPly === null) return null;
+  const move = viewPly > 0 ? history[viewPly - 1] : null;
+  const number = move ? `${Math.ceil(viewPly / 2)}.${move.color === 'b' ? '..' : ''} ${figurineSan(move.san)}` : 'Grundstellung';
+  return (
+    <div className={`analysis-bar${compact ? ' compact' : ''}`}>
+      <span className="analysis-label">Analyse: {move ? `nach ${number}` : number}</span>
+      {compact && (
+        <>
+          <button className="icon-btn small" onClick={() => actions().stepView(-1)} aria-label="Zug zurück">
+            ‹
+          </button>
+          <button className="icon-btn small" onClick={() => actions().stepView(1)} aria-label="Zug vor">
+            ›
+          </button>
+        </>
+      )}
+      <button className="btn small-btn" onClick={() => actions().viewMove(null)}>
+        Zur Partie
+      </button>
+    </div>
+  );
+}
+
+function MoveNav() {
+  const total = useGame((s) => s.history.length);
+  const shown = useGame(displayPly);
+  if (total === 0) return null;
+  const a = actions();
+  return (
+    <div className="move-nav">
+      <button onClick={() => a.viewMove(0)} disabled={shown === 0} aria-label="Zum Anfang" title="Anfang (Pos1)">
+        ⏮
+      </button>
+      <button onClick={() => a.stepView(-1)} disabled={shown === 0} aria-label="Zug zurück" title="Zurück (←)">
+        ◀
+      </button>
+      <button onClick={() => a.stepView(1)} disabled={shown === total} aria-label="Zug vor" title="Vor (→)">
+        ▶
+      </button>
+      <button onClick={() => a.viewMove(null)} disabled={shown === total} aria-label="Zur aktuellen Stellung" title="Ende (Ende)">
+        ⏭
+      </button>
+    </div>
+  );
+}
+
 export function MoveList() {
   const history = useGame((s) => s.history);
   const startFen = useGame((s) => s.startFen);
+  const viewPly = useGame((s) => s.viewPly);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [history.length]);
+    if (el && viewPly === null) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [history.length, viewPly]);
 
   const firstNumber = Number(startFen.split(' ')[5] ?? '1') || 1;
   const offset = history[0]?.color === 'b' ? 1 : 0;
@@ -137,19 +217,34 @@ export function MoveList() {
       rows[row].bi = i;
     }
   });
-  const last = history.length - 1;
+  const current = (viewPly ?? history.length) - 1;
+  const cell = (san: string | undefined, index: number | undefined, empty: string) =>
+    san === undefined || index === undefined ? (
+      <span className="move">{empty}</span>
+    ) : (
+      <button
+        className={`move${index === current ? ' current' : ''}`}
+        onClick={() => actions().viewMove(index + 1)}
+        title="Stellung nach diesem Zug ansehen"
+      >
+        {san}
+      </button>
+    );
 
   return (
-    <div className="move-list" ref={ref}>
-      {rows.length === 0 && <div className="move-empty">Noch keine Züge</div>}
-      {rows.map((r) => (
-        <div className="move-row" key={r.n}>
-          <span className="move-no">{r.n}.</span>
-          <span className={`move${r.wi === last ? ' current' : ''}`}>{r.w ?? '…'}</span>
-          <span className={`move${r.bi === last ? ' current' : ''}`}>{r.b ?? ''}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="move-list" ref={ref}>
+        {rows.length === 0 && <div className="move-empty">Noch keine Züge</div>}
+        {rows.map((r) => (
+          <div className="move-row" key={r.n}>
+            <span className="move-no">{r.n}.</span>
+            {cell(r.w, r.wi, '…')}
+            {cell(r.b, r.bi, '')}
+          </div>
+        ))}
+      </div>
+      <MoveNav />
+    </>
   );
 }
 
@@ -239,7 +334,8 @@ function useControls() {
   const thinking = useGame((s) => s.engineThinking);
   const paused = useGame((s) => s.paused);
   const clockOn = useGame((s) => s.clock.enabled);
-  const myTurn = mode === 'local' || turn === human;
+  const viewing = useGame((s) => s.viewPly !== null);
+  const myTurn = (mode === 'local' || turn === human) && !viewing;
   return {
     canUndo: active && (historyLength > 0 || result !== null),
     canHint: training && !result && myTurn && !thinking && !paused,
@@ -327,6 +423,8 @@ function DesktopHud({ sidebar }: { sidebar: number }) {
         </div>
         <PlayerCard color={opposite(viewSide)} />
         <StatusLine />
+        <AnalysisBar />
+        <EvalBar />
         <MoveList />
         <TrainingPanel />
         <PlayerCard color={viewSide} />
@@ -344,6 +442,7 @@ function MobileHud() {
   const c = useControls();
   const showTraining = useGame((s) => s.settings.training && (s.hint !== null || s.feedback !== null));
   const sound = useGame((s) => s.prefs.sound);
+  const viewing = useGame((s) => s.viewPly !== null);
   const a = actions();
   const statusRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -376,7 +475,8 @@ function MobileHud() {
         </button>
       </div>
       <div className="mobile-status" ref={statusRef}>
-        <StatusLine />
+        {viewing ? <AnalysisBar compact /> : <StatusLine />}
+        <EvalBar />
       </div>
       <div className="mobile-bottom" ref={bottomRef}>
         {showTraining && <TrainingPanel compact />}

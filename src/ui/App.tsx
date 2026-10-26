@@ -67,6 +67,13 @@ function useKeyboard() {
         return;
       }
       if (s.screen !== 'game' || ui.dialog) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        s.stepView(e.key === 'ArrowLeft' ? -1 : 1);
+        return;
+      }
+      if (e.key === 'Home') return s.viewMove(0);
+      if (e.key === 'End') return s.viewMove(null);
       switch (e.key.toLowerCase()) {
         case 'u':
           s.undo();

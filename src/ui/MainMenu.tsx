@@ -201,13 +201,19 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       <p>Ziehen auf freier Fläche dreht das Brett, Mausrad oder zwei Finger zoomen. „Drehen“ wechselt die Seite.</p>
       <h3>Tastatur</h3>
       <p>
-        <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü
+        <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü ·
+        <kbd>←</kbd> <kbd>→</kbd> durch die Partie blättern
       </p>
       <h3>Regeln</h3>
       <p>
         Alle Schachregeln inklusive Rochade, en passant und Bauernumwandlung. Remis bei Patt, ungenügendem Material,
         dreifacher Stellungswiederholung und nach der 50-Züge-Regel. Bei Zeitüberschreitung gewinnt der Gegner – außer er
         kann gar nicht mehr mattsetzen, dann ist es Remis.
+      </p>
+      <h3>Analyse</h3>
+      <p>
+        Ein Klick auf einen Zug in der Zugliste zeigt die Stellung danach. Im Trainingsmodus und nach Partieende bewertet
+        Stockfish jede Stellung (Balken, Zahl, bester Zug). „Zur Partie“ führt zurück.
       </p>
       <h3>Speichern</h3>
       <p>Die Partie wird nach jedem Zug automatisch im Browser gespeichert. Über „PGN“ lässt sie sich exportieren und auf anderen Geräten laden.</p>
