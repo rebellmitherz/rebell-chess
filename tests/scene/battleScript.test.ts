@@ -138,6 +138,20 @@ describe('Drehbuch des Kriegerkampfs', () => {
   });
 });
 
+describe('Vielfalt', () => {
+  it('spiegelt Bewegungen zufällig und nutzt für den Todesstoß mehrere Angriffe', () => {
+    const mirrored = new Set<string>();
+    const finishers = new Set<string>();
+    for (let seed = 1; seed <= 200; seed++) {
+      const plan = planBattle(pawnTakesPawn, { ...OPTS, seed, scenario: 'blitz' });
+      mirrored.add(`${plan.mirror.a}/${plan.mirror.v}`);
+      finishers.add(plan.cues.find((c) => c.actor === 'a' && ['attack', 'heavy', 'kick'].includes(c.role))!.clip);
+    }
+    expect(mirrored.size).toBe(4);
+    expect(finishers.size).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe('Kamera im Kampf', () => {
   const opts = (aspect: number, viewSide: 'w' | 'b' = 'w') => ({ aspect, fov: 28, viewSide, usableHeight: 0.8 });
 

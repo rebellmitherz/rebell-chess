@@ -32,19 +32,16 @@ function pieceYaw(piece: TrackedPiece): number {
 const probe = new THREE.Vector3();
 const fightPoint = new THREE.Vector3();
 
-/** Letzter Kampf – nach dem Ende tauchen Figuren erst wieder auf, wenn die Kamera zurück ist */
-let recentBattle: { victimSquare: Square; from: Square; until: number } | null = null;
-
 function blocksBattleView(camera: THREE.Camera, x: number, z: number): boolean {
-  const current = gameStore.getState().battle;
-  const now = performance.now();
-  if (current) recentBattle = { victimSquare: current.victimSquare, from: current.from, until: now + 1300 };
-  const battle = current ?? (recentBattle && now < recentBattle.until ? recentBattle : null);
+  const battle = gameStore.getState().battle;
   if (!battle) return false;
+  // Nur wenn die Kamera nah über dem Brett filmt – in der Draufsicht (vor und nach dem Kampf) bleibt alles stehen
+  if (camera.position.y > 5) return false;
   const [mx, mz] = squareToWorld(battle.victimSquare);
   const [fx, fz] = squareToWorld(battle.from);
   // Kampfplatz: zwischen Opfer und Startfeld, nahe am Opfer
   fightPoint.set(mx * 0.75 + fx * 0.25, 0.6, mz * 0.75 + fz * 0.25);
+  // Die Kämpfer selbst brauchen Platz: Figuren direkt auf ihren Feldern bleiben stehen (sie sind schon weg)
   const fightDepth = camera.position.distanceTo(fightPoint);
   // Figur (Mitte und Kopf) im Bild – vor den Kämpfern oder dicht dahinter? Fernere bleiben als Kulisse stehen
   for (const y of [0.3, 0.9]) {
@@ -268,7 +265,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
 
     a.scale = THREE.MathUtils.damp(a.scale, 1, 9, dt);
     a.pop = THREE.MathUtils.damp(a.pop, 0, 5, dt);
-    a.duck = THREE.MathUtils.damp(a.duck, blocksBattleView(state.camera, pose.x, pose.z) ? 1 : 0, 10, dt);
+    a.duck = THREE.MathUtils.damp(a.duck, blocksBattleView(state.camera, pose.x, pose.z) ? 1 : 0, 14, dt);
     const s = Math.max(0.001, a.scale * (1 + a.pop * 0.3) * a.viewScale * (1 - a.duck));
     const wide = 1 / Math.sqrt(pose.squash);
     g.scale.set(s * wide, s * pose.squash, s * wide);
@@ -389,7 +386,7 @@ function Ghost({
     material.opacity = k.opacity;
     if (k.hit && !hit) {
       setHit(true);
-      emitImpact({ x, z, dirX: dx, dirZ: dz, victim: piece.color, power: 1.25 });
+      emitImpact({ x, z, dirX: dx, dirZ: dz, victim: piece.color, power: 1.25, ring: false });
     }
     // Splitter: ballistisch, drehend, verblassend
     if (k.hit && shards.current) {

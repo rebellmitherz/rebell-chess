@@ -157,6 +157,8 @@ export interface BattlePlan {
   total: number;
   scale: Record<Actor, number>;
   colors: Record<Actor, Color>;
+  /** Spiegelverkehrt abspielen: aus Rechtshänder wird Linkshänder – verdoppelt die Vielfalt der Bewegungen */
+  mirror: Record<Actor, boolean>;
 }
 
 // ---------- Zufall ----------
@@ -293,6 +295,13 @@ export function planBattle(input: BattleInput, opts: PlanOptions): BattlePlan {
   };
   // Nicht zweimal hintereinander dieselbe Bewegung
   const lastClip: Record<Actor, string> = { a: '', v: '' };
+  /** Wie `choose`, aber aus allen genannten Rollen gemeinsam (doppelt genannt = doppelt so oft) */
+  const chooseMixed = (actor: Actor, ...roles: MoveRole[]): MoveClip | null => {
+    const all = roles.flatMap((r) => lib(actor)[r] ?? []);
+    if (!all.length) return null;
+    const fresh = all.filter((c) => c.name !== lastClip[actor]);
+    return pick(fresh.length ? fresh : all);
+  };
   const choose = (actor: Actor, ...roles: MoveRole[]): MoveClip | null => {
     const list = clipsFor(actor, ...roles);
     if (!list.length) return null;
@@ -411,7 +420,13 @@ export function planBattle(input: BattleInput, opts: PlanOptions): BattlePlan {
     const by = beat.by;
     const target = other(by);
     const role = beat.role ?? 'attack';
-    const move = choose(by, role, role === 'kick' ? 'heavy' : 'attack', 'attack', 'heavy');
+    // Der letzte Schlag darf ein schwerer Angriff oder ein normaler sein, der erste Schlag meist ein normaler
+    const move =
+      beat.result === 'kill'
+        ? chooseMixed(by, 'heavy', 'heavy', 'attack', 'kick')
+        : role === 'attack'
+          ? chooseMixed(by, 'attack', 'attack', 'heavy')
+          : choose(by, role, role === 'kick' ? 'heavy' : 'attack', 'attack', 'heavy');
     if (!move) return;
     const speed = vary(beat.tempo ?? 1.15, 0.08);
     const impact = cursor + (move.impact ?? move.duration * 0.5) / speed;
@@ -465,7 +480,7 @@ export function planBattle(input: BattleInput, opts: PlanOptions): BattlePlan {
   });
 
   // ----- Sieg und Rückverwandlung -----
-  const victory = choose('a', 'victory', 'taunt', 'idle');
+  const victory = chooseMixed('a', 'victory', 'taunt', 'taunt') ?? choose('a', 'idle');
   if (victory) cue(deathAt + 0.55, 'a', victory, vary(1.1, 0.08), 0.22);
   fx.push({ t: deathAt + 0.65, kind: 'cheer', at: 'a' });
   shots.push({ t: deathAt + 0.6, kind: rnd() < 0.5 ? 'hero' : 'side', cut: rnd() < 0.5 });
@@ -495,6 +510,7 @@ export function planBattle(input: BattleInput, opts: PlanOptions): BattlePlan {
     total: outro + VANISH,
     scale,
     colors,
+    mirror: { a: rnd() < 0.5, v: rnd() < 0.5 },
   };
 }
 

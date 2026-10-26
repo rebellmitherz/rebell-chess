@@ -181,7 +181,7 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
         break;
       case 'death':
         addBurst(px, 0.7, pz, SPARK, 64);
-        emitImpact({ x: px, z: pz, dirX: dx, dirZ: dz, victim: victimColor, power: 1.25, ring: true, burst: false });
+        emitImpact({ x: px, z: pz, dirX: dx, dirZ: dz, victim: victimColor, power: 1.25, ring: false, burst: false });
         break;
       case 'fall':
         addBurst(px, 0.08, pz, DUST, 44);
@@ -239,10 +239,12 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
     const sv = appearScale(plan, 'v', t);
     groupA.current.position.set(ax, 0, az);
     groupA.current.rotation.y = Math.atan2(dx, dz);
-    groupA.current.scale.setScalar(Math.max(0.001, plan.scale.a * sa));
+    const sA = Math.max(0.001, plan.scale.a * sa);
+    groupA.current.scale.set(plan.mirror.a ? -sA : sA, sA, sA);
     groupV.current.position.set(vx, victimSink(plan, t), vz);
     groupV.current.rotation.y = Math.atan2(-dx, -dz);
-    groupV.current.scale.setScalar(Math.max(0.001, plan.scale.v * sv));
+    const sV = Math.max(0.001, plan.scale.v * sv);
+    groupV.current.scale.set(plan.mirror.v ? -sV : sV, sV, sV);
     auraA.current.position.set(ax, 0.012, az);
     auraV.current.position.set(vx, 0.012, vz);
     (auraA.current.material as THREE.MeshBasicMaterial).opacity = 0.45 * sa;

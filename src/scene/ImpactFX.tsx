@@ -62,10 +62,9 @@ function Shockwave({ impact }: { impact: Impact }) {
   );
 }
 
-/** Mini-Explosion: heller Glutball, der in 0,25 s aufblitzt und verpufft, dazu ein flacher Staubring */
+/** Mini-Explosion: heller Glutball, der in 0,25 s aufblitzt und verpufft (ohne Ring – das war zu viel) */
 function Explosion({ impact }: { impact: Impact }) {
   const ball = useRef<THREE.Sprite>(null!);
-  const dust = useRef<THREE.Mesh>(null!);
   const color = impact.victim === 'w' ? '#ffd27a' : '#ff9a5a';
   useFrame(() => {
     const t = (performance.now() - impact.at) / 1000;
@@ -73,20 +72,12 @@ function Explosion({ impact }: { impact: Impact }) {
     const grow = 0.25 + (1 - Math.pow(1 - k, 3)) * 1.35 * impact.power;
     ball.current.scale.set(grow, grow, grow);
     (ball.current.material as THREE.SpriteMaterial).opacity = (1 - k) * (1 - k);
-    const d = Math.min(1, t / 0.4);
-    const r = 0.3 + (1 - Math.pow(1 - d, 2)) * 1.1 * impact.power;
-    dust.current.scale.set(r, r, r);
-    (dust.current.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - d);
   });
   return (
     <group position={[impact.x, 0.4, impact.z]}>
       <sprite ref={ball} renderOrder={9}>
         <spriteMaterial map={getSprite()} color={color} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
       </sprite>
-      <mesh ref={dust} position={[0, -0.36, 0]} rotation-x={-Math.PI / 2} renderOrder={8}>
-        <ringGeometry args={[0.55, 1, 40]} />
-        <meshBasicMaterial color="#e9dcc0" transparent depthWrite={false} toneMapped={false} />
-      </mesh>
     </group>
   );
 }
