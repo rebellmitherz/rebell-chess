@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { canInstall, onInstallAvailable, promptInstall } from '../pwa';
 import { playSfx } from '../audio/sound';
 import type { Color } from '../core/types';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
@@ -217,6 +218,11 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       </p>
       <h3>Speichern</h3>
       <p>Die Partie wird nach jedem Zug automatisch im Browser gespeichert. Über „PGN“ lässt sie sich exportieren und auf anderen Geräten laden.</p>
+      <h3>Als App</h3>
+      <p>
+        Android, Chrome, Edge: „Als App installieren“ im Hauptmenü oder im Browsermenü. iPhone/iPad (Safari): Teilen →
+        „Zum Home-Bildschirm“. Nach dem ersten Laden läuft das Spiel auch ohne Internet.
+      </p>
       <h3>Lizenzen</h3>
       <p>
         Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
@@ -238,6 +244,8 @@ export function MainMenu() {
   const active = useGame((s) => s.active);
   const hasSave = useGame((s) => s.hasSave);
   const result = useGame((s) => s.result);
+  const [installable, setInstallable] = useState(canInstall);
+  useEffect(() => onInstallAvailable(() => setInstallable(canInstall())), []);
   const back = () => setPanel('home');
 
   return (
@@ -271,6 +279,11 @@ export function MainMenu() {
             <button className="btn" onClick={() => setPanel('help')}>
               Anleitung
             </button>
+            {installable && (
+              <button className="btn" onClick={() => void promptInstall()}>
+                Als App installieren
+              </button>
+            )}
           </nav>
         )}
         {panel === 'new' && <NewGamePanel onBack={back} />}
