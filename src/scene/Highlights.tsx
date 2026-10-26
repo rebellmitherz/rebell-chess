@@ -26,14 +26,18 @@ let shared: ReturnType<typeof buildShared> | null = null;
 function buildShared() {
   return {
     square: new THREE.PlaneGeometry(0.97, 0.97),
-    dot: new THREE.CircleGeometry(0.13, 40),
+    dot: new THREE.CircleGeometry(0.135, 40),
+    // dunkler Rand unter Punkten und Ringen: so sind sie auf hellen und dunklen Feldern gleich gut zu sehen
+    dotHalo: new THREE.CircleGeometry(0.19, 40),
     ring: new THREE.RingGeometry(0.39, 0.47, 56),
+    ringHalo: new THREE.RingGeometry(0.36, 0.5, 56),
     selectRing: new THREE.RingGeometry(0.42, 0.485, 56),
     lastMove: overlayMaterial('#e7c36a', 0.26),
     selected: overlayMaterial('#f6d47c', 0.34),
     selectedRing: overlayMaterial('#ffe29a', 0.95),
-    target: overlayMaterial('#f2cf78', 0.88),
-    capture: overlayMaterial('#ff8f5a', 0.92),
+    target: overlayMaterial('#f0b429', 0.95),
+    capture: overlayMaterial('#ff7a3d', 0.95),
+    halo: overlayMaterial('#1b140a', 0.55),
     dropTarget: overlayMaterial('#ffe29a', 0.5),
   };
 }
@@ -141,9 +145,15 @@ export function Highlights() {
       {showLegal &&
         targets.map((t) =>
           t.isCapture ? (
-            <Flat key={t.to} square={t.to} geometry={s.ring} material={s.capture} order={5} />
+            <group key={t.to}>
+              <Flat square={t.to} geometry={s.ringHalo} material={s.halo} order={5} />
+              <Flat square={t.to} geometry={s.ring} material={s.capture} order={6} />
+            </group>
           ) : (
-            <Flat key={t.to} square={t.to} geometry={s.dot} material={s.target} order={5} />
+            <group key={t.to}>
+              <Flat square={t.to} geometry={s.dotHalo} material={s.halo} order={5} />
+              <Flat square={t.to} geometry={s.dot} material={s.target} order={6} />
+            </group>
           ),
         )}
       {dropLegal && dragOver && (

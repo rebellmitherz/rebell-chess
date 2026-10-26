@@ -110,7 +110,8 @@ export function loadRealAssets(): Promise<RealAssets> {
       return {
         // polierter Marmor: leichte Klarlackschicht, aber matt genug, dass von oben nichts blendet
         pieces: {
-          w: pbr(wd, wn, wa, { clearcoat: 0.15, clearcoatRoughness: 0.35, envMapIntensity: 0.9 }),
+          // Weiß etwas abgedunkelt (warmes Elfenbein statt Reinweiß) und matter, damit es nicht blendet
+          w: pbr(wd, wn, wa, { color: '#cdc5b8', clearcoat: 0.06, clearcoatRoughness: 0.5, envMapIntensity: 0.7 }),
           b: pbr(bd, bn, ba, { clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 1 }),
         },
         // Brett seidenmatt: von oben spiegeln sich sonst Fenster und Decke des Raumlichts

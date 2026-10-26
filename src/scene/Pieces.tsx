@@ -186,10 +186,15 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     if (mated) anim.current.mateStart = -1;
   }, [mated]);
 
-  useFrame((state, dt) => {
+  useFrame((state, frameDt) => {
     const a = anim.current;
     const g = group.current;
     const now = state.clock.elapsedTime;
+    // Ein einziger ungültiger Zeitschritt (Tab im Hintergrund, Sprung der Uhr) darf keinen Wert dauerhaft zerstören
+    const dt = Number.isFinite(frameDt) ? Math.min(Math.max(frameDt, 0), 0.1) : 0;
+    for (const k of ['scale', 'pop', 'duck', 'lift', 'topple', 'viewTilt', 'viewScale'] as const) {
+      if (!Number.isFinite(a[k])) a[k] = k === 'scale' || k === 'viewScale' ? 1 : 0;
+    }
     const dragged = pointerDrag.active && pointerDrag.pieceId === piece.id;
     if (dragged) {
       // Figur folgt dem Zeiger (leicht gedämpft), schwebt über dem Brett
