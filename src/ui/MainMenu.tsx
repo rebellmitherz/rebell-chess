@@ -232,7 +232,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       </p>
       <h3>Schlagen</h3>
       <p>
-        Beim Schlagen werden beide Figuren zu Kriegern – Weiß kämpft als Ritter, Schwarz als Barbar. Die Uhr steht, bis
+        Beim Schlagen werden beide Figuren zu Kriegern – Paladine in goldener und schwarzer Rüstung, jeder Kampf läuft anders ab. Die Uhr steht, bis
         der Kampf vorbei ist. Antippen, Klick, Leertaste oder <kbd>Esc</kbd> überspringen ihn; unter Einstellungen →
         „Beim Schlagen“ gibt es auch „Kurz“ und „Aus“.
       </p>
@@ -270,7 +270,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
         3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
         Figuren und Brett: „Chess Set“ von Riley Queen, Raumlicht „Lebombo“, Tisch „Wood Table 001“ (alle Poly Haven,
-        CC0). Krieger: „KayKit Adventurers“ von Kay Lousberg (CC0). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
+        CC0). Krieger und Kampfbewegungen: Adobe Mixamo („Paladin“, „Pro Sword and Shield Pack“). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.
       </p>
       <div className="menu-actions">
         <button className="btn ghost" onClick={onBack}>

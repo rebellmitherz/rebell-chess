@@ -59,7 +59,9 @@ src/
     Pieces.tsx        Figuren mit Bewegungs- und Schlag-Animation
     Battle.tsx        Kriegerkampf: Krieger, Animationen, Effekte und Klänge im Takt des Drehbuchs
     battleScript.ts   Drehbuch des Kampfes als reine Funktionen (Ablauf, Wege, Kamera) – getestet
-    warriors.ts       Lädt die Krieger (GLB mit Skelett-Animationen, meshopt)
+    warriors.ts       Lädt die Krieger (2 Mixamo-Figuren + Bewegungsbibliothek warrior_moves.glb, meshopt)
+    WeaponTrail.tsx   Leuchtende Schwertspur (Klinge wird aus dem Modell bestimmt)
+    warriorMoves.json Rollen, Treffermomente und Fortbewegung jeder Bewegung (aus build-warriors.mjs)
     pieceGeometry.ts  Prozedurale Staunton-Figuren (Lathe + Extrude, gemergt)
     materials.ts      PBR-Materialien (Gold, Onyx, Silber)
     Highlights.tsx    Legale Züge, letzter Zug, Schach, Hinweis-Pfeil, Zielfeld beim Ziehen

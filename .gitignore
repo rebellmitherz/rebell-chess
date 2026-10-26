@@ -6,3 +6,8 @@ public/engine/
 coverage/
 # Rohdaten (CC0) – neu laden mit: npm run assets:pieces
 assets-src/
+# Mixamo-Krieger: dürfen im Spiel genutzt, aber nicht als Einzeldateien weitergegeben werden –
+# sie werden lokal mit `npm run assets:warriors` erzeugt und nur in die fertige Seite gebaut
+public/models/warrior_white.glb
+public/models/warrior_black.glb
+public/models/warrior_moves.glb

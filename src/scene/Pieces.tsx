@@ -25,6 +25,38 @@ function pieceYaw(piece: TrackedPiece): number {
   return piece.color === 'w' ? Math.PI / 2 + KNIGHT_YAW : -Math.PI / 2 + KNIGHT_YAW;
 }
 
+/**
+ * Steht eine Figur im Kriegerkampf zwischen Kamera und Kämpfern? Dann taucht sie kurz weg, damit sie nicht die
+ * Sicht verdeckt (die Kamera fliegt dafür nah über das Brett).
+ */
+const probe = new THREE.Vector3();
+const fightPoint = new THREE.Vector3();
+
+/** Letzter Kampf – nach dem Ende tauchen Figuren erst wieder auf, wenn die Kamera zurück ist */
+let recentBattle: { victimSquare: Square; from: Square; until: number } | null = null;
+
+function blocksBattleView(camera: THREE.Camera, x: number, z: number): boolean {
+  const current = gameStore.getState().battle;
+  const now = performance.now();
+  if (current) recentBattle = { victimSquare: current.victimSquare, from: current.from, until: now + 1300 };
+  const battle = current ?? (recentBattle && now < recentBattle.until ? recentBattle : null);
+  if (!battle) return false;
+  const [mx, mz] = squareToWorld(battle.victimSquare);
+  const [fx, fz] = squareToWorld(battle.from);
+  // Kampfplatz: zwischen Opfer und Startfeld, nahe am Opfer
+  fightPoint.set(mx * 0.75 + fx * 0.25, 0.6, mz * 0.75 + fz * 0.25);
+  const fightDepth = camera.position.distanceTo(fightPoint);
+  // Figur (Mitte und Kopf) im Bild – vor den Kämpfern oder dicht dahinter? Fernere bleiben als Kulisse stehen
+  for (const y of [0.3, 0.9]) {
+    probe.set(x, y, z);
+    const depth = camera.position.distanceTo(probe);
+    if (depth > fightDepth + 0.9) continue;
+    probe.project(camera);
+    if (probe.z < 1 && Math.abs(probe.x) < 1.15 && Math.abs(probe.y) < 1.15) return true;
+  }
+  return false;
+}
+
 function setPointer(active: boolean) {
   document.body.style.cursor = active ? 'pointer' : '';
 }
@@ -120,6 +152,8 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     viewTilt: viewTilt,
     viewScale: viewScale,
     wasHidden: false,
+    /** 1 = taucht weg, weil die Figur im Kampf zwischen Kamera und Kriegern steht */
+    duck: 0,
   });
 
   useLayoutEffect(() => {
@@ -228,7 +262,8 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
 
     a.scale = THREE.MathUtils.damp(a.scale, 1, 9, dt);
     a.pop = THREE.MathUtils.damp(a.pop, 0, 5, dt);
-    const s = Math.max(0.001, a.scale * (1 + a.pop * 0.3) * a.viewScale);
+    a.duck = THREE.MathUtils.damp(a.duck, blocksBattleView(state.camera, pose.x, pose.z) ? 1 : 0, 10, dt);
+    const s = Math.max(0.001, a.scale * (1 + a.pop * 0.3) * a.viewScale * (1 - a.duck));
     const wide = 1 / Math.sqrt(pose.squash);
     g.scale.set(s * wide, s * pose.squash, s * wide);
   });

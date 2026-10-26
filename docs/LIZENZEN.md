@@ -29,19 +29,23 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
   hängt von der rechtlichen Bewertung ab (eigenständiges Programm im Worker vs. „kombiniertes Werk“). Für die private
   Nutzung spielt das keine Rolle; vor einem kommerziellen Vertrieb bitte rechtlich prüfen lassen.
 
+## Mixamo (Adobe) – Krieger und Kampfbewegungen
+
+- Figur „Paladin W/Prop J Nordstrom“ und das „Pro Sword and Shield Pack“ von [mixamo.com](https://www.mixamo.com), von Emilio mit seinem Adobe-Konto heruntergeladen.
+- Nutzung in Spielen (auch veröffentlicht, auch kommerziell) ist erlaubt und lizenzfrei; die Dateien dürfen aber **nicht als Einzeldateien weitergegeben** werden. Deshalb liegen `public/models/warrior_*.glb` **nicht in Git** (`.gitignore`) und werden nur umgewandelt und komprimiert in die fertige Seite gebaut. Neu erzeugen: Rohdaten nach `assets-src/mixamo/` legen, dann `npm run assets:warriors`.
+- Nicht gemeinfrei: vor einem kommerziellen Vertrieb die Adobe-Bedingungen prüfen.
+
 ## Fremde Inhalte (alle CC0 – gemeinfrei, frei nutzbar auch kommerziell)
 
 | Inhalt | Quelle | Lizenz | Verwendung |
 |---|---|---|---|
 | „Chess Set“ von **Riley Queen** | [Poly Haven](https://polyhaven.com/a/chess_set) | CC0 | Formen der klassischen Figuren + Verdeckungskarte (`public/models/`) |
 | „Impact Sounds“ von **Kenney** | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 | Aufnahmen für Ziehen/Schlagen und den Kriegerkampf (`public/sounds/`, 45 von 130 Dateien) |
-| „KayKit : Adventurers Character Pack 1.0“ von **Kay Lousberg** | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0), [kaylousberg.com](https://kaylousberg.com) | CC0 | Krieger im Kriegerkampf: „Knight“ (Weiß) und „Barbarian“ (Schwarz), gekürzt auf benötigte Waffen und Animationen (`public/models/warrior_*.glb`) |
 | Marmor-/Brett-Texturen aus „Chess Set“ (**Riley Queen**) | [Poly Haven](https://polyhaven.com/a/chess_set) | CC0 | Stil „Echt“: Figuren, Brett (`public/textures/`, `public/models/board.glb`) |
 | Raumlicht „Lebombo“ (**Greg Zaal**) | [Poly Haven](https://polyhaven.com/a/lebombo) | CC0 | Beleuchtung/Hintergrund im Stil „Echt“ (`public/env/`) |
 | Tischplatte „Wood Table 001“ (**Dimitrios Savva, Rico Cilliers**) | [Poly Haven](https://polyhaven.com/a/wood_table_001) | CC0 | Tisch unter dem Brett (`public/textures/table_*`) |
 
-Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces`, `npm run assets:real`, `npm run assets:warriors`
-(alle mit Prüfsummen) und `npm run assets:sounds` neu erzeugt. Eine Namensnennung ist nicht vorgeschrieben – sie steht trotzdem hier und in der Spielanleitung.
+Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces`, `npm run assets:real`, (alle mit Prüfsummen) und `npm run assets:sounds` neu erzeugt. Eine Namensnennung ist nicht vorgeschrieben – sie steht trotzdem hier und in der Spielanleitung.
 
 ## Eigene Inhalte
 

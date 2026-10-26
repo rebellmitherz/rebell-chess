@@ -1,132 +1,177 @@
 import { describe, expect, it } from 'vitest';
 import {
+  actorPosition,
   APPEAR,
   appearScale,
-  attackerPosition,
   cinematicView,
-  FIGHT_DISTANCE,
+  MIN_DISTANCE,
   planBattle,
-  victimPosition,
+  SCENARIOS,
+  shotView,
+  timeScale,
   victimSink,
-  WARRIOR_CLIPS,
   type BattleInput,
+  type MoveLibrary,
+  type ShotKind,
 } from '../../src/scene/battleScript';
 
-const pawnTakesPawn: BattleInput = {
-  from: 'e4',
-  victimSquare: 'd5',
-  attacker: { color: 'w', type: 'p' },
-  victim: { color: 'b', type: 'p' },
+/** Kleine Test-Bibliothek in der Art der Mixamo-Bewegungen (mit und ohne Fortbewegung) */
+const LIB: MoveLibrary = {
+  idle: [{ name: 'idle', role: 'idle', duration: 2 }],
+  run: [{ name: 'run', role: 'run', duration: 0.8 }],
+  attack: [
+    { name: 'slash', role: 'attack', duration: 1.2, impact: 0.5 },
+    { name: 'slash 2', role: 'attack', duration: 1.0, impact: 0.42, root: [[0, 0, 0], [0.5, 0.25, 0], [1, 0.5, 0]] },
+    { name: 'attack 3', role: 'attack', duration: 1.3, impact: 0.62 },
+  ],
+  heavy: [{ name: 'jump attack', role: 'heavy', duration: 1.6, impact: 0.8, root: [[0, 0, 0], [1, 0.6, 0]] }],
+  kick: [{ name: 'kick', role: 'kick', duration: 1.1, impact: 0.45 }],
+  block: [{ name: 'block', role: 'block', duration: 1 }],
+  impact: [
+    { name: 'impact', role: 'impact', duration: 0.8 },
+    { name: 'impact 2', role: 'impact', duration: 0.9, root: [[0, 0, 0], [1, -0.3, 0]] },
+  ],
+  death: [
+    { name: 'death', role: 'death', duration: 2.2, impact: 1.1, root: [[0, 0, 0], [0.5, -0.5, 0], [1, -0.8, 0]] },
+    { name: 'death 2', role: 'death', duration: 1.8, impact: 0.9 },
+  ],
+  taunt: [{ name: 'power up', role: 'taunt', duration: 1.8 }],
 };
+const OPTS = { library: { w: LIB, b: LIB } };
 
-const rookAcrossBoard: BattleInput = {
-  from: 'a1',
-  victimSquare: 'a8',
-  attacker: { color: 'w', type: 'r' },
-  victim: { color: 'b', type: 'r' },
-};
+const pawnTakesPawn: BattleInput = { from: 'e4', victimSquare: 'd5', attacker: { color: 'w', type: 'p' }, victim: { color: 'b', type: 'p' } };
+const rookAcrossBoard: BattleInput = { from: 'a1', victimSquare: 'a8', attacker: { color: 'w', type: 'r' }, victim: { color: 'b', type: 'r' } };
+const pawnTakesQueen: BattleInput = { from: 'e4', victimSquare: 'd5', attacker: { color: 'b', type: 'p' }, victim: { color: 'w', type: 'q' } };
+const queenTakesPawn: BattleInput = { from: 'd1', victimSquare: 'd5', attacker: { color: 'w', type: 'q' }, victim: { color: 'b', type: 'p' } };
+
+const names = new Set(Object.values(LIB).flat().map((c) => c.name));
 
 describe('Drehbuch des Kriegerkampfs', () => {
-  it('folgt der Reihenfolge Hieb – Konter – Treffer – Todesstoß – Jubel', () => {
-    const plan = planBattle(pawnTakesPawn);
-    const [i1, i2, i3, i4] = plan.impacts;
-    expect(i1).toBeGreaterThan(plan.runEnd);
-    expect(i2).toBeGreaterThan(i1);
-    expect(i3).toBeGreaterThan(i2);
-    expect(i4).toBeGreaterThan(i3);
-    const roleAt = (actor: 'a' | 'v', role: string) => plan.cues.find((c) => c.actor === actor && c.role === role)!.t;
-    expect(roleAt('v', 'blockHit')).toBeCloseTo(i1);
-    expect(roleAt('a', 'blockHit')).toBeCloseTo(i2);
-    expect(roleAt('v', 'hit')).toBeCloseTo(i3);
-    expect(roleAt('v', 'death')).toBeCloseTo(i4);
-    expect(roleAt('a', 'cheer')).toBeGreaterThan(i4);
-    // Nach dem Tod greift das Opfer nicht mehr an
-    expect(plan.cues.filter((c) => c.actor === 'v' && c.t > i4)).toHaveLength(0);
-    // Klänge und Effekte im Takt der Treffer
-    const fxAt = (kind: string) => plan.fx.filter((f) => f.kind === kind).map((f) => f.t);
-    expect(fxAt('death')).toEqual([i4]);
-    expect(fxAt('fall')[0]).toBeGreaterThan(i4);
-    expect(fxAt('hit')).toEqual([i3]);
-    // Weiß hat einen Schild (Ritter), Schwarz pariert mit der Axt
-    expect(plan.fx.find((f) => f.t === i1)?.kind).toBe('clash');
-    expect(plan.fx.find((f) => f.t === i2)?.kind).toBe('block');
+  it('würfelt viele verschiedene Kämpfe – alle Szenarien kommen vor', () => {
+    const seen = new Set<string>();
+    const signatures = new Set<string>();
+    for (let seed = 1; seed <= 300; seed++) {
+      const plan = planBattle(pawnTakesPawn, { ...OPTS, seed });
+      seen.add(plan.scenario);
+      if (seed <= 30) signatures.add(plan.scenario + plan.cues.map((c) => c.clip).join(',') + plan.shots.map((s) => s.kind).join(','));
+    }
+    expect([...seen].sort()).toEqual(Object.keys(SCENARIOS).sort());
+    // 30 Kämpfe derselben Figuren: fast alle sehen anders aus
+    expect(signatures.size).toBeGreaterThanOrEqual(26);
   });
 
-  it('dauert spürbar, aber nicht ewig – auch über das ganze Brett', () => {
-    const short = planBattle(pawnTakesPawn);
-    expect(short.total).toBeGreaterThan(3.8);
-    expect(short.total).toBeLessThan(6.2);
-    const long = planBattle(rookAcrossBoard);
-    expect(long.runEnd - long.runStart).toBeLessThanOrEqual(1.05 + 1e-9);
-    expect(long.total).toBeLessThan(short.total + 1.2);
-    // Schritte während des Anlaufs
-    expect(long.fx.filter((f) => f.kind === 'step').length).toBeGreaterThan(3);
+  it('wiederholt die zuletzt gespielten Szenarien nicht', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const plan = planBattle(pawnTakesPawn, { ...OPTS, seed, avoid: ['duel', 'kick'] });
+      expect(['duel', 'kick']).not.toContain(plan.scenario);
+    }
   });
 
-  it('läuft bis auf Kampfabstand an das Opfer heran', () => {
-    const plan = planBattle(rookAcrossBoard);
-    expect(attackerPosition(plan, 0)).toEqual(plan.start);
-    const stop = attackerPosition(plan, plan.runEnd + 0.01);
-    expect(Math.hypot(stop[0] - plan.victim[0], stop[1] - plan.victim[1])).toBeCloseTo(FIGHT_DISTANCE);
-    // Auf halbem Weg wirklich unterwegs
-    const half = attackerPosition(plan, (plan.runStart + plan.runEnd) / 2);
-    expect(half[1]).toBeLessThan(plan.start[1]);
-    expect(half[1]).toBeGreaterThan(plan.stop[1]);
+  it('passt das Szenario den Figuren an: Bauer gegen Dame kämpft länger als Dame gegen Bauer', () => {
+    const count = (input: BattleInput, scenario: string) => {
+      let n = 0;
+      for (let seed = 1; seed <= 400; seed++) if (planBattle(input, { ...OPTS, seed }).scenario === scenario) n++;
+      return n;
+    };
+    expect(count(pawnTakesQueen, 'comeback')).toBeGreaterThan(count(queenTakesPawn, 'comeback') * 2);
+    expect(count(queenTakesPawn, 'blitz')).toBeGreaterThan(count(pawnTakesQueen, 'blitz') * 2);
   });
 
-  it('stößt das Opfer zurück, legt es hin und lässt es im Brett versinken', () => {
-    const plan = planBattle(pawnTakesPawn);
-    const before = victimPosition(plan, 0);
-    const after = victimPosition(plan, plan.total);
+  for (const scenario of Object.keys(SCENARIOS)) {
+    it(`Szenario „${scenario}“ ist schlüssig`, () => {
+      for (const input of [pawnTakesPawn, rookAcrossBoard]) {
+        for (let seed = 1; seed <= 12; seed++) {
+          const plan = planBattle(input, { ...OPTS, seed, scenario });
+          // genau ein tödlicher Treffer, er ist der letzte und kommt vom Angreifer
+          const kills = plan.hits.filter((h) => h.result === 'kill');
+          expect(kills).toHaveLength(1);
+          expect(plan.hits.at(-1)).toMatchObject({ by: 'a', result: 'kill', t: plan.deathAt });
+          expect(plan.hits.map((h) => h.t)).toEqual([...plan.hits.map((h) => h.t)].sort((a, b) => a - b));
+          // nur Bewegungen aus der Bibliothek, das Opfer bewegt sich nach dem Tod nicht mehr selbst
+          for (const c of plan.cues) expect(names).toContain(c.clip);
+          expect(plan.cues.filter((c) => c.actor === 'v' && c.t > plan.deathAt + 1e-9)).toHaveLength(0);
+          expect(plan.cues.find((c) => c.actor === 'v' && c.role === 'death')?.t).toBeCloseTo(plan.deathAt);
+          // Ablauf: Tod → Versinken → Rückverwandlung
+          expect(plan.sink).toBeGreaterThan(plan.deathAt);
+          expect(plan.outro).toBeGreaterThan(plan.sink);
+          expect(plan.total).toBeGreaterThan(2.4);
+          expect(plan.total).toBeLessThan(9);
+          // niemand läuft durch den anderen hindurch
+          for (let t = plan.runEnd; t < plan.deathAt; t += 0.05) {
+            const a = actorPosition(plan, 'a', t);
+            const v = actorPosition(plan, 'v', t);
+            expect(Math.hypot(a[0] - v[0], a[1] - v[1])).toBeGreaterThan(MIN_DISTANCE * 0.95);
+          }
+        }
+      }
+    });
+  }
+
+  it('begrenzt den Anlauf auch über das ganze Brett', () => {
+    const plan = planBattle(rookAcrossBoard, { ...OPTS, seed: 7 });
+    expect(plan.runEnd - plan.runStart).toBeLessThanOrEqual(1.0 + 1e-9);
+    expect(plan.cues.some((c) => c.role === 'run' && c.actor === 'a')).toBe(true);
+    expect(plan.fx.filter((f) => f.kind === 'step').length).toBeGreaterThan(3);
+    expect(actorPosition(plan, 'a', 0)).toEqual(plan.start);
+    expect(actorPosition(plan, 'a', plan.runEnd)).toEqual(plan.stop);
+  });
+
+  it('stößt das Opfer zurück, lässt es im Brett versinken und verwandelt die Krieger', () => {
+    const plan = planBattle(pawnTakesPawn, { ...OPTS, seed: 3, scenario: 'duel' });
+    const before = actorPosition(plan, 'v', 0);
+    const after = actorPosition(plan, 'v', plan.total);
     const pushed = (after[0] - before[0]) * plan.dir[0] + (after[1] - before[1]) * plan.dir[1];
     expect(pushed).toBeGreaterThan(0.1);
     expect(victimSink(plan, plan.sink - 0.01)).toBeCloseTo(0);
     expect(victimSink(plan, plan.total)).toBeLessThan(-0.5);
-  });
-
-  it('verwandelt Figuren in Krieger und zurück', () => {
-    const plan = planBattle(pawnTakesPawn);
     expect(appearScale(plan, 'a', 0)).toBe(0);
     expect(appearScale(plan, 'a', APPEAR + 0.01)).toBe(1);
-    expect(appearScale(plan, 'v', APPEAR + 0.1)).toBe(1);
     expect(appearScale(plan, 'a', plan.total)).toBe(0);
-    // Größere Figuren werden größere Krieger
-    const queen = planBattle({ ...pawnTakesPawn, attacker: { color: 'w', type: 'q' } });
-    expect(queen.scale.a).toBeGreaterThan(plan.scale.a);
   });
 
-  it('nutzt nur Animationen, die das Krieger-Skript mitliefert', () => {
-    // Abgleich mit scripts/build-warriors.mjs
-    expect(Object.values(WARRIOR_CLIPS.w).map((c) => c.name)).toContain('1H_Melee_Attack_Stab');
-    expect(Object.values(WARRIOR_CLIPS.b).map((c) => c.name)).toContain('2H_Melee_Attack_Spin');
-    for (const color of ['w', 'b'] as const) {
-      for (const role of ['attack1', 'attack2', 'finisher'] as const) expect(WARRIOR_CLIPS[color][role].impact).toBeGreaterThan(0);
-    }
+  it('Zeitlupe beim Todesstoß, kurzes Anhalten bei Treffern', () => {
+    const plan = planBattle(pawnTakesPawn, { ...OPTS, seed: 5, scenario: 'trade' });
+    expect(timeScale(plan, plan.deathAt + 0.1)).toBeLessThan(0.5);
+    const hit = plan.hits.find((h) => h.result === 'hit')!;
+    expect(timeScale(plan, hit.t + 0.02)).toBeLessThan(0.2);
+    expect(timeScale(plan, plan.deathAt + 1)).toBe(1);
   });
 });
 
 describe('Kamera im Kampf', () => {
-  it('filmt von der Seite des Spielers, schräg von oben, nah genug', () => {
-    // Kampf entlang einer Reihe (quer zum Spieler): Kamera auf der Seite des Spielers
-    const plan = planBattle({ ...pawnTakesPawn, from: 'c5', victimSquare: 'e5' });
-    for (const aspect of [0.46, 1.78]) {
-      const white = cinematicView(plan, { aspect, fov: 28, viewSide: 'w', usableHeight: 0.8 });
-      const black = cinematicView(plan, { aspect, fov: 28, viewSide: 'b', usableHeight: 0.8 });
-      expect(white.position[2]).toBeGreaterThan(plan.mid[1]);
-      expect(black.position[2]).toBeLessThan(plan.mid[1]);
-      expect(white.position[1]).toBeGreaterThan(white.target[1]);
-      const d = Math.hypot(...white.position.map((v, i) => v - white.target[i]) as [number, number, number]);
-      expect(d).toBeGreaterThan(2);
-      expect(d).toBeLessThan(aspect < 1 ? 14 : 8);
+  const opts = (aspect: number, viewSide: 'w' | 'b' = 'w') => ({ aspect, fov: 28, viewSide, usableHeight: 0.8 });
+
+  it('beginnt mit der Totale, schneidet vor dem Todesstoß auf eine Nahaufnahme', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const plan = planBattle(pawnTakesPawn, { ...OPTS, seed });
+      expect(plan.shots[0]).toMatchObject({ t: 0, kind: 'side' });
+      const killShot = plan.shots.find((s) => s.t <= plan.deathAt && s.t >= plan.deathAt - 0.4 && (s.kind === 'close' || s.kind === 'low'));
+      expect(killShot, `Seed ${seed}`).toBeDefined();
     }
   });
 
-  it('geht im Hochformat weiter zurück als im Querformat', () => {
-    const plan = planBattle(pawnTakesPawn);
-    const dist = (aspect: number) => {
-      const v = cinematicView(plan, { aspect, fov: 28, viewSide: 'w', usableHeight: 0.8 });
-      return Math.hypot(...v.position.map((p, i) => p - v.target[i]) as [number, number, number]);
-    };
-    expect(dist(0.5)).toBeGreaterThan(dist(1.8));
+  it('Totale von der Seite des Spielers', () => {
+    const plan = planBattle({ ...pawnTakesPawn, from: 'c5', victimSquare: 'e5' }, { ...OPTS, seed: 1 });
+    for (const aspect of [0.46, 1.78]) {
+      expect(cinematicView(plan, opts(aspect, 'w')).position[2]).toBeGreaterThan(plan.victim[1]);
+      expect(cinematicView(plan, opts(aspect, 'b')).position[2]).toBeLessThan(plan.victim[1]);
+    }
+  });
+
+  it('jede Einstellung bleibt über dem Brett und hält Abstand zu den Kriegern', () => {
+    const kinds: ShotKind[] = ['side', 'overA', 'overV', 'low', 'close', 'hero', 'high'];
+    for (const input of [pawnTakesPawn, rookAcrossBoard, queenTakesPawn]) {
+      const plan = planBattle(input, { ...OPTS, seed: 11 });
+      for (const kind of kinds) {
+        for (const aspect of [0.46, 1.78]) {
+          const t = plan.deathAt - 0.2;
+          const view = shotView(plan, kind, t, opts(aspect));
+          expect(view.position[1], kind).toBeGreaterThan(0.1);
+          const d = Math.hypot(...(view.position.map((p, i) => p - view.target[i]) as [number, number, number]));
+          expect(d, kind).toBeGreaterThan(0.6);
+          expect(d, kind).toBeLessThan(25);
+        }
+      }
+    }
   });
 });

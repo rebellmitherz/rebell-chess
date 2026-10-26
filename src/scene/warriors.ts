@@ -3,18 +3,24 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import type { Color } from '../core/types';
+import type { MoveLibrary } from './battleScript';
+import moves from './warriorMoves.json';
 import { modelUrl } from './pieceModels';
+import { findBlade, type Blade } from './WeaponTrail';
 
 /**
- * Die Krieger der Kampfszenen: „Knight“ (Weiß) und „Barbarian“ (Schwarz) aus „KayKit Adventurers“ von Kay Lousberg (CC0),
- * aufbereitet von `scripts/build-warriors.mjs` (nur benötigte Ausrüstung und Animationen, je ca. 300 KB).
+ * Die Krieger der Kampfszenen: zwei Mixamo-Figuren (Weiß und Schwarz) mit gemeinsamem Skelett und eine
+ * Bewegungsbibliothek (warrior_moves.glb) – aufbereitet von `scripts/build-warriors.mjs`.
  */
-export interface WarriorModel {
-  scene: THREE.Group;
-  clips: THREE.AnimationClip[];
+export interface Warriors {
+  models: Record<Color, THREE.Group>;
+  clips: Map<string, THREE.AnimationClip>;
+  /** Klinge für die Schwertspur (null = Figur ohne Waffe) */
+  blades: Record<Color, Blade | null>;
 }
 
-export type Warriors = Record<Color, WarriorModel>;
+/** Rollen, Dauer, Treffermomente und Fortbewegung jeder Bewegung (beide Seiten nutzen dieselbe Bibliothek) */
+export const MOVE_LIBRARY = moves as MoveLibrary;
 
 let pending: Promise<Warriors> | null = null;
 let loaded: Warriors | null = null;
@@ -24,20 +30,16 @@ export function warriorsReady(): Warriors | null {
   return loaded;
 }
 
-async function loadOne(loader: GLTFLoader, file: string): Promise<WarriorModel> {
-  const gltf = await loader.loadAsync(modelUrl(file));
-  gltf.scene.traverse((o) => {
+function prepare(scene: THREE.Group): THREE.Group {
+  scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
     o.castShadow = true;
     // Gelenkte Figuren verändern ihre Form – ihre Hüllkugel aus der Ruhepose wäre falsch
     o.frustumCulled = false;
     const m = o.material as THREE.MeshStandardMaterial;
-    // Spielzeug-Look etwas zurücknehmen: matter, nicht spiegelnd
-    m.roughness = Math.max(m.roughness, 0.72);
-    m.metalness = Math.min(m.metalness, 0.15);
-    m.envMapIntensity = 0.9;
+    m.envMapIntensity = 1;
   });
-  return { scene: gltf.scene, clips: gltf.animations };
+  return scene;
 }
 
 export function loadWarriors(): Promise<Warriors> {
@@ -45,8 +47,17 @@ export function loadWarriors(): Promise<Warriors> {
     pending = (async () => {
       const loader = new GLTFLoader();
       loader.setMeshoptDecoder(MeshoptDecoder);
-      const [w, b] = await Promise.all([loadOne(loader, 'warrior_white.glb'), loadOne(loader, 'warrior_black.glb')]);
-      loaded = { w, b };
+      const [w, b, m] = await Promise.all([
+        loader.loadAsync(modelUrl('warrior_white.glb')),
+        loader.loadAsync(modelUrl('warrior_black.glb')),
+        loader.loadAsync(modelUrl('warrior_moves.glb')),
+      ]);
+      const models = { w: prepare(w.scene), b: prepare(b.scene) };
+      loaded = {
+        models,
+        clips: new Map(m.animations.map((c) => [c.name, c])),
+        blades: { w: findBlade(models.w), b: findBlade(models.b) },
+      };
       return loaded;
     })();
     pending.catch(() => {

@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.6.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.7.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -57,7 +57,7 @@ ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = 
 | **Stil „Echt“ (Standard)**: polierte Marmorfiguren und Marmorbrett mit echten Texturen, Holztisch, Wohnraum-Licht (HDRI), unscharfer Raum im Hintergrund; „Edel“ (Gold/Onyx) und „Rebell“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
 | **Größeres Brett**: längere Brennweite (28°), knappe Einpassung, schmale Handy-Leisten, Hochformat steiler | im Browser geprüft; im Hochformat begrenzt die Bildschirmbreite die Größe |
 | **Ansicht „Gerade von oben“ (Standard)**: Brett exakt von oben, jede Figur zum Spieler geneigt (Form erkennbar), angetippt/gezogen wird das Feld; „3D schräg“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
-| **Kriegerkampf beim Schlagen (Standard)**: beide Figuren verwandeln sich in Krieger (Weiß = Ritter mit Schwert und Schild, Schwarz = Barbar mit Zweihandaxt), der Angreifer stürmt los, Hieb gegen Abwehr, Konter, Treffer, Todesstoß in Zeitlupe, Jubel, Rückverwandlung; Kamera fährt seitlich heran und kreist, Kino-Balken mit Titel („Weißer Bauer schlägt schwarzen Bauern“), Funken, Lichtblitze, Druckwelle, Beben, eigene Kampfklänge (Klingen, Schild, Treffer, Sturz, Schritte) | getestet (Drehbuch 8 Tests, Store 7 Tests: Uhr steht, Eingaben gesperrt, KI wartet, Rückgängig/Neustart, Sicherheitsgrenze, Matt durch Schlagen; Modelldateien 2 Tests); im Browser als Bildfolge geprüft (PC 1280×720, Smartphone 375×812, gegen die KI) |
+| **Kriegerkampf beim Schlagen (Standard)**: beide Figuren werden zu realistischen Paladinen (Mixamo, Weiß in goldener, Schwarz in schwarzer Rüstung, Schwert und Schild) mit 28 Motion-Capture-Bewegungen. Jeder Kampf wird neu gewürfelt: 8 Szenarien (Duell, Blitzangriff, Schlaghagel, Comeback, Tritt, Schlagabtausch, Konter, Verhöhnen), passend zu den Figuren (Bauer gegen Dame kämpft sich zurück, Dame macht kurzen Prozess), zufällige Bewegungen und Tempo, die letzten Szenarien werden gemieden. Kamera mit Schnitten (Totale, über die Schulter, Froschperspektive, von oben, Todesstoß, Siegerpose), Zeitlupe, Trefferstopp, Schwertspuren, Ausfallschritte treiben den Gegner zurück, Schachfiguren im Bild tauchen weg | getestet (Drehbuch 17 Tests inkl. Vielfalt: von 30 gleichen Schlagzügen ≥ 26 verschieden; Store 7; Bewegungsbibliothek 4); als Bildfolge in Edge geprüft (PC 1280×720, Handy 412×860) |
 | Kampf überspringen (Tippen, Klick, Leertaste, Enter, Esc), Einstellung „Beim Schlagen: Kriegerkampf / Kurz / Aus“ | im Browser geprüft (Tippen beendet den Kampf, Uhr läuft weiter, Brett dreht sich) |
 
 ## Leistung (gemessen 25.10.2026, Chromium im Desktop-PC, 766×646, Partie in Grundstellung)
@@ -97,9 +97,7 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
   **Drag & Drop per Finger** ist nur mit Maus geprüft – die Touch-Logik nutzt dieselben Pointer-Events, ist aber
   ungetestet.
 - **Sounds** wurden nur technisch gemessen, nicht angehört – das gilt auch für die neuen Kampfklänge.
-- **Kriegerkampf**: Die Krieger sind bewusst verspielte Comic-Figuren (KayKit, CC0) – realistische, frei nutzbare
-  Kämpfer mit passenden Animationen gibt es kaum. Der Ablauf wurde im Browser Bild für Bild geprüft, aber nicht in
-  Echtzeit auf einem echten Gerät angesehen (die Testumgebung drosselt die Bildrate).
+- **Kriegerkampf**: Beide Seiten sind derselbe Paladin (Weiß aufgehellt) – für eine zweite Figur müsste bei Mixamo eine weitere Figur *mit Skin* geladen werden. Geprüft als Bildfolge in unsichtbarem Edge, nicht in Echtzeit auf einem echten Gerät; Kampfklänge nicht angehört.
 - **Offline im WLAN-Test** (http://192.168…) gibt es keinen Service Worker (Browser verlangt https) – online über
   GitHub Pages (https) funktioniert er.
 - **Elo-Angaben** der Stufen sind Richtwerte (Stockfish-Kalibrierung gilt für das volle Netz, hier läuft das Lite-Netz).

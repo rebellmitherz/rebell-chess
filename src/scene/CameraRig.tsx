@@ -3,7 +3,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
-import { cinematicView, planBattle } from './battleScript';
 import { sceneHandles } from './interaction';
 
 const { ACTION } = CameraControlsImpl;
@@ -126,21 +125,12 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
   }, [cinematic]);
   const free = cinematic || relaxed;
 
-  // Ausrichtung auf die Seite, die unten sitzt (kürzester Drehweg) – im Kampf: Kamera zu den Kriegern
+  // Ausrichtung auf die Seite, die unten sitzt (kürzester Drehweg)
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    if (battle) {
-      const view = cinematicView(planBattle(battle), {
-        aspect: size.width / size.height,
-        fov: FOV,
-        viewSide,
-        usableHeight: 1 - 2 * LETTERBOX,
-      });
-      void c.setFocalOffset(0, 0, 0, true);
-      void c.setLookAt(...view.position, ...view.target, true);
-      return;
-    }
+    // Im Kampf führt die Kampfszene die Kamera (Battle.tsx)
+    if (battle) return;
     const base = viewSide === 'w' ? 0 : Math.PI;
     const current = c.azimuthAngle;
     const target = base + Math.round((current - base) / (Math.PI * 2)) * Math.PI * 2;

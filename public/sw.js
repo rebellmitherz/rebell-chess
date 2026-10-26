@@ -2,7 +2,7 @@
 // - Startseite: erst Netz (Updates kommen sofort an), ohne Netz aus dem Speicher
 // - Dateien mit Hash im Namen (assets/…): einmal laden, dann aus dem Speicher (ändern sich nie)
 // - Engine, Figuren, Sounds, Symbole: aus dem Speicher, im Hintergrund auffrischen
-const CACHE = 'rebellchess-v7';
+const CACHE = 'rebellchess-v8';
 const CORE = [
   './',
   './manifest.webmanifest',
@@ -14,6 +14,7 @@ const CORE = [
   './models/board.glb',
   './models/warrior_white.glb',
   './models/warrior_black.glb',
+  './models/warrior_moves.glb',
   './env/lebombo_1k.hdr',
   ...['pieces_white', 'pieces_black', 'board', 'table'].flatMap((p) =>
     ['diff', 'nor', 'arm'].map((k) => `./textures/${p}_${k}.jpg`),

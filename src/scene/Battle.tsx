@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { playBattleSfx, playSfx } from '../audio/sound';
@@ -6,56 +6,58 @@ import type { Color } from '../core/types';
 import { gameStore, useGame } from '../game/instance';
 import type { BattleState } from '../game/store';
 import {
+  actorPosition,
   appearScale,
-  attackerPosition,
-  deathPan,
   planBattle,
-  victimPosition,
+  shotAt,
+  shotView,
+  timeScale,
   victimSink,
-  WARRIOR_CLIPS,
   type Actor,
-  type BattlePlan,
-  type ClipRole,
+  type CinematicView,
   type FxCue,
 } from './battleScript';
 import { squareToWorld } from './boardMath';
+import { FOV, LETTERBOX } from './CameraRig';
 import { Burst, getSprite } from './Effects';
 import { emitImpact } from './ImpactFX';
 import { activity, markActive, sceneHandles } from './interaction';
-import { useWarriors, type WarriorModel, type Warriors } from './warriors';
+import { MOVE_LIBRARY, useWarriors, type Warriors } from './warriors';
+import { WeaponTrail } from './WeaponTrail';
 
 /** Gemeinsam mit den Figuren: ab der Rückverwandlung darf die siegreiche Schachfigur wieder erscheinen */
 export const battleRuntime = { reveal: false };
 
+/** Zuletzt gespielte Szenarien – der nächste Kampf soll anders aussehen */
+const recentScenarios: string[] = [];
+
 interface Rig {
   root: THREE.Object3D;
   mixer: THREE.AnimationMixer;
-  actions: Record<ClipRole, THREE.AnimationAction>;
+  actions: Map<string, THREE.AnimationAction>;
   current: THREE.AnimationAction | null;
 }
 
-// Es kämpft immer genau ein Ritter gegen einen Barbaren – je Modell genügt eine Instanz
-const rigs = new WeakMap<WarriorModel, Rig>();
+// Es kämpft immer genau ein weißer gegen einen schwarzen Krieger – je Farbe genügt eine Instanz
+const rigs = new WeakMap<THREE.Object3D, Rig>();
 
-function rigFor(model: WarriorModel, color: Color): Rig {
+function rigFor(model: THREE.Object3D): Rig {
   let rig = rigs.get(model);
   if (!rig) {
-    const mixer = new THREE.AnimationMixer(model.scene);
-    const actions = {} as Record<ClipRole, THREE.AnimationAction>;
-    for (const role of Object.keys(WARRIOR_CLIPS[color]) as ClipRole[]) {
-      const name = WARRIOR_CLIPS[color][role].name;
-      const clip = model.clips.find((c) => c.name === name);
-      if (!clip) throw new Error(`Animation ${name} fehlt`);
-      actions[role] = mixer.clipAction(clip);
-    }
-    rig = { root: model.scene, mixer, actions, current: null };
+    rig = { root: model, mixer: new THREE.AnimationMixer(model), actions: new Map(), current: null };
     rigs.set(model, rig);
   }
   return rig;
 }
 
-function play(rig: Rig, role: ClipRole, speed: number, loop: boolean, fade: number) {
-  const next = rig.actions[role];
+function play(rig: Rig, warriors: Warriors, name: string, speed: number, loop: boolean, fade: number) {
+  const clip = warriors.clips.get(name);
+  if (!clip) return;
+  let next = rig.actions.get(name);
+  if (!next) {
+    next = rig.mixer.clipAction(clip);
+    rig.actions.set(name, next);
+  }
   next.reset();
   next.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
   next.clampWhenFinished = !loop;
@@ -75,6 +77,8 @@ const AURA: Record<Color, string> = { w: '#ffd58a', b: '#a9c2ff' };
 /** Funken beim Klingenschlag, Staub bei Treffer und Sturz */
 const SPARK = '#ffcf6a';
 const DUST = '#d9c9ab';
+/** Langsame Kreisfahrt der Kamera innerhalb einer Einstellung (rad/s) */
+const ORBIT_SPEED = 0.09;
 
 interface BurstFx {
   id: number;
@@ -86,29 +90,49 @@ interface BurstFx {
 }
 
 let burstId = 0;
-/** Langsame Kreisfahrt der Kamera während des Kampfes (rad/s) */
-const ORBIT_SPEED = 0.07;
 
-/** Kurze Zeitlupe um den Todesstoß */
-function slowMotion(plan: BattlePlan, t: number): number {
-  const i4 = plan.impacts[3];
-  if (t < i4 - 0.1 || t > i4 + 0.3) return 1;
-  return 0.38;
+/** Kamera um den Blickpunkt drehen (langsame Kreisfahrt) */
+function orbit(view: CinematicView, angle: number): CinematicView {
+  const [tx, , tz] = view.target;
+  const dx = view.position[0] - tx;
+  const dz = view.position[2] - tz;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return { target: view.target, position: [tx + dx * c - dz * s, view.position[1], tz + dx * s + dz * c] };
 }
 
 function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }) {
-  const plan = useMemo(() => planBattle(battle), [battle]);
-  const rigA = rigFor(warriors[battle.attacker.color], battle.attacker.color);
-  const rigV = rigFor(warriors[battle.victim.color], battle.victim.color);
+  const size = useThree((s) => s.size);
+  const viewSide = useMemo(() => gameStore.getState().viewSide, []);
+  const plan = useMemo(
+    () =>
+      planBattle(battle, {
+        library: { w: MOVE_LIBRARY, b: MOVE_LIBRARY },
+        seed: (Math.random() * 2 ** 31) | 0,
+        avoid: recentScenarios.slice(-2),
+      }),
+    [battle],
+  );
+  const rigA = rigFor(warriors.models[battle.attacker.color]);
+  const rigV = rigFor(warriors.models[battle.victim.color]);
   const groupA = useRef<THREE.Group>(null!);
   const groupV = useRef<THREE.Group>(null!);
   const auraA = useRef<THREE.Mesh>(null!);
   const auraV = useRef<THREE.Mesh>(null!);
-  const state = useRef({ t: 0, cueA: 0, cueV: 0, fx: 0, done: false, panned: false });
+  const state = useRef({ t: 0, cueA: 0, cueV: 0, fx: 0, shot: -1, done: false });
+  /** Rolle der gerade laufenden Bewegung je Krieger (für die Schwertspur) */
+  const roles = useRef<Record<Actor, string>>({ a: '', v: '' });
   const [bursts, setBursts] = useState<BurstFx[]>([]);
   const cuesA = useMemo(() => plan.cues.filter((c) => c.actor === 'a'), [plan]);
   const cuesV = useMemo(() => plan.cues.filter((c) => c.actor === 'v'), [plan]);
   const [toX, toZ] = squareToWorld(battle.to);
+
+  useEffect(() => {
+    recentScenarios.push(plan.scenario);
+    if (recentScenarios.length > 4) recentScenarios.shift();
+    // Nur im Dev-Modus: Drehbuch für Prüfungen in der Browser-Konsole
+    if (import.meta.env.DEV) (window as unknown as { __battlePlan?: unknown }).__battlePlan = plan;
+  }, [plan]);
 
   useEffect(() => {
     battleRuntime.reveal = false;
@@ -116,6 +140,7 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
       rig.mixer.stopAllAction();
       rig.current = null;
     }
+    void sceneHandles.controls?.setFocalOffset(0, 0, 0, true);
     return () => {
       battleRuntime.reveal = false;
       for (const rig of [rigA, rigV]) {
@@ -132,35 +157,35 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
   };
 
   const trigger = (cue: FxCue, t: number) => {
-    const [ax, az] = attackerPosition(plan, t);
-    const [vx, vz] = victimPosition(plan, t);
+    const [ax, az] = actorPosition(plan, 'a', t);
+    const [vx, vz] = actorPosition(plan, 'v', t);
     const [dx, dz] = plan.dir;
     const mx = (ax + vx) / 2;
     const mz = (az + vz) / 2;
     const victimColor = battle.victim.color;
+    const [px, pz] = cue.at === 'a' ? [ax, az] : cue.at === 'v' ? [vx, vz] : [mx, mz];
     const sound = gameStore.getState().prefs.sound;
     if (sound && !(cue.kind === 'transform' && cue.at === 'v')) playBattleSfx(cue.kind);
     switch (cue.kind) {
       case 'transform':
-        if (cue.at === 'a') addBurst(ax, 0.35, az, '#f4ead6', 46);
-        else addBurst(vx, 0.35, vz, '#f4ead6', 46);
+        addBurst(px, 0.35, pz, '#f4ead6', 46);
         break;
       case 'clash':
       case 'block':
-        addBurst(mx, 0.78, mz, SPARK, 34);
-        emitImpact({ x: mx, z: mz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.45, ring: false, burst: false });
+        addBurst(mx, 0.78, mz, SPARK, 38);
+        emitImpact({ x: mx, z: mz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.5, ring: false, burst: false });
         break;
       case 'hit':
-        addBurst(vx, 0.62, vz, DUST, 28);
-        emitImpact({ x: vx, z: vz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.7, ring: false, burst: false });
+        addBurst(px, 0.62, pz, DUST, 30);
+        emitImpact({ x: px, z: pz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.75, ring: false, burst: false });
         break;
       case 'death':
-        addBurst(vx, 0.7, vz, SPARK, 60);
-        emitImpact({ x: vx, z: vz, dirX: dx, dirZ: dz, victim: victimColor, power: 1.2, ring: true, burst: false });
+        addBurst(px, 0.7, pz, SPARK, 64);
+        emitImpact({ x: px, z: pz, dirX: dx, dirZ: dz, victim: victimColor, power: 1.25, ring: true, burst: false });
         break;
       case 'fall':
-        addBurst(vx + dx * 0.35, 0.08, vz + dz * 0.35, DUST, 40);
-        emitImpact({ x: vx, z: vz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.5, ring: false, burst: false });
+        addBurst(px, 0.08, pz, DUST, 44);
+        emitImpact({ x: px, z: pz, dirX: dx, dirZ: dz, victim: victimColor, power: 0.55, ring: false, burst: false });
         break;
       case 'vanish':
         battleRuntime.reveal = true;
@@ -175,8 +200,8 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
   useFrame((_, dt) => {
     const s = state.current;
     if (s.done) return;
-    // nach einem Tab-Wechsel nicht springen
-    const step = Math.min(dt, 1 / 20) * slowMotion(plan, s.t);
+    // nach einem Tab-Wechsel nicht springen; Zeitlupe und kurzes Anhalten bei Treffern
+    const step = Math.min(dt, 1 / 20) * timeScale(plan, s.t);
     s.t += step;
     const t = s.t;
     markActive(400);
@@ -184,27 +209,32 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
 
     while (s.cueA < cuesA.length && cuesA[s.cueA].t <= t) {
       const c = cuesA[s.cueA++];
-      play(rigA, c.role, c.speed, c.loop, c.fade);
+      roles.current.a = c.role;
+      play(rigA, warriors, c.clip, c.speed, c.loop, c.fade);
     }
     while (s.cueV < cuesV.length && cuesV[s.cueV].t <= t) {
       const c = cuesV[s.cueV++];
-      play(rigV, c.role, c.speed, c.loop, c.fade);
+      roles.current.v = c.role;
+      play(rigV, warriors, c.clip, c.speed, c.loop, c.fade);
     }
     while (s.fx < plan.fx.length && plan.fx[s.fx].t <= t) trigger(plan.fx[s.fx++], t);
     rigA.mixer.update(step);
     rigV.mixer.update(step);
 
-    // Kamera kreist langsam um die Kämpfer und schwenkt beim Todesstoß zum fallenden Opfer
+    // Kamera: Schnitt oder Fahrt in die nächste Einstellung, dabei langsam kreisen und den Kämpfern folgen
     const controls = sceneHandles.controls;
-    if (controls && t > plan.runEnd && t < plan.outro) void controls.rotate(ORBIT_SPEED * step, 0, true);
-    if (controls && !s.panned && t > plan.impacts[3] + 0.05) {
-      s.panned = true;
-      void controls.moveTo(...deathPan(plan), true);
+    if (controls && t < plan.outro) {
+      const { shot, index } = shotAt(plan, t);
+      const opts = { aspect: size.width / size.height, fov: FOV, viewSide, usableHeight: 1 - 2 * LETTERBOX };
+      const view = orbit(shotView(plan, shot.kind, t, opts), ORBIT_SPEED * (t - shot.t));
+      const jump = index !== s.shot && shot.cut;
+      s.shot = index;
+      void controls.setLookAt(...view.position, ...view.target, !jump);
     }
 
     const [dx, dz] = plan.dir;
-    const [ax, az] = attackerPosition(plan, t);
-    const [vx, vz] = victimPosition(plan, t);
+    const [ax, az] = actorPosition(plan, 'a', t);
+    const [vx, vz] = actorPosition(plan, 'v', t);
     const sa = appearScale(plan, 'a', t);
     const sv = appearScale(plan, 'v', t);
     groupA.current.position.set(ax, 0, az);
@@ -215,9 +245,9 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
     groupV.current.scale.setScalar(Math.max(0.001, plan.scale.v * sv));
     auraA.current.position.set(ax, 0.012, az);
     auraV.current.position.set(vx, 0.012, vz);
-    (auraA.current.material as THREE.MeshBasicMaterial).opacity = 0.5 * sa;
-    const dead = Math.min(1, Math.max(0, (t - plan.impacts[3]) / 0.6));
-    (auraV.current.material as THREE.MeshBasicMaterial).opacity = 0.5 * sv * (1 - dead);
+    (auraA.current.material as THREE.MeshBasicMaterial).opacity = 0.45 * sa;
+    const dead = Math.min(1, Math.max(0, (t - plan.deathAt) / 0.6));
+    (auraV.current.material as THREE.MeshBasicMaterial).opacity = 0.45 * sv * (1 - dead);
 
     if (t >= plan.total) {
       s.done = true;
@@ -248,6 +278,12 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
           />
         </mesh>
       ))}
+      {(['a', 'v'] as Actor[]).map((actor) => {
+        const color = actor === 'a' ? battle.attacker.color : battle.victim.color;
+        const blade = warriors.blades[color];
+        const attacking = () => ['attack', 'heavy', 'kick'].includes(roles.current[actor]);
+        return blade && <WeaponTrail key={`trail-${actor}`} blade={blade} color={AURA[color]} active={attacking} />;
+      })}
       {bursts.map((b) => (
         <group key={b.id} position={[b.x, b.y, b.z]}>
           <Burst color={b.color} count={b.count} />
