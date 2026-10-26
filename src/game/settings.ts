@@ -60,6 +60,8 @@ export interface Preferences {
   /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
   turnBoard: boolean;
   showCoordinates: boolean;
+  /** PC: Seitenleiste während der Partie ausgeblendet – das Brett bekommt die ganze Breite */
+  hideSidebar: boolean;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -87,6 +89,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   battleMode: 'warriors',
   turnBoard: true,
   showCoordinates: true,
+  hideSidebar: false,
 };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
@@ -131,5 +134,6 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' ? r.viewMode : base.viewMode,
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
+    hideSidebar: bool(r.hideSidebar, base.hideSidebar),
   };
 }

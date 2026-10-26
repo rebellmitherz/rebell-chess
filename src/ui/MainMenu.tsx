@@ -243,7 +243,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       </p>
       <h3>Tastatur</h3>
       <p>
-        <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>Esc</kbd> Menü ·
+        <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>S</kbd> Seitenleiste ein/aus · <kbd>V</kbd> Vollbild · <kbd>Esc</kbd> Menü ·
         <kbd>←</kbd> <kbd>→</kbd> durch die Partie blättern
       </p>
       <h3>Regeln</h3>

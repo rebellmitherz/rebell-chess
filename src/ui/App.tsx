@@ -4,6 +4,7 @@ import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
 import { BattleOverlay } from './BattleOverlay';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
+import { toggleFullscreen } from './fullscreen';
 import { Hud } from './Hud';
 import { MainMenu } from './MainMenu';
 import { useLayout } from './useLayout';
@@ -97,6 +98,12 @@ function useKeyboard() {
         case 'p':
           if (s.clock.enabled) s.setPaused(!s.paused);
           break;
+        case 's':
+          s.setPrefs({ hideSidebar: !s.prefs.hideSidebar });
+          break;
+        case 'v':
+          toggleFullscreen();
+          break;
       }
     };
     window.addEventListener('keydown', onKey);
@@ -109,6 +116,7 @@ export function App() {
   const screen = useGame((s) => s.screen);
   const measured = useUi((s) => s.insets);
   const fighting = useGame((s) => s.battle !== null);
+  const hideSidebar = useGame((s) => s.prefs.hideSidebar);
   useSoundBridge();
   useClockTicker();
   useKeyboard();
@@ -119,7 +127,7 @@ export function App() {
   return (
     <div className="app">
       <SceneErrorBoundary>
-        <ChessScene sidebar={inGame ? layout.sidebar : 0} topInset={topInset} bottomInset={bottomInset} />
+        <ChessScene sidebar={inGame && !hideSidebar ? layout.sidebar : 0} topInset={topInset} bottomInset={bottomInset} />
       </SceneErrorBoundary>
       {/* Während eines Kriegerkampfs treten die Leisten zurück – volle Bühne für die Kamera */}
       {inGame && (

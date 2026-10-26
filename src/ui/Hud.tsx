@@ -7,6 +7,7 @@ import { displayPly } from '../game/store';
 import { COLOR_NAME, FIGURINE, figurineSan, playerName, resultTitle } from './format';
 import {
   IconClose,
+  IconExpand,
   IconFlag,
   IconFlip,
   IconHandshake,
@@ -14,17 +15,20 @@ import {
   IconList,
   IconMenu,
   IconMore,
+  IconPanel,
   IconPause,
   IconPgn,
   IconPlay,
   IconRestart,
   IconSave,
+  IconShrink,
   IconSound,
   IconUndo,
 } from './icons';
 import type { Layout } from './useLayout';
 import { useNow } from './useLayout';
 import { useUi } from './uiState';
+import { fullscreenAvailable, toggleFullscreen, useFullscreen } from './fullscreen';
 
 const actions = () => gameStore.getState();
 
@@ -406,8 +410,76 @@ function SoundToggle() {
   );
 }
 
+function FullscreenButton() {
+  const on = useFullscreen();
+  if (!fullscreenAvailable()) return null;
+  return (
+    <button className="icon-btn" onClick={toggleFullscreen} aria-label={on ? 'Vollbild beenden' : 'Vollbild'} title={on ? 'Vollbild beenden (V)' : 'Vollbild (V)'}>
+      {on ? <IconShrink /> : <IconExpand />}
+    </button>
+  );
+}
+
+function PanelButton({ open }: { open: boolean }) {
+  return (
+    <button
+      className="icon-btn"
+      onClick={() => actions().setPrefs({ hideSidebar: open })}
+      aria-label={open ? 'Seitenleiste ausblenden' : 'Seitenleiste zeigen'}
+      title={open ? 'Seitenleiste ausblenden (S)' : 'Seitenleiste zeigen (S)'}
+    >
+      <IconPanel open={open} />
+    </button>
+  );
+}
+
+/** Kleine Uhr mit Name – für die schlanke Anzeige ohne Seitenleiste */
+function MiniPlayer({ color }: { color: Color }) {
+  const settings = useGame((s) => s.settings);
+  const turn = useGame((s) => s.status.turn);
+  const result = useGame((s) => s.result);
+  const active = !result && turn === color;
+  return (
+    <div className={`mini-player${active ? ' active' : ''}`}>
+      <span className={`piece-chip small chip-${color}`}>{FIGURINE.k}</span>
+      <span className="mini-name">{playerName(settings, color)}</span>
+      <ClockFace color={color} />
+    </div>
+  );
+}
+
+/** Ohne Seitenleiste: nur das Nötigste schwebt am Rand, das Brett nutzt die ganze Breite */
+function FocusHud() {
+  const viewSide = useGame((s) => s.viewSide);
+  const c = useControls();
+  return (
+    <div className="focus-hud">
+      <div className="focus-buttons">
+        <PanelButton open={false} />
+        <FullscreenButton />
+        <SoundToggle />
+        <button className="icon-btn" onClick={() => actions().openMenu()} aria-label="Menü" title="Menü (Esc)">
+          <IconMenu />
+        </button>
+      </div>
+      <MiniPlayer color={opposite(viewSide)} />
+      <StatusLine />
+      <MiniPlayer color={viewSide} />
+      <div className="focus-buttons">
+        <button className="icon-btn" onClick={() => actions().undo()} disabled={!c.canUndo} aria-label="Zug zurück" title="Zug zurück (U)">
+          <IconUndo />
+        </button>
+        <button className="icon-btn" onClick={() => actions().flipView()} aria-label="Brett drehen" title="Brett drehen (F)">
+          <IconFlip />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DesktopHud({ sidebar }: { sidebar: number }) {
   const viewSide = useGame((s) => s.viewSide);
+  if (sidebar === 0) return <FocusHud />;
   return (
     <>
       <div className="brand-corner">
@@ -416,6 +488,8 @@ function DesktopHud({ sidebar }: { sidebar: number }) {
       </div>
       <aside className="sidebar" style={{ width: sidebar }}>
         <div className="sidebar-head">
+          <PanelButton open />
+          <FullscreenButton />
           <SoundToggle />
           <button className="icon-btn" onClick={() => actions().openMenu()} aria-label="Menü" title="Menü (Esc)">
             <IconMenu />
@@ -553,5 +627,6 @@ function MobileHud() {
 }
 
 export function Hud({ layout }: { layout: Layout }) {
-  return layout.desktop ? <DesktopHud sidebar={layout.sidebar} /> : <MobileHud />;
+  const hidden = useGame((s) => s.prefs.hideSidebar);
+  return layout.desktop ? <DesktopHud sidebar={hidden ? 0 : layout.sidebar} /> : <MobileHud />;
 }

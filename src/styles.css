@@ -1567,3 +1567,77 @@ kbd {
     animation-duration: 0.01s !important;
   }
 }
+
+/* ---------- Ohne Seitenleiste (PC) ---------- */
+
+.focus-hud {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: rgba(10, 11, 15, 0.72);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.focus-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.focus-buttons .icon-btn {
+  flex: 1;
+  width: auto;
+  height: 38px;
+}
+
+.focus-buttons .icon-btn:disabled {
+  opacity: 0.35;
+}
+
+.focus-hud .status-line {
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.mini-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.mini-player.active {
+  border-color: var(--border);
+  background: rgba(226, 184, 92, 0.08);
+}
+
+.mini-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.piece-chip.small {
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+}
+
+.mini-player .clock {
+  font-size: 16px;
+  padding: 3px 8px;
+  min-width: 64px;
+}
