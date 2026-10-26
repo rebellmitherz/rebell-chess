@@ -11,6 +11,7 @@ import { CameraRig, FOV } from './CameraRig';
 import { DragController } from './DragController';
 import { GoldDust } from './Effects';
 import { Highlights } from './Highlights';
+import { PALETTES } from './materials';
 import { ImpactFX, ShakeGroup } from './ImpactFX';
 import { AdaptiveResolution, FrameDriver, ShadowUpdater } from './Performance';
 import { Pieces } from './Pieces';
@@ -26,9 +27,9 @@ const QUALITY: Record<
 };
 
 /** Studio-Umgebung aus Leuchtflächen: sorgt für die Reflexionen auf Gold und Onyx – ohne HDR-Download. */
-function StudioEnvironment() {
+function StudioEnvironment({ intensity }: { intensity: number }) {
   return (
-    <Environment resolution={256} frames={1} background={false}>
+    <Environment resolution={256} frames={1} background={false} environmentIntensity={intensity}>
       {/* Warmer Grundton statt Schwarz: Metall spiegelt sonst große schwarze Flächen */}
       <color attach="background" args={['#2a2520']} />
       <Lightformer form="rect" intensity={2.6} position={[0, 8, 0]} rotation-x={Math.PI / 2} scale={[16, 16, 1]} />
@@ -63,6 +64,10 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
   const graphics = useGame((s) => s.prefs.graphics);
   const battle = useGame((s) => s.prefs.battleMode !== 'off');
   const realStyle = useGame((s) => s.prefs.pieceStyle === 'real');
+  const theme = useGame((s) => (s.prefs.pieceStyle === 'rebell' ? 'rebell' : 'classic'));
+  const background = realStyle ? '#2a2420' : PALETTES[theme].background;
+  // Farbige Stile (Smaragd, Rot) sind helle Flächen statt Gold und Onyx: weniger Licht, sonst wäscht alles aus
+  const k = realStyle ? 1 : 0.5;
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
 
@@ -76,15 +81,15 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       camera={{ fov: FOV, position: [0, 16, 16], near: 0.1, far: 160 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
     >
-      <color attach="background" args={[realStyle ? '#2a2420' : '#07080b']} />
-      {!realStyle && <fog attach="fog" args={['#07080b', 22, 55]} />}
+      <color attach="background" args={[background]} />
+      {!realStyle && <fog attach="fog" args={[background, 22, 55]} />}
       {q.soft && <SoftShadows size={22} samples={12} focus={0.7} />}
-      <ambientLight intensity={0.22} />
-      <hemisphereLight args={['#fff4dc', '#08090c', 0.35]} />
+      <ambientLight intensity={0.22 * k} />
+      <hemisphereLight args={['#fff4dc', '#08090c', 0.35 * k]} />
       <directionalLight
         castShadow={shadows}
         position={[-5, 13, 7]}
-        intensity={2.1}
+        intensity={2.1 * k}
         color="#fff3dd"
         shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
         shadow-camera-left={-7}
@@ -96,8 +101,8 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
         shadow-bias={-0.0004}
         shadow-normalBias={0.025}
       />
-      <spotLight position={[0, 13, 0]} angle={0.55} penumbra={0.9} intensity={1.4} decay={0} color="#ffe2ad" />
-      <directionalLight position={[6, 4, -8]} intensity={0.6} color="#a9c4ff" />
+      <spotLight position={[0, 13, 0]} angle={0.55} penumbra={0.9} intensity={1.4 * k} decay={0} color="#ffe2ad" />
+      <directionalLight position={[6, 4, -8]} intensity={0.6 * k} color="#a9c4ff" />
       <Suspense fallback={null}>
         {realStyle ? (
           // Echtes Raumlicht (Wohnraum mit Fenstern), unscharf im Hintergrund
@@ -109,7 +114,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
             environmentIntensity={0.95}
           />
         ) : (
-          <StudioEnvironment />
+          <StudioEnvironment intensity={k} />
         )}
       </Suspense>
       <CameraRig sidebar={sidebar} topInset={topInset} bottomInset={bottomInset} />

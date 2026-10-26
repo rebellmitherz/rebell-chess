@@ -25,6 +25,55 @@ export function assetUrl(file: string): string {
 
 let pending: Promise<RealAssets> | null = null;
 
+interface Grade {
+  /** Farbsättigung (1 = unverändert) */
+  saturation?: number;
+  /** Kontrast um die Mitte (1 = unverändert) */
+  contrast?: number;
+  /** Gamma > 1 macht Tiefen dunkler (satteres Schwarz), < 1 hellt auf */
+  gamma?: number;
+  /** Helligkeit je Kanal (Farbstich), 1 = unverändert */
+  gain?: [number, number, number];
+}
+
+/** Farbkorrektur einer Farbtextur (einmal beim Laden): kräftigere Farben, tieferes Schwarz */
+function grade(tex: THREE.Texture, g: Grade): THREE.Texture {
+  const img = tex.image as CanvasImageSource & { width: number; height: number };
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const px = data.data;
+  const { saturation = 1, contrast = 1, gamma = 1, gain = [1, 1, 1] } = g;
+  for (let i = 0; i < px.length; i += 4) {
+    let r = px[i] / 255;
+    let gr = px[i + 1] / 255;
+    let b = px[i + 2] / 255;
+    const luma = 0.299 * r + 0.587 * gr + 0.114 * b;
+    r = luma + (r - luma) * saturation;
+    gr = luma + (gr - luma) * saturation;
+    b = luma + (b - luma) * saturation;
+    r = (Math.pow(Math.max(0, r), gamma) - 0.5) * contrast + 0.5;
+    gr = (Math.pow(Math.max(0, gr), gamma) - 0.5) * contrast + 0.5;
+    b = (Math.pow(Math.max(0, b), gamma) - 0.5) * contrast + 0.5;
+    px[i] = Math.max(0, Math.min(255, r * gain[0] * 255));
+    px[i + 1] = Math.max(0, Math.min(255, gr * gain[1] * 255));
+    px[i + 2] = Math.max(0, Math.min(255, b * gain[2] * 255));
+  }
+  ctx.putImageData(data, 0, 0);
+  const out = new THREE.CanvasTexture(canvas);
+  out.colorSpace = tex.colorSpace;
+  out.flipY = tex.flipY;
+  out.wrapS = tex.wrapS;
+  out.wrapT = tex.wrapT;
+  out.repeat.copy(tex.repeat);
+  out.anisotropy = tex.anisotropy;
+  tex.dispose();
+  return out;
+}
+
 function texture(loader: THREE.TextureLoader, file: string, color: boolean, gltfUv: boolean): Promise<THREE.Texture> {
   return loader.loadAsync(assetUrl(`textures/${file}`)).then((t) => {
     t.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
@@ -85,6 +134,11 @@ export function loadRealAssets(): Promise<RealAssets> {
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
         t.repeat.set(2.2, 2.2);
       }
+      // Kräftigere Farben: tiefes Schwarz, leuchtendes Elfenbein, warmes sattes Holz
+      const boardDiff = grade(od, { saturation: 1.35, contrast: 1.28, gamma: 1.25, gain: [1.04, 1.0, 0.94] });
+      const blackDiff = grade(bd, { saturation: 1.2, contrast: 1.4, gamma: 2.1 });
+      const whiteDiff = grade(wd, { saturation: 1.3, contrast: 1.12, gamma: 1.05, gain: [1.03, 1.0, 0.93] });
+      const tableDiff = grade(td, { saturation: 1.7, contrast: 1.25, gamma: 1.1, gain: [1.1, 0.98, 0.82] });
       let mesh: THREE.Mesh | null = null;
       gltf.scene.traverse((o) => {
         if (!mesh && o instanceof THREE.Mesh) mesh = o;
@@ -111,13 +165,13 @@ export function loadRealAssets(): Promise<RealAssets> {
         // polierter Marmor: leichte Klarlackschicht, aber matt genug, dass von oben nichts blendet
         pieces: {
           // Weiß etwas abgedunkelt (warmes Elfenbein statt Reinweiß) und matter, damit es nicht blendet
-          w: pbr(wd, wn, wa, { color: '#cdc5b8', clearcoat: 0.06, clearcoatRoughness: 0.5, envMapIntensity: 0.7 }),
-          b: pbr(bd, bn, ba, { clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 1 }),
+          w: pbr(whiteDiff, wn, wa, { color: '#cdc5b8', clearcoat: 0.06, clearcoatRoughness: 0.5, envMapIntensity: 0.7 }),
+          b: pbr(blackDiff, bn, ba, { clearcoat: 0.45, clearcoatRoughness: 0.18, envMapIntensity: 0.85 }),
         },
         // Brett seidenmatt: von oben spiegeln sich sonst Fenster und Decke des Raumlichts
-        board: { geometry, material: satin(pbr(od, on, oa, { envMapIntensity: 0.55 })) },
+        board: { geometry, material: satin(pbr(boardDiff, on, oa, { envMapIntensity: 0.55 })) },
         table: new THREE.MeshStandardMaterial({
-          map: td,
+          map: tableDiff,
           normalMap: tn,
           aoMap: ta,
           roughnessMap: ta,

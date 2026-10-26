@@ -66,37 +66,87 @@ function marbleTexture(base: string, vein: string) {
   );
 }
 
-let cached: ReturnType<typeof build> | null = null;
+/** Farbwelten der gebauten Stile: „Edel“ = Smaragd und Gold, „Rebell“ = Blutrot und Elfenbein */
+export type Theme = 'classic' | 'rebell';
 
-function build() {
+interface Palette {
+  /** Figuren: helle Seite (Weiß) und dunkle Seite (Schwarz) */
+  pieceLight: { color: string; metalness: number; roughness: number; clearcoat: number; env: number };
+  pieceDark: { color: string; metalness: number; roughness: number; clearcoat: number; env: number };
+  /** Zierring am Fuß: für Weiß, für Schwarz */
+  accentLight: string;
+  accentDark: string;
+  lightSquare: { color: string; stone: string; vein: string };
+  darkSquare: { stone: string; vein: string };
+  frame: string;
+  trim: string;
+  plinth: string;
+  floor: string;
+  /** Szenenhintergrund */
+  background: string;
+}
+
+export const PALETTES: Record<Theme, Palette> = {
+  classic: {
+    pieceLight: { color: '#f2c45a', metalness: 1, roughness: 0.3, clearcoat: 0.25, env: 1.0 },
+    pieceDark: { color: '#0a9a5e', metalness: 0.1, roughness: 0.3, clearcoat: 0.5, env: 0.6 },
+    accentLight: '#0f3d2c',
+    accentDark: '#e9bd5a',
+    lightSquare: { color: '#e4f3e0', stone: '#cfe8d2', vein: '#ffffff' },
+    darkSquare: { stone: '#04402a', vein: '#3fd194' },
+    frame: '#052e1d',
+    trim: '#e9bd5a',
+    plinth: '#07281b',
+    floor: '#04301f',
+    background: '#04140d',
+  },
+  rebell: {
+    pieceLight: { color: '#e4d2b8', metalness: 0.1, roughness: 0.34, clearcoat: 0.3, env: 0.55 },
+    pieceDark: { color: '#c4101f', metalness: 0.1, roughness: 0.3, clearcoat: 0.5, env: 0.6 },
+    accentLight: '#5a0c16',
+    accentDark: '#e3b25a',
+    lightSquare: { color: '#f4e1d4', stone: '#ecd3c4', vein: '#ffffff' },
+    darkSquare: { stone: '#4a0610', vein: '#ff5d5d' },
+    frame: '#2d0509',
+    trim: '#e3b25a',
+    plinth: '#220509',
+    floor: '#3a0710',
+    background: '#150408',
+  },
+};
+
+const cache: Partial<Record<Theme, ReturnType<typeof build>>> = {};
+
+function build(theme: Theme) {
+  const p = PALETTES[theme];
   const brushed = brushedTexture();
-  const darkStone = marbleTexture('#16171b', '#8b8f99');
-  const lightStone = marbleTexture('#c9ccd2', '#ffffff');
+  const darkStone = marbleTexture(p.darkSquare.stone, p.darkSquare.vein);
+  const lightStone = marbleTexture(p.lightSquare.stone, p.lightSquare.vein);
 
   const gold = new THREE.MeshPhysicalMaterial({
-    color: '#f5c96a',
-    metalness: 1,
-    roughness: 0.24,
-    clearcoat: 0.35,
+    color: p.pieceLight.color,
+    metalness: p.pieceLight.metalness,
+    roughness: p.pieceLight.roughness,
+    clearcoat: p.pieceLight.clearcoat,
     clearcoatRoughness: 0.12,
-    envMapIntensity: 1.45,
+    envMapIntensity: p.pieceLight.env,
   });
   const onyx = new THREE.MeshPhysicalMaterial({
-    color: '#08090b',
-    metalness: 0.2,
-    roughness: 0.22,
-    clearcoat: 0.85,
+    color: p.pieceDark.color,
+    metalness: p.pieceDark.metalness,
+    roughness: p.pieceDark.roughness,
+    clearcoat: p.pieceDark.clearcoat,
     clearcoatRoughness: 0.06,
-    envMapIntensity: 0.5,
+    envMapIntensity: p.pieceDark.env,
   });
   const silver = new THREE.MeshPhysicalMaterial({
-    color: '#e3e6eb',
+    color: p.accentDark,
     metalness: 1,
     roughness: 0.22,
     envMapIntensity: 1.2,
   });
   const gunmetal = new THREE.MeshPhysicalMaterial({
-    color: '#2b2c33',
+    color: p.accentLight,
     metalness: 1,
     roughness: 0.3,
     envMapIntensity: 1.1,
@@ -106,54 +156,57 @@ function build() {
     piece: { w: gold, b: onyx } as Record<Color, THREE.MeshPhysicalMaterial>,
     accent: { w: gunmetal, b: silver } as Record<Color, THREE.MeshPhysicalMaterial>,
     lightSquare: new THREE.MeshPhysicalMaterial({
-      color: '#d4d7dd',
+      color: p.lightSquare.color,
       map: lightStone,
-      metalness: 0.55,
-      roughness: 0.34,
+      // Matt statt Spiegel: von oben spiegelt sich sonst die Studiodecke und wäscht die Farben aus
+      metalness: 0.05,
+      roughness: 0.55,
       roughnessMap: brushed,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.3,
-      envMapIntensity: 0.9,
+      clearcoat: 0.04,
+      clearcoatRoughness: 0.5,
+      envMapIntensity: 0.3,
     }),
     darkSquare: new THREE.MeshPhysicalMaterial({
       color: '#ffffff',
       map: darkStone,
-      metalness: 0.15,
-      roughness: 0.24,
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.12,
-      envMapIntensity: 0.35,
+      metalness: 0.05,
+      roughness: 0.4,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.35,
+      envMapIntensity: 0.2,
     }),
     frame: new THREE.MeshPhysicalMaterial({
-      color: '#0b0b0e',
-      metalness: 0.35,
-      roughness: 0.28,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
+      color: p.frame,
+      metalness: 0.2,
+      roughness: 0.4,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.3,
+      envMapIntensity: 0.5,
     }),
     trim: new THREE.MeshPhysicalMaterial({
-      color: '#e2b85c',
+      color: p.trim,
       metalness: 1,
-      roughness: 0.26,
-      envMapIntensity: 1.2,
+      roughness: 0.38,
+      envMapIntensity: 0.55,
     }),
-    plinth: new THREE.MeshStandardMaterial({ color: '#121318', metalness: 0.8, roughness: 0.38 }),
-    floor: new THREE.MeshStandardMaterial({ color: '#0a0b0e', metalness: 0.1, roughness: 0.85 }),
+    plinth: new THREE.MeshStandardMaterial({ color: p.plinth, metalness: 0.8, roughness: 0.38 }),
+    floor: new THREE.MeshStandardMaterial({ color: p.floor, metalness: 0.1, roughness: 0.85 }),
   };
 }
 
-export function getMaterials() {
-  if (!cached) cached = build();
-  return cached;
+export function getMaterials(theme: Theme = 'classic') {
+  return (cache[theme] ??= build(theme));
 }
 
-const modelCache = new WeakMap<THREE.Texture, Record<Color, THREE.MeshPhysicalMaterial>>();
+const modelCache = new WeakMap<THREE.Texture, Partial<Record<Theme, Record<Color, THREE.MeshPhysicalMaterial>>>>();
 
-/** Gold/Onyx für die Modell-Figuren: zusätzlich mit gebackener Verdeckung (Rillen, Krone, Mähne). */
-export function getModelMaterials(ao: THREE.Texture): Record<Color, THREE.MeshPhysicalMaterial> {
-  let m = modelCache.get(ao);
+/** Die Figuren der Modell-Stile: zusätzlich mit gebackener Verdeckung (Rillen, Krone, Mähne). */
+export function getModelMaterials(ao: THREE.Texture, theme: Theme = 'classic'): Record<Color, THREE.MeshPhysicalMaterial> {
+  const perTheme = modelCache.get(ao) ?? {};
+  modelCache.set(ao, perTheme);
+  let m = perTheme[theme];
   if (!m) {
-    const base = getMaterials().piece;
+    const base = getMaterials(theme).piece;
     const gold = base.w.clone();
     gold.aoMap = ao;
     gold.aoMapIntensity = 0.85;
@@ -161,7 +214,7 @@ export function getModelMaterials(ao: THREE.Texture): Record<Color, THREE.MeshPh
     onyx.aoMap = ao;
     onyx.aoMapIntensity = 0.6;
     m = { w: gold, b: onyx };
-    modelCache.set(ao, m);
+    perTheme[theme] = m;
   }
   return m;
 }

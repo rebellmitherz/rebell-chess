@@ -90,6 +90,7 @@ interface PieceLook {
 
 function usePieceLook(): PieceLook {
   const style = useGame((s) => s.prefs.pieceStyle);
+  const theme = style === 'rebell' ? 'rebell' : 'classic';
   const model = useModelPieces(style !== 'rebell');
   const real = useRealAssets(style === 'real');
   return useMemo(() => {
@@ -98,11 +99,11 @@ function usePieceLook(): PieceLook {
       return {
         geometry: (t) => model.geometries[t],
         accent: (t) => model.accents[t],
-        material: getModelMaterials(model.ao),
+        material: getModelMaterials(model.ao, theme),
       };
     }
-    return { geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials().piece };
-  }, [model, real]);
+    return { geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials(theme).piece };
+  }, [model, real, theme]);
 }
 
 interface PieceProps {
@@ -273,7 +274,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     g.scale.set(s * wide, s * pose.squash, s * wide);
   });
 
-  const mats = getMaterials();
+  const mats = getMaterials(useGame((s) => (s.prefs.pieceStyle === 'rebell' ? 'rebell' : 'classic')));
   const yaw = pieceYaw(piece);
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {

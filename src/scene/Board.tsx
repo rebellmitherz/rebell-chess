@@ -134,7 +134,7 @@ function useCoordinateTexture(inside: boolean, side: 'w' | 'b') {
 }
 
 export function Board() {
-  const mats = getMaterials();
+  const mats = getMaterials(useGame((s) => (s.prefs.pieceStyle === 'rebell' ? 'rebell' : 'classic')));
   const showCoordinates = useGame((s) => s.prefs.showCoordinates);
   const selectSquare = useGame((s) => s.selectSquare);
   const [hover, setHover] = useState<Square | null>(null);
