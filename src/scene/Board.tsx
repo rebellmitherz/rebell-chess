@@ -1,3 +1,4 @@
+import { useThree } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
@@ -66,23 +67,69 @@ function drawCoordinates(ctx: CanvasRenderingContext2D, size: number) {
   });
 }
 
-function useCoordinateTexture() {
+/**
+ * Handy: Koordinaten klein in die Randfelder (wie bei Lichess) – dann darf der Rahmen aus dem Bild und das
+ * Spielfeld wird größer. Buchstaben unten rechts in der untersten Reihe, Zahlen oben links in der linken Spalte,
+ * jeweils aus Sicht des Spielers unten; dunkle Schrift auf hellen, helle Schrift auf dunklen Feldern.
+ */
+function drawCoordinatesInside(ctx: CanvasRenderingContext2D, size: number, side: 'w' | 'b') {
+  ctx.clearRect(0, 0, size, size);
+  const toPx = (v: number) => ((v + FRAME_HALF) / (FRAME_HALF * 2)) * size;
+  ctx.font = `800 ${Math.round(size * 0.03)}px Inter, system-ui, sans-serif`;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.005;
+  const flip = side === 'b';
+  const label = (text: string, x: number, z: number, light: boolean, align: 'left' | 'right', base: 'top' | 'bottom') => {
+    ctx.save();
+    ctx.translate(toPx(x), toPx(z));
+    if (flip) ctx.rotate(Math.PI);
+    ctx.textAlign = align;
+    ctx.textBaseline = base;
+    // Kontur in der Gegenfarbe: lesbar auf hellen wie dunklen Feldern
+    ctx.strokeStyle = light ? 'rgba(255, 250, 240, 0.85)' : 'rgba(20, 16, 12, 0.85)';
+    ctx.fillStyle = light ? 'rgba(62, 50, 36, 0.95)' : 'rgba(248, 238, 214, 0.97)';
+    ctx.strokeText(text, 0, 0);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  };
+  // a1 ist ein dunkles Feld; (Spalte + Reihe) gerade = dunkel
+  const inset = 0.43;
+  FILES.forEach((f, i) => {
+    const rankIdx = flip ? 7 : 0; // unterste Reihe aus Spielersicht
+    const light = (i + rankIdx) % 2 === 1;
+    const x = i - 3.5 + (flip ? -inset : inset);
+    const z = 3.5 - rankIdx + (flip ? -inset : inset);
+    label(f, x, z, light, 'right', 'bottom');
+  });
+  RANKS.forEach((r, i) => {
+    const fileIdx = flip ? 7 : 0; // linke Spalte aus Spielersicht
+    const light = (fileIdx + i) % 2 === 1;
+    const x = fileIdx - 3.5 + (flip ? inset : -inset);
+    const z = 3.5 - i + (flip ? inset : -inset);
+    label(r, x, z, light, 'left', 'top');
+  });
+}
+
+function useCoordinateTexture(inside: boolean, side: 'w' | 'b') {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 2048;
-    drawCoordinates(canvas.getContext('2d')!, canvas.width);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 8;
     return tex;
   }, []);
   useEffect(() => {
-    // Nach dem Laden der Schrift neu zeichnen
-    document.fonts?.load('600 60px Cinzel').then(() => {
-      drawCoordinates((texture.image as HTMLCanvasElement).getContext('2d')!, 2048);
+    const draw = () => {
+      const ctx = (texture.image as HTMLCanvasElement).getContext('2d')!;
+      if (inside) drawCoordinatesInside(ctx, 2048, side);
+      else drawCoordinates(ctx, 2048);
       texture.needsUpdate = true;
-    });
-  }, [texture]);
+    };
+    draw();
+    // Nach dem Laden der Schrift neu zeichnen
+    void document.fonts?.load('600 60px Cinzel').then(draw);
+  }, [texture, inside, side]);
   return texture;
 }
 
@@ -99,7 +146,10 @@ export function Board() {
   const darkGeo = useMemo(() => buildSquares(false), []);
   const frameGeo = useMemo(() => new RoundedBoxGeometry(FRAME_HALF * 2, 0.32, FRAME_HALF * 2, 4, 0.07), []);
   const plinthGeo = useMemo(() => new RoundedBoxGeometry(9.1, 0.5, 9.1, 4, 0.1), []);
-  const coordTex = useCoordinateTexture();
+  // Hochformat (Handy): Koordinaten in den Feldern, damit die Kamera auf das Spielfeld allein einpassen kann
+  const compact = useThree((s) => s.size.width / s.size.height < 0.9);
+  const viewSide = useGame((s) => s.viewSide);
+  const coordTex = useCoordinateTexture(compact, viewSide);
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 8 || clickSuppressed()) return; // war ein Kamera-Ziehen oder Drag & Drop

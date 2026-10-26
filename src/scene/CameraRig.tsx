@@ -20,6 +20,14 @@ const FIT_POINTS_TOP = [
   new THREE.Vector3(4.4, 0, -4.75),
 ];
 
+/** Hochformat von oben: nur das Spielfeld (Koordinaten stehen dann in den Feldern), der Rahmen darf aus dem Bild */
+const FIT_POINTS_TOP_TIGHT = [
+  new THREE.Vector3(-4.02, 0, 4.02),
+  new THREE.Vector3(4.02, 0, 4.02),
+  new THREE.Vector3(-4.02, 0, -4.35),
+  new THREE.Vector3(4.02, 0, -4.35),
+];
+
 /** Punkte, die immer sichtbar sein müssen: Spielfeld-Ecken und die Köpfe der hinteren Figuren. */
 const FIT_POINTS = [
   new THREE.Vector3(-4.05, 0, 4.05),
@@ -50,7 +58,7 @@ function framing(width: number, height: number, sidebar: number, topInset: numbe
   // Von oben: senkrecht (minimal schräg, damit „oben“ auf dem Bildschirm eindeutig ist)
   // 3D: Hochformat steiler, damit das Brett auch die Höhe nutzt
   const polar = top ? 0.0001 : portrait ? 0.66 : 0.98;
-  const points = top ? FIT_POINTS_TOP : FIT_POINTS;
+  const points = top ? (portrait ? FIT_POINTS_TOP_TIGHT : FIT_POINTS_TOP) : FIT_POINTS;
   const aspect = width / height;
   // freier Bereich in NDC (-1..1)
   const rect = {

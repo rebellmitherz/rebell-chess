@@ -725,6 +725,11 @@ input:focus-visible + .toggle-switch {
 .mobile-top .captured,
 .mobile-bottom .captured {
   min-height: 0;
+  font-size: 17px;
+}
+
+.mobile-top .advantage,
+.mobile-bottom .advantage {
   font-size: 13px;
 }
 
