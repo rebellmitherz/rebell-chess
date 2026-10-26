@@ -20,9 +20,9 @@ export interface Pose {
 export type MoveProfile = 'glide' | 'hop' | 'attack';
 
 /** Zeitpunkt des Einschlags nach Beginn eines Schlagzugs (Sekunden) */
-export const ATTACK_IMPACT = 0.46;
-const ATTACK_WINDUP = 0.16;
-const SETTLE = 0.32;
+export const ATTACK_IMPACT = 0.36;
+const ATTACK_WINDUP = 0.12;
+const SETTLE = 0.26;
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -94,7 +94,7 @@ export interface KnockPose {
 }
 
 /** Gesamtdauer des Treffer-Ablaufs der geschlagenen Figur */
-export const KNOCK_TOTAL = ATTACK_IMPACT + 1.15;
+export const KNOCK_TOTAL = ATTACK_IMPACT + 0.95;
 
 /**
  * Geschlagene Figur: zittert bis zum Einschlag, wird dann rückwärts geschleudert (Richtung dirX/dirZ),
@@ -106,8 +106,8 @@ export function knockPose(dirX: number, dirZ: number, time: number): KnockPose {
     return { dx: tremble * dirZ, dz: -tremble * dirX, y: 0, spin: 0, opacity: 1, hit: false };
   }
   const t = time - ATTACK_IMPACT;
-  const speed = 4.2;
-  const up = 3.4;
+  const speed = 5.2;
+  const up = 3.0;
   const g = 11;
   const tLand = (2 * up) / g; // Aufprall
   let y: number;
@@ -122,6 +122,6 @@ export function knockPose(dirX: number, dirZ: number, time: number): KnockPose {
     y = Math.max(0, up2 * t2 - 0.5 * g * t2 * t2);
     travel = speed * tLand + speed * 0.4 * t2;
   }
-  const opacity = 1 - clamp01((t - 0.65) / 0.45);
+  const opacity = 1 - clamp01((t - 0.45) / 0.4);
   return { dx: dirX * travel, dz: dirZ * travel, y, spin: Math.min(t, tLand) * 9 + Math.max(0, t - tLand) * 3, opacity, hit: true };
 }

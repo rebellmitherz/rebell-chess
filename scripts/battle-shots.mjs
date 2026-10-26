@@ -17,6 +17,8 @@ if (!executablePath) throw new Error('Kein Edge/Chrome gefunden');
 const browser = await puppeteer.launch({
   executablePath,
   headless: true,
+  // eigenes Profil: läuft auch, wenn Edge schon offen ist
+  userDataDir: `${process.env.TEMP ?? '.'}/rc-edge-${Date.now()}`,
   args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', `--window-size=${width},${height}`],
   defaultViewport: { width: +width, height: +height, deviceScaleFactor: 1 },
 });

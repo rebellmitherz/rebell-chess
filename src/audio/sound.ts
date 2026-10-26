@@ -397,7 +397,7 @@ function renderInto(c: Chain, kind: SfxKind, t: number) {
       break;
     case 'strike': {
       // Anlauf: anschwellendes Rauschen, dann Einschlag mit Metallklang (passend zu ATTACK_IMPACT = 0,46 s)
-      const hitAt = t + 0.45;
+      const hitAt = t + 0.35;
       whoosh(c, t + 0.12, hitAt);
       knock(c, hitAt, 1.15, 1, true);
       bell(c, 1567.98, hitAt, 0.05, 0.7);

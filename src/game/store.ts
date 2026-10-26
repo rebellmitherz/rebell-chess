@@ -27,6 +27,7 @@ import {
 } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
 import { scoreToCp } from '../engine/uci';
+import { FRESH_BATTLE_HISTORY, nextHistory, shouldFight, type BattleHistory } from './battleRules';
 import { resolveDrop } from './drop';
 import type { EngineService } from './engineService';
 import {
@@ -311,6 +312,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
   let pausedByMenu = false;
   let drawPending = false;
   let battleId = 0;
+  let battleHistory: BattleHistory = FRESH_BATTLE_HISTORY;
   /** Kampf-Zustand neben dem Store: Uhr angehalten, Brett soll danach drehen, Schlussklang aufgeschoben */
   let battleHeldClock = false;
   let turnAfterBattle = false;
@@ -511,8 +513,16 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       const snapshot = { w: timeLeft(s.clock, 'w', now), b: timeLeft(s.clock, 'b', now) };
       let clock = pressClock(s.clock, record.color, now, s.paused);
       const d = derive();
+      const mode = s.prefs.battleMode;
+      const wantsFight =
+        deps.battleScenes &&
+        s.screen === 'game' &&
+        record.isCapture &&
+        (mode === 'always' || (mode === 'warriors' && shouldFight(record, d.history.length, battleHistory)));
+      // Nur Schläge zählen für den Verlauf (Wichtiges bekommt einen Kampf, der Rest bleibt schnell)
+      if (deps.battleScenes && mode === 'warriors' && record.isCapture) battleHistory = nextHistory(battleHistory, wantsFight, d.history.length);
       const battle: BattleState | null =
-        deps.battleScenes && s.prefs.battleMode === 'warriors' && record.isCapture && s.screen === 'game'
+        wantsFight
           ? {
               id: ++battleId,
               ply: d.history.length,
@@ -593,6 +603,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
     ) => {
       cancelAi();
       dropBattle();
+      battleHistory = FRESH_BATTLE_HISTORY;
       drawPending = false;
       pausedByMenu = false;
       game = ChessGame.fromUciMoves(startFen, moves);

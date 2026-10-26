@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import type { Color } from '../core/types';
-import { Burst } from './Effects';
+import { Burst, getSprite } from './Effects';
 import { markActive } from './interaction';
 
 /** Einschlag eines Schlagzugs: Ort, Schlagrichtung, Farbe der getroffenen Figur */
@@ -42,7 +42,7 @@ function Shockwave({ impact }: { impact: Impact }) {
   const material = useRef<THREE.MeshBasicMaterial>(null!);
   useFrame(() => {
     const t = (performance.now() - impact.at) / 1000;
-    const k = Math.min(1, t / 0.55);
+    const k = Math.min(1, t / 0.4);
     const s = 0.3 + (1 - Math.pow(1 - k, 3)) * 2.2;
     mesh.current.scale.set(s, s, s);
     material.current.opacity = 0.85 * (1 - k);
@@ -62,6 +62,35 @@ function Shockwave({ impact }: { impact: Impact }) {
   );
 }
 
+/** Mini-Explosion: heller Glutball, der in 0,25 s aufblitzt und verpufft, dazu ein flacher Staubring */
+function Explosion({ impact }: { impact: Impact }) {
+  const ball = useRef<THREE.Sprite>(null!);
+  const dust = useRef<THREE.Mesh>(null!);
+  const color = impact.victim === 'w' ? '#ffd27a' : '#ff9a5a';
+  useFrame(() => {
+    const t = (performance.now() - impact.at) / 1000;
+    const k = Math.min(1, t / 0.28);
+    const grow = 0.25 + (1 - Math.pow(1 - k, 3)) * 1.35 * impact.power;
+    ball.current.scale.set(grow, grow, grow);
+    (ball.current.material as THREE.SpriteMaterial).opacity = (1 - k) * (1 - k);
+    const d = Math.min(1, t / 0.4);
+    const r = 0.3 + (1 - Math.pow(1 - d, 2)) * 1.1 * impact.power;
+    dust.current.scale.set(r, r, r);
+    (dust.current.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - d);
+  });
+  return (
+    <group position={[impact.x, 0.4, impact.z]}>
+      <sprite ref={ball} renderOrder={9}>
+        <spriteMaterial map={getSprite()} color={color} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </sprite>
+      <mesh ref={dust} position={[0, -0.36, 0]} rotation-x={-Math.PI / 2} renderOrder={8}>
+        <ringGeometry args={[0.55, 1, 40]} />
+        <meshBasicMaterial color="#e9dcc0" transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Ein einziges, immer vorhandenes Licht für Einschlagblitze (kein Shader-Neuaufbau durch neue Lichter) */
 function FlashLight() {
   const light = useRef<THREE.PointLight>(null!);
@@ -73,7 +102,7 @@ function FlashLight() {
       return;
     }
     light.current.position.set(imp.x, 0.9, imp.z);
-    light.current.intensity = 22 * imp.power * Math.exp(-t * 9);
+    light.current.intensity = 34 * imp.power * Math.exp(-t * 11);
   });
   return <pointLight ref={light} intensity={0} distance={7} decay={2} color="#ffe2a0" />;
 }
@@ -104,7 +133,7 @@ export function ImpactFX() {
   useEffect(() => {
     const onImpact = (impact: Impact) => {
       setImpacts((all) => [...all, impact]);
-      setTimeout(() => setImpacts((all) => all.filter((i) => i.id !== impact.id)), 1300);
+      setTimeout(() => setImpacts((all) => all.filter((i) => i.id !== impact.id)), 1000);
     };
     listeners.add(onImpact);
     return () => {
@@ -117,6 +146,7 @@ export function ImpactFX() {
       {impacts.map((imp) => (
         <group key={imp.id}>
           {imp.ring && <Shockwave impact={imp} />}
+          {imp.burst && <Explosion impact={imp} />}
           {imp.burst && (
             <group position={[imp.x, 0.35, imp.z]}>
               <Burst color={imp.victim === 'w' ? '#ffd27a' : '#e4ebff'} count={80} />

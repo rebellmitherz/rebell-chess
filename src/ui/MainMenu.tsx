@@ -176,14 +176,16 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           value={prefs.battleMode}
           onChange={(battleMode) => set({ battleMode })}
           options={[
-            { value: 'warriors', label: 'Kriegerkampf' },
+            { value: 'warriors', label: 'Wichtige' },
+            { value: 'always', label: 'Immer' },
             { value: 'quick', label: 'Kurz' },
             { value: 'off', label: 'Aus' },
           ]}
         />
         <p className="field-hint">
-          Kriegerkampf: Beide Figuren werden zu Kriegern und kämpfen (Tippen überspringt, die Uhr steht so lange). Kurz:
-          Die Figur stürmt los, der Gegner zerspringt. Aus: für schnelle Blitzpartien.
+          Wichtige: Nur bei großen Momenten (Dame, Turm, Matt, Bauer schlägt Figur …) kämpfen die Figuren als Krieger,
+          sonst gibt es einen schnellen Schlag mit Mini-Explosion. Immer: bei jedem Schlag ein Kriegerkampf. Kurz: immer
+          der schnelle Schlag. Aus: schlicht. Ein Kampf lässt sich durch Tippen überspringen, die Uhr steht so lange.
         </p>
       </div>
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label="Soundeffekte" />
@@ -232,7 +234,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       </p>
       <h3>Schlagen</h3>
       <p>
-        Beim Schlagen werden beide Figuren zu Kriegern – Paladine in goldener und schwarzer Rüstung, jeder Kampf läuft anders ab. Die Uhr steht, bis
+        Bei wichtigen Schlägen (Dame, Turm, Matt …) werden beide Figuren zu Kriegern – Paladine, jeder Kampf läuft anders ab. Alle anderen Schläge sind kurz und knallen mit einer kleinen Explosion. Die Uhr steht, bis
         der Kampf vorbei ist. Antippen, Klick, Leertaste oder <kbd>Esc</kbd> überspringen ihn; unter Einstellungen →
         „Beim Schlagen“ gibt es auch „Kurz“ und „Aus“.
       </p>

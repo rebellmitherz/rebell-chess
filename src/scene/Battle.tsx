@@ -300,7 +300,7 @@ function Fight({ battle, warriors }: { battle: BattleState; warriors: Warriors }
 export function BattleStage() {
   const mode = useGame((s) => s.prefs.battleMode);
   const battle = useGame((s) => s.battle);
-  const warriors = useWarriors(mode === 'warriors');
+  const warriors = useWarriors(mode === 'warriors' || mode === 'always');
 
   useEffect(() => {
     if (!battle || warriors) return;

@@ -7,8 +7,11 @@ export type GraphicsQuality = 'high' | 'medium' | 'low';
 export type PieceStyle = 'real' | 'classic' | 'rebell';
 /** top = Brett gerade von oben, Figuren zum Spieler geneigt · perspective = schräge 3D-Ansicht */
 export type ViewMode = 'top' | 'perspective';
-/** Schlagzüge: warriors = Figuren werden zu Kriegern und kämpfen · quick = kurzer Stoß mit Splittern · off = schlicht */
-export type BattleMode = 'warriors' | 'quick' | 'off';
+/**
+ * Schlagzüge: warriors = Kriegerkampf nur in wichtigen Momenten, sonst schneller Schlag · always = bei jedem Schlag
+ * Kriegerkampf · quick = immer schneller Schlag mit Mini-Explosion · off = schlicht
+ */
+export type BattleMode = 'warriors' | 'always' | 'quick' | 'off';
 
 export interface TimeControl {
   id: string;
@@ -126,7 +129,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
           : base.pieceStyle,
     // Bis 0.5 gab es nur an/aus („battleAnimations“) – „aus“ bleibt aus, „an“ wird zum Kriegerkampf
     battleMode:
-      r.battleMode === 'warriors' || r.battleMode === 'quick' || r.battleMode === 'off'
+      r.battleMode === 'warriors' || r.battleMode === 'always' || r.battleMode === 'quick' || r.battleMode === 'off'
         ? r.battleMode
         : r.battleAnimations === false
           ? 'off'

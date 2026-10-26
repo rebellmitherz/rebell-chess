@@ -413,6 +413,8 @@ describe('Kriegerkampf beim Schlagen', () => {
       battleScenes: true,
       ...extra,
     });
+    // Diese Tests prüfen den Ablauf eines Kampfes: dafür bei jedem Schlag (die Auswahl „wichtige“ prüft battleRules.test.ts)
+    store.getState().setPrefs({ battleMode: 'always' });
     store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local', timeControlId: '5+0', ...settings }, fen);
     return {
       store,
@@ -533,5 +535,36 @@ describe('Kriegerkampf beim Schlagen', () => {
     expect(s.sfx?.kind).not.toBe('win');
     store.getState().endBattle();
     expect(store.getState().sfx?.kind).toBe('win');
+  });
+});
+
+describe('Kriegerkampf nur bei wichtigen Schlägen', () => {
+  function important(fen: string) {
+    const store = createGameStore({ storage: new MemoryStorage(), aiDelayMs: 0, battleScenes: true });
+    store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local' }, fen);
+    return store;
+  }
+
+  it('Bauer schlägt Bauer: schneller Schlag, kein Kampf', () => {
+    const store = important('rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2');
+    store.getState().tryMove('e4', 'd5');
+    expect(store.getState().battle).toBeNull();
+    expect(store.getState().sfx?.kind).toBe('capture');
+  });
+
+  it('Dame geschlagen: Kampf', () => {
+    const store = important('rnb1kbnr/pppp1ppp/8/4p3/3Pq3/8/PPP1QPPP/RNB1KBNR b KQkq - 0 4');
+    store.getState().tryMove('e4', 'e2');
+    expect(store.getState().battle).toMatchObject({ attacker: { type: 'q', color: 'b' }, victim: { type: 'q', color: 'w' } });
+  });
+
+  it('bei „Kurz“ nie ein Kampf, bei „Immer“ jedes Mal', () => {
+    for (const [mode, expected] of [['quick', false], ['always', true]] as const) {
+      const store = createGameStore({ storage: new MemoryStorage(), aiDelayMs: 0, battleScenes: true });
+      store.getState().setPrefs({ battleMode: mode });
+      store.getState().startGame({ ...DEFAULT_SETTINGS, mode: 'local' }, 'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2');
+      store.getState().tryMove('e4', 'd5');
+      expect(store.getState().battle !== null).toBe(expected);
+    }
   });
 });

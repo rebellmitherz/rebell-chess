@@ -316,7 +316,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
   );
 }
 
-const SHARDS = 16;
+const SHARDS = 24;
 let shardGeometry: THREE.BufferGeometry | null = null;
 
 /**
@@ -389,7 +389,7 @@ function Ghost({
     material.opacity = k.opacity;
     if (k.hit && !hit) {
       setHit(true);
-      emitImpact({ x, z, dirX: dx, dirZ: dz, victim: piece.color });
+      emitImpact({ x, z, dirX: dx, dirZ: dz, victim: piece.color, power: 1.25 });
     }
     // Splitter: ballistisch, drehend, verblassend
     if (k.hit && shards.current) {
