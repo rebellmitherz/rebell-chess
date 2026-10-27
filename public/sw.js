@@ -2,7 +2,7 @@
 // - Startseite: erst Netz (Updates kommen sofort an), ohne Netz aus dem Speicher
 // - Dateien mit Hash im Namen (assets/…): einmal laden, dann aus dem Speicher (ändern sich nie)
 // - Engine, Figuren, Sounds, Symbole: aus dem Speicher, im Hintergrund auffrischen
-const CACHE = 'rebellchess-v17';
+const CACHE = 'rebellchess-v18';
 const CORE = [
   './',
   './manifest.webmanifest',

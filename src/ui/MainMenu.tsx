@@ -166,7 +166,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           ]}
         />
         <p className="field-hint">
-          Echt: Marmorfiguren auf tiefschwarzem Brett im Wohnzimmerlicht. Edel: Smaragdgrün und Gold. Rebell: Blutrot und Elfenbein, eigene
+          Echt: Marmorfiguren auf tiefschwarzem Brett im Wohnzimmerlicht. Edel: goldene und schwarze Figuren auf Smaragdgrün. Rebell: Elfenbein und Schwarz auf Rot, eigene
           Figuren.
         </p>
       </div>
