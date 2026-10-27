@@ -78,7 +78,7 @@ function PlayerCard({ color }: { color: Color }) {
         <CapturedRow color={color} />
       </div>
       {isAi && thinking && (
-        <div className="thinking" aria-label={tr('Stockfish denkt')}>
+        <div className="thinking" aria-label={tr('Rebell-KI denkt')}>
           <span />
           <span />
           <span />
@@ -101,13 +101,13 @@ function StatusLine() {
     text = resultTitle(result, settings);
     tone = 'over';
   } else if (paused) text = tr('Partie pausiert');
-  else if (settings.mode === 'ai' && thinking) text = tr('Stockfish denkt …');
+  else if (settings.mode === 'ai' && thinking) text = tr('Rebell-KI denkt …');
   else {
     const who =
       settings.mode === 'ai'
         ? status.turn === settings.humanColor
           ? tr('Du bist am Zug')
-          : tr('Stockfish ist am Zug')
+          : tr('Rebell-KI ist am Zug')
         : tr('{color} ist am Zug', { color: COLOR_NAME[status.turn] });
     text = status.inCheck ? `${tr('Schach!')} ${who}` : who;
     if (status.inCheck) tone = 'check';
@@ -276,7 +276,7 @@ export function TrainingPanel({ compact = false }: { compact?: boolean }) {
             <IconClose />
           </button>
         </div>
-        {hint.status === 'loading' && <p className="muted">{tr('Stockfish sucht den besten Zug …')}</p>}
+        {hint.status === 'loading' && <p className="muted">{tr('Rebell-KI sucht den besten Zug …')}</p>}
         {hint.status === 'error' && <p className="muted">{tr('Die Schach-KI ist gerade nicht erreichbar.')}</p>}
         {hint.status === 'ready' && (
           <>
@@ -322,7 +322,7 @@ export function TrainingPanel({ compact = false }: { compact?: boolean }) {
     <div className="training-card intro">
       <span className="badge b-hint">{tr('Training')}</span>
       <p className="training-point">
-        {tr('Nach jedem deiner Züge bewertet Stockfish ihn und erklärt die Idee. Mit')} <strong>{tr('Hinweis')}</strong> {tr('siehst du den besten Zug als Pfeil.')}
+        {tr('Nach jedem deiner Züge bewertet Rebell-KI ihn und erklärt die Idee. Mit')} <strong>{tr('Hinweis')}</strong> {tr('siehst du den besten Zug als Pfeil.')}
       </p>
     </div>
   );

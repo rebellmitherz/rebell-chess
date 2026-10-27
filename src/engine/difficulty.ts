@@ -73,7 +73,7 @@ export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
     id: 7,
     name: 'Großmeister',
     strength: 'volle Stärke',
-    description: 'Stockfish ohne Bremse (Lite-Netz, 2 Sekunden pro Zug).',
+    description: 'Volle Stärke ohne Bremse (Lite-Netz, 2 Sekunden pro Zug).',
     options: unlimited,
     limits: { movetime: 2000 },
     randomMoveChance: 0,

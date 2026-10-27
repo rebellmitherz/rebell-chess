@@ -119,13 +119,13 @@ export function explainMove(
       if (defenders.length === 0) {
         warnings.push(
           options.suggested
-            ? tr('{name} auf {sq} darf geschlagen werden – laut Stockfish lohnt sich dieses Angebot.', { name, sq: move.to })
+            ? tr('{name} auf {sq} darf geschlagen werden – laut Rebell-KI lohnt sich dieses Angebot.', { name, sq: move.to })
             : tr('Vorsicht: {name} auf {sq} steht ungedeckt und kann geschlagen werden.', { name, sq: move.to }),
         );
       } else if (PIECE_VALUES[cheapest] < PIECE_VALUES[movedType]) {
         warnings.push(
           options.suggested
-            ? tr('{name} auf {sq} wird {by} angegriffen – Stockfish nimmt das bewusst in Kauf.', { name, sq: move.to, by: BY_PIECE[cheapest] })
+            ? tr('{name} auf {sq} wird {by} angegriffen – Rebell-KI nimmt das bewusst in Kauf.', { name, sq: move.to, by: BY_PIECE[cheapest] })
             : tr('Vorsicht: {name} auf {sq} kann {by} geschlagen werden.', { name, sq: move.to, by: BY_PIECE[cheapest] }),
         );
       }

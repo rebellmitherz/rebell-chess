@@ -64,7 +64,7 @@ function NewGamePanel({ onBack }: { onBack: () => void }) {
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'ai', label: tr('Stockfish-KI') },
+            { value: 'ai', label: tr('Rebell-KI') },
             { value: 'local', label: tr('Zwei Spieler') },
           ]}
         />
@@ -263,7 +263,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           </p>
           <h3>Analysis</h3>
           <p>
-            Clicking a move in the move list shows the position after it. In training mode and after the game, Stockfish rates every position (bar, number, best move). “Back to game” takes you back.
+            Clicking a move in the move list shows the position after it. In training mode and after the game, the Rebell AI rates every position (bar, number, best move). “Back to game” takes you back.
           </p>
           <h3>Saving</h3>
           <p>The game is saved automatically in your browser after every move. With “PGN” you can export it and load it on other devices.</p>
@@ -314,7 +314,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           <h3>Analyse</h3>
           <p>
             Ein Klick auf einen Zug in der Zugliste zeigt die Stellung danach. Im Trainingsmodus und nach Partieende bewertet
-            Stockfish jede Stellung (Balken, Zahl, bester Zug). „Zur Partie“ führt zurück.
+            die Rebell-KI jede Stellung (Balken, Zahl, bester Zug). „Zur Partie“ führt zurück.
           </p>
           <h3>Speichern</h3>
           <p>Die Partie wird nach jedem Zug automatisch im Browser gespeichert. Über „PGN“ lässt sie sich exportieren und auf anderen Geräten laden.</p>
