@@ -1733,3 +1733,32 @@ kbd {
     animation-duration: 0.01s;
   }
 }
+
+/* ---------- Sprachwahl ---------- */
+
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lang-switch button {
+  min-width: 38px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 12px var(--font-ui);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.lang-switch button.active {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  color: #1b1405;
+}

@@ -1,4 +1,5 @@
 import type { Color } from '../core/types';
+import { detectLang, type Lang } from '../i18n';
 import { DIFFICULTY_LEVELS } from '../engine/difficulty';
 
 export type GameMode = 'local' | 'ai';
@@ -63,6 +64,8 @@ export interface Preferences {
   /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
   turnBoard: boolean;
   showCoordinates: boolean;
+  /** Sprache der Oberfläche */
+  lang: Lang;
   /** PC: Seitenleiste während der Partie ausgeblendet – das Brett bekommt die ganze Breite */
   hideSidebar: boolean;
 }
@@ -93,6 +96,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   turnBoard: true,
   showCoordinates: true,
   hideSidebar: false,
+  lang: detectLang(),
 };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
@@ -138,5 +142,6 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
     hideSidebar: bool(r.hideSidebar, base.hideSidebar),
+    lang: r.lang === 'de' || r.lang === 'en' ? r.lang : base.lang,
   };
 }

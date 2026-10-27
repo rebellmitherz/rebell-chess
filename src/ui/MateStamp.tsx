@@ -5,6 +5,7 @@ import { markActive } from '../scene/interaction';
 import { squareToWorld } from '../scene/boardMath';
 import { resultTitle } from './format';
 import { useUi } from './uiState';
+import { tr } from '../i18n';
 
 /** Der Stempel schlägt ein (nach dem Aufbau des Klangs, passend zu SFX „mate“) */
 const SLAM_AT = 1100;
@@ -113,7 +114,7 @@ export function MateStamp() {
     <div className="mate-layer" onPointerDown={skip} key={stamp.id}>
       <div className="mate-flash" />
       <div className="mate-stamp">
-        <span className="mate-word">SCHACHMATT</span>
+        <span className="mate-word">{tr('SCHACHMATT')}</span>
         <span className="mate-sub">{stamp.sub}</span>
       </div>
     </div>

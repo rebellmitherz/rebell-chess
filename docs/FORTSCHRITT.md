@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.8.2 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.10.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -58,6 +58,7 @@ ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = 
 | **Größeres Brett**: längere Brennweite (28°), knappe Einpassung, schmale Handy-Leisten, Hochformat steiler | im Browser geprüft; im Hochformat begrenzt die Bildschirmbreite die Größe |
 | **Ansicht „Gerade von oben“ (Standard)**: Brett exakt von oben, jede Figur zum Spieler geneigt (Form erkennbar), angetippt/gezogen wird das Feld; „3D schräg“ wählbar | im Browser geprüft (PC und Smartphone 375×812) |
 | **Kriegerkampf nur bei wichtigen Schlägen (Standard)** – Dame/Turm geschlagen, Matt, Bauer schlägt Figur, Schach mit Beute, sonst schneller Schlag mit Mini-Explosion (0,6 s); nach 4 schnellen Schlägen bekommt die nächste Beute einen Kampf, direkt nach einem Kampf keiner (Regeln in `src/game/battleRules.ts`, 9 Tests); Einstellung Wichtige / Immer / Kurz / Aus. Der Kampf selbst: beide Figuren werden zu realistischen Paladinen (Mixamo, Weiß in goldener, Schwarz in schwarzer Rüstung, Schwert und Schild) mit 28 Motion-Capture-Bewegungen. Jeder Kampf wird neu gewürfelt: 8 Szenarien (Duell, Blitzangriff, Schlaghagel, Comeback, Tritt, Schlagabtausch, Konter, Verhöhnen), passend zu den Figuren (Bauer gegen Dame kämpft sich zurück, Dame macht kurzen Prozess), zufällige Bewegungen und Tempo, die letzten Szenarien werden gemieden. Kamera mit Schnitten (Totale, über die Schulter, Froschperspektive, von oben, Todesstoß, Siegerpose), Zeitlupe, Trefferstopp, Schwertspuren, Ausfallschritte treiben den Gegner zurück, Schachfiguren im Bild tauchen weg | getestet (Drehbuch 17 Tests inkl. Vielfalt: von 30 gleichen Schlagzügen ≥ 26 verschieden; Store 7; Bewegungsbibliothek 4); als Bildfolge in Edge geprüft (PC 1280×720, Handy 412×860) |
+| **Zwei Sprachen: Deutsch und Englisch** – Oberfläche, Anleitung, Meldungen, Zugerklärungen, Ergebnisse, Kampftitel; Standard nach Browser-Sprache, Umschalter im Menü und in den Einstellungen, gespeichert | getestet (7 Tests: jeder Text im Code hat eine englische Übersetzung, Platzhalter stimmen, Zugerklärungen und Ergebnisse auf Englisch); im Browser auf Englisch durchgespielt (Menü, Partie, Einstellungen, Anleitung, Matt-Finale, Ergebnisfenster) |
 | Kampf überspringen (Tippen, Klick, Leertaste, Enter, Esc), Einstellung „Beim Schlagen: Kriegerkampf / Kurz / Aus“ | im Browser geprüft (Tippen beendet den Kampf, Uhr läuft weiter, Brett dreht sich) |
 
 ## Leistung (gemessen 25.10.2026, Chromium im Desktop-PC, 766×646, Partie in Grundstellung)

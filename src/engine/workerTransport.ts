@@ -1,4 +1,5 @@
 import type { EngineTransport } from './StockfishEngine';
+import { tr } from '../i18n';
 
 export const ENGINE_FILE = 'engine/stockfish-19-lite-single.js';
 
@@ -20,7 +21,7 @@ export function createWorkerTransport(url: string = defaultEngineUrl()): EngineT
   };
   worker.onerror = (event: ErrorEvent) => {
     event.preventDefault();
-    const message = event.message || 'Die Schach-KI konnte nicht geladen werden.';
+    const message = event.message || tr('Die Schach-KI konnte nicht geladen werden.');
     errorListeners.forEach((l) => l(message));
   };
 

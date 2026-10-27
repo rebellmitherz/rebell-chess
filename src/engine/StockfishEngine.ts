@@ -1,4 +1,5 @@
 import { parseBestMove, parseInfoLine, type UciInfo } from './uci';
+import { tr } from '../i18n';
 
 /** Verbindung zu einem Engine-Prozess (Web Worker im Browser, WASM-Modul in Node-Tests). */
 export interface EngineTransport {
@@ -58,7 +59,7 @@ export class StockfishEngine {
       }
       const timer = setTimeout(() => {
         this.listeners.delete(listener);
-        reject(new Error('Zeitüberschreitung der Engine'));
+        reject(new Error(tr('Zeitüberschreitung der Engine')));
       }, timeoutMs);
       const listener = (line: string) => {
         if (line.startsWith('__error__')) {

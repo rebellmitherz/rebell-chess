@@ -1,8 +1,17 @@
 import type { Color, GameResult, PieceSymbol } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
 import type { GameSettings } from '../game/settings';
+import { getLang, tr } from '../i18n';
 
-export const COLOR_NAME: Record<Color, string> = { w: 'Weiß', b: 'Schwarz' };
+/** Farbnamen in der aktuellen Sprache (Zugriff über Getter, damit ein Sprachwechsel sofort wirkt) */
+export const COLOR_NAME = {
+  get w() {
+    return tr('Weiß');
+  },
+  get b() {
+    return tr('Schwarz');
+  },
+} as Record<Color, string>;
 
 /** Figurine-Symbole mit Text-Darstellung (︎ verhindert Emoji-Darstellung auf Smartphones) */
 export const FIGURINE: Record<PieceSymbol, string> = {
@@ -22,36 +31,36 @@ export function figurineSan(san: string): string {
 
 export function playerName(settings: GameSettings, color: Color): string {
   if (settings.mode === 'local') return COLOR_NAME[color];
-  return color === settings.humanColor ? 'Du' : `Stockfish · ${getDifficulty(settings.aiLevel).name}`;
+  return color === settings.humanColor ? tr('Du') : `Stockfish · ${tr(getDifficulty(settings.aiLevel).name)}`;
 }
 
 export function resultTitle(result: GameResult, settings: GameSettings): string {
-  if (result.winner === null) return 'Remis';
-  if (settings.mode === 'ai') return result.winner === settings.humanColor ? 'Du hast gewonnen!' : 'Stockfish gewinnt';
-  return `${COLOR_NAME[result.winner]} gewinnt`;
+  if (result.winner === null) return tr('Remis');
+  if (settings.mode === 'ai') return result.winner === settings.humanColor ? tr('Du hast gewonnen!') : tr('Stockfish gewinnt');
+  return tr('{color} gewinnt', { color: COLOR_NAME[result.winner] });
 }
 
 export function resultReason(result: GameResult): string {
   const loser = result.winner ? COLOR_NAME[result.winner === 'w' ? 'b' : 'w'] : '';
   switch (result.reason) {
     case 'checkmate':
-      return 'Schachmatt';
+      return tr('Schachmatt');
     case 'stalemate':
-      return 'Patt – der Spieler am Zug hat keinen legalen Zug, steht aber nicht im Schach.';
+      return tr('Patt – der Spieler am Zug hat keinen legalen Zug, steht aber nicht im Schach.');
     case 'insufficient-material':
-      return 'Ungenügendes Material – niemand kann mehr mattsetzen.';
+      return tr('Ungenügendes Material – niemand kann mehr mattsetzen.');
     case 'threefold-repetition':
-      return 'Dreifache Stellungswiederholung';
+      return tr('Dreifache Stellungswiederholung');
     case 'fifty-move-rule':
-      return '50-Züge-Regel – 50 Züge ohne Bauernzug und ohne Schlagen.';
+      return tr('50-Züge-Regel – 50 Züge ohne Bauernzug und ohne Schlagen.');
     case 'timeout':
-      return `${loser}: Zeit abgelaufen`;
+      return tr('{loser}: Zeit abgelaufen', { loser });
     case 'timeout-insufficient-material':
-      return 'Zeit abgelaufen, aber der Gegner kann nicht mehr mattsetzen.';
+      return tr('Zeit abgelaufen, aber der Gegner kann nicht mehr mattsetzen.');
     case 'resignation':
-      return `${loser} gibt auf`;
+      return tr('{loser} gibt auf', { loser });
     case 'agreement':
-      return 'Remis durch Einigung';
+      return tr('Remis durch Einigung');
   }
 }
 
@@ -72,6 +81,11 @@ const PIECE_WORDS: Record<PieceSymbol, { nom: string; acc: string; female: boole
 
 /** Überschrift eines Kriegerkampfs, z. B. „Weißer Springer schlägt schwarzen Bauern“ */
 export function battleTitle(b: { attacker: { color: Color; type: PieceSymbol }; victim: { color: Color; type: PieceSymbol } }): string {
+  if (getLang() === 'en') {
+    const name = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+    const side = (c: Color) => (c === 'w' ? 'White' : 'Black');
+    return `${side(b.attacker.color)} ${name[b.attacker.type]} takes ${side(b.victim.color).toLowerCase()} ${name[b.victim.type]}`;
+  }
   const a = PIECE_WORDS[b.attacker.type];
   const v = PIECE_WORDS[b.victim.type];
   const aColor = b.attacker.color === 'w' ? 'Weiß' : 'Schwarz';

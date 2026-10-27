@@ -1,6 +1,6 @@
 # Rebell Chess 3D bei CrazyGames einreichen
 
-Stand: 27.10.2026 · Version 0.9.2. Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
+Stand: 27.10.2026 · Version 0.10.0. Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
 Angaben zu CrazyGames stammen aus deren öffentlichen Seiten (docs.crazygames.com) und können sich ändern – im Portal gegenprüfen.
 
 ## 1. Was hochgeladen wird
@@ -41,7 +41,7 @@ Tap or click a piece, then its target square (or drag it). Dots show legal moves
 
 **Tags:** chess, 3d, board game, strategy, ai, two player, puzzle, brain
 **Kategorie:** Brettspiele / Strategie
-**Sprachen:** Deutsch (die Oberfläche ist zurzeit nur Deutsch – siehe offene Punkte)
+**Sprachen:** Englisch und Deutsch (die Oberfläche wählt nach der Browser-Sprache: deutsche Browser Deutsch, alle anderen Englisch; Umschalter im Menü und in den Einstellungen)
 
 ## 4. Rechtliche Punkte – vor dem Abschicken klären
 
@@ -59,7 +59,6 @@ Tap or click a piece, then its target square (or drag it). Dots show legal moves
 
 ## 6. Offene Punkte
 
-- **Sprache:** Die Oberfläche ist nur Deutsch. Auf einem internationalen Portal bringt Englisch deutlich mehr Spieler – bei Zusage übersetzen.
 - Online-Spiel gegen Freunde (braucht einen eigenen Server, CrazyGames hostet nur Dateien).
 - Full-Launch-Module des SDK (Werbung, Speicher), falls das Spiel ausgewählt wird.
 - Titelbild/Trailer von Hand prüfen: Die vorgegebenen Bildgrößen im Portal gegenprüfen.

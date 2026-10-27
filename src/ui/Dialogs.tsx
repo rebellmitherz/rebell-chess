@@ -4,6 +4,7 @@ import { opposite, PROMOTION_PIECES } from '../core/types';
 import { gameStore, useGame } from '../game/instance';
 import { COLOR_NAME, FIGURINE, resultReason, resultScore, resultTitle } from './format';
 import { useUi } from './uiState';
+import { tr } from '../i18n';
 
 const actions = () => gameStore.getState();
 
@@ -34,8 +35,8 @@ export function PromotionDialog() {
   if (!pending) return null;
   return (
     <Modal onClose={() => actions().choosePromotion(null)}>
-      <h2 className="modal-title">Bauernumwandlung</h2>
-      <p className="modal-text">Wähle die neue Figur für das Feld {pending.to}.</p>
+      <h2 className="modal-title">{tr('Bauernumwandlung')}</h2>
+      <p className="modal-text">{tr('Wähle die neue Figur für das Feld {sq}.', { sq: pending.to })}</p>
       <div className="promo-grid">
         {PROMOTION_PIECES.map((p) => (
           <button key={p} className={`promo-btn promo-${turn}`} onClick={() => actions().choosePromotion(p)} autoFocus={p === 'q'}>
@@ -45,7 +46,7 @@ export function PromotionDialog() {
         ))}
       </div>
       <button className="btn ghost full" onClick={() => actions().choosePromotion(null)}>
-        Abbrechen
+        {tr('Abbrechen')}
       </button>
     </Modal>
   );
@@ -74,13 +75,13 @@ export function GameOverDialog() {
       <p className="modal-text">{resultReason(result)}</p>
       <div className="modal-actions">
         <button className="btn primary" onClick={() => actions().restart()}>
-          Neue Partie
+          {tr('Neue Partie')}
         </button>
         <button className="btn" onClick={() => actions().undo()}>
-          Zug zurücknehmen
+          {tr('Zug zurücknehmen')}
         </button>
         <button className="btn" onClick={() => dismiss(key)}>
-          Brett ansehen
+          {tr('Brett ansehen')}
         </button>
         <button
           className="btn"
@@ -89,10 +90,10 @@ export function GameOverDialog() {
             openDialog('pgn');
           }}
         >
-          PGN speichern
+          {tr('PGN speichern')}
         </button>
         <button className="btn ghost" onClick={() => actions().openMenu()}>
-          Hauptmenü
+          {tr('Hauptmenü')}
         </button>
       </div>
     </Modal>
@@ -104,16 +105,16 @@ export function DrawOfferDialog() {
   if (!offer) return null;
   return (
     <Modal>
-      <h2 className="modal-title">Remisangebot</h2>
+      <h2 className="modal-title">{tr('Remisangebot')}</h2>
       <p className="modal-text">
-        {COLOR_NAME[offer.by]} bietet Remis an. Nimmt {COLOR_NAME[opposite(offer.by)]} an?
+        {tr('{a} bietet Remis an. Nimmt {b} an?', { a: COLOR_NAME[offer.by], b: COLOR_NAME[opposite(offer.by)] })}
       </p>
       <div className="modal-actions row">
         <button className="btn primary" onClick={() => actions().answerDraw(true)}>
-          Annehmen
+          {tr('Annehmen')}
         </button>
         <button className="btn" onClick={() => actions().answerDraw(false)}>
-          Ablehnen
+          {tr('Ablehnen')}
         </button>
       </div>
     </Modal>
@@ -127,10 +128,10 @@ export function PauseOverlay() {
   if (!paused || screen !== 'game' || result) return null;
   return (
     <Modal>
-      <h2 className="modal-title">Partie pausiert</h2>
-      <p className="modal-text">Die Uhren sind angehalten.</p>
+      <h2 className="modal-title">{tr('Partie pausiert')}</h2>
+      <p className="modal-text">{tr('Die Uhren sind angehalten.')}</p>
       <button className="btn primary full" onClick={() => actions().setPaused(false)} autoFocus>
-        Fortsetzen
+        {tr('Fortsetzen')}
       </button>
     </Modal>
   );
@@ -143,8 +144,8 @@ export function ConfirmDialogs() {
   if (dialog === 'resign') {
     return (
       <Modal onClose={close}>
-        <h2 className="modal-title">Aufgeben?</h2>
-        <p className="modal-text">Die Partie wird als verloren gewertet.</p>
+        <h2 className="modal-title">{tr('Aufgeben?')}</h2>
+        <p className="modal-text">{tr('Die Partie wird als verloren gewertet.')}</p>
         <div className="modal-actions row">
           <button
             className="btn danger"
@@ -153,10 +154,10 @@ export function ConfirmDialogs() {
               close();
             }}
           >
-            Aufgeben
+            {tr('Aufgeben')}
           </button>
           <button className="btn" onClick={close} autoFocus>
-            Weiterspielen
+            {tr('Weiterspielen')}
           </button>
         </div>
       </Modal>
@@ -165,8 +166,8 @@ export function ConfirmDialogs() {
   if (dialog === 'restart') {
     return (
       <Modal onClose={close}>
-        <h2 className="modal-title">Neue Partie starten?</h2>
-        <p className="modal-text">Die aktuelle Partie wird beendet. Modus, Stärke und Bedenkzeit bleiben gleich.</p>
+        <h2 className="modal-title">{tr('Neue Partie starten?')}</h2>
+        <p className="modal-text">{tr('Die aktuelle Partie wird beendet. Modus, Stärke und Bedenkzeit bleiben gleich.')}</p>
         <div className="modal-actions row">
           <button
             className="btn primary"
@@ -175,10 +176,10 @@ export function ConfirmDialogs() {
               close();
             }}
           >
-            Neu starten
+            {tr('Neu starten')}
           </button>
           <button className="btn" onClick={close}>
-            Abbrechen
+            {tr('Abbrechen')}
           </button>
         </div>
       </Modal>
@@ -199,7 +200,7 @@ function PgnDialog({ onClose }: { onClose: () => void }) {
       await navigator.clipboard.writeText(pgn);
       setCopied(true);
     } catch {
-      actions().showToast('Kopieren nicht möglich – bitte den Text markieren und kopieren.');
+      actions().showToast(tr('Kopieren nicht möglich – bitte den Text markieren und kopieren.'));
     }
   };
   const download = () => {
@@ -217,10 +218,10 @@ function PgnDialog({ onClose }: { onClose: () => void }) {
       <h2 className="modal-title">PGN</h2>
       <div className="tabs">
         <button className={tab === 'export' ? 'active' : ''} onClick={() => setTab('export')}>
-          Exportieren
+          {tr('Exportieren')}
         </button>
         <button className={tab === 'import' ? 'active' : ''} onClick={() => setTab('import')}>
-          Importieren
+          {tr('Importieren')}
         </button>
       </div>
       {tab === 'export' ? (
@@ -228,16 +229,16 @@ function PgnDialog({ onClose }: { onClose: () => void }) {
           <textarea className="pgn-text" readOnly value={pgn} rows={8} onFocus={(e) => e.currentTarget.select()} />
           <div className="modal-actions row">
             <button className="btn primary" onClick={copy}>
-              {copied ? 'Kopiert ✓' : 'Kopieren'}
+              {copied ? tr('Kopiert ✓') : tr('Kopieren')}
             </button>
             <button className="btn" onClick={download}>
-              Als Datei speichern
+              {tr('Als Datei speichern')}
             </button>
           </div>
         </>
       ) : (
         <>
-          <p className="modal-text">PGN einer Partie einfügen. Sie wird geprüft und als lokale Partie geladen.</p>
+          <p className="modal-text">{tr('PGN einer Partie einfügen. Sie wird geprüft und als lokale Partie geladen.')}</p>
           <textarea className="pgn-text" value={input} onChange={(e) => setInput(e.target.value)} rows={8} placeholder='[Event "…"]&#10;1. e4 e5 2. Nf3 …' />
           <div className="modal-actions row">
             <button
@@ -247,13 +248,13 @@ function PgnDialog({ onClose }: { onClose: () => void }) {
                 if (actions().importPgn(input)) onClose();
               }}
             >
-              Partie laden
+              {tr('Partie laden')}
             </button>
           </div>
         </>
       )}
       <button className="btn ghost full" onClick={onClose}>
-        Schließen
+        {tr('Schließen')}
       </button>
     </Modal>
   );

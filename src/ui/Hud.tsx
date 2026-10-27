@@ -29,6 +29,7 @@ import type { Layout } from './useLayout';
 import { useNow } from './useLayout';
 import { useUi } from './uiState';
 import { fullscreenAvailable, toggleFullscreen, useFullscreen } from './fullscreen';
+import { tr } from '../i18n';
 
 const actions = () => gameStore.getState();
 
@@ -39,7 +40,7 @@ function ClockFace({ color }: { color: Color }) {
   if (!clock.enabled) return null;
   const ms = timeLeft(clock, color, now);
   return (
-    <div className={`clock${running ? ' running' : ''}${ms < 20_000 ? ' low' : ''}`} aria-label={`Restzeit ${COLOR_NAME[color]}`}>
+    <div className={`clock${running ? ' running' : ''}${ms < 20_000 ? ' low' : ''}`} aria-label={`${tr('Restzeit')} ${COLOR_NAME[color]}`}>
       {formatClock(ms)}
     </div>
   );
@@ -77,7 +78,7 @@ function PlayerCard({ color }: { color: Color }) {
         <CapturedRow color={color} />
       </div>
       {isAi && thinking && (
-        <div className="thinking" aria-label="Stockfish denkt">
+        <div className="thinking" aria-label={tr('Stockfish denkt')}>
           <span />
           <span />
           <span />
@@ -99,16 +100,16 @@ function StatusLine() {
   if (result) {
     text = resultTitle(result, settings);
     tone = 'over';
-  } else if (paused) text = 'Partie pausiert';
-  else if (settings.mode === 'ai' && thinking) text = 'Stockfish denkt …';
+  } else if (paused) text = tr('Partie pausiert');
+  else if (settings.mode === 'ai' && thinking) text = tr('Stockfish denkt …');
   else {
     const who =
       settings.mode === 'ai'
         ? status.turn === settings.humanColor
-          ? 'Du bist am Zug'
-          : 'Stockfish ist am Zug'
-        : `${COLOR_NAME[status.turn]} ist am Zug`;
-    text = status.inCheck ? `Schach! ${who}` : who;
+          ? tr('Du bist am Zug')
+          : tr('Stockfish ist am Zug')
+        : tr('{color} ist am Zug', { color: COLOR_NAME[status.turn] });
+    text = status.inCheck ? `${tr('Schach!')} ${who}` : who;
     if (status.inCheck) tone = 'check';
   }
   return (
@@ -127,14 +128,14 @@ export function EvalBar() {
   if (analysis.status === 'ready') {
     if (analysis.mate !== undefined) {
       share = analysis.mate > 0 ? 100 : 0;
-      label = analysis.mate > 0 ? `Weiß setzt matt${analysis.mate > 1 ? ` in ${analysis.mate}` : ''}` : `Schwarz setzt matt${analysis.mate < -1 ? ` in ${-analysis.mate}` : ''}`;
+      label = analysis.mate > 0 ? `${tr('Weiß setzt matt')}${analysis.mate > 1 ? ` ${tr('in')} ${analysis.mate}` : ''}` : `${tr('Schwarz setzt matt')}${analysis.mate < -1 ? ` ${tr('in')} ${-analysis.mate}` : ''}`;
     } else if (analysis.cp !== undefined) {
       share = 100 / (1 + Math.exp(-analysis.cp / 250));
       label = `${analysis.cp > 0 ? '+' : ''}${(analysis.cp / 100).toFixed(1)}`;
     }
   } else if (analysis.status === 'error') label = 'keine Bewertung';
   return (
-    <div className="eval" aria-label={`Bewertung ${label}`}>
+    <div className="eval" aria-label={`${tr('Bewertung')} ${label}`}>
       <div className="eval-bar">
         <div className="eval-white" style={{ width: `${share}%` }} />
       </div>
@@ -152,16 +153,16 @@ export function AnalysisBar({ compact = false }: { compact?: boolean }) {
   const history = useGame((s) => s.history);
   if (viewPly === null) return null;
   const move = viewPly > 0 ? history[viewPly - 1] : null;
-  const number = move ? `${Math.ceil(viewPly / 2)}.${move.color === 'b' ? '..' : ''} ${figurineSan(move.san)}` : 'Grundstellung';
+  const number = move ? `${Math.ceil(viewPly / 2)}.${move.color === 'b' ? '..' : ''} ${figurineSan(move.san)}` : tr('Grundstellung');
   return (
     <div className={`analysis-bar${compact ? ' compact' : ''}`}>
-      <span className="analysis-label">Analyse: {move ? `nach ${number}` : number}</span>
+      <span className="analysis-label">{tr('Analyse:')} {move ? `${tr('nach')} ${number}` : number}</span>
       {compact && (
         <>
-          <button className="icon-btn small" onClick={() => actions().stepView(-1)} aria-label="Zug zurück">
+          <button className="icon-btn small" onClick={() => actions().stepView(-1)} aria-label={tr('Zug zurück')}>
             ‹
           </button>
-          <button className="icon-btn small" onClick={() => actions().stepView(1)} aria-label="Zug vor">
+          <button className="icon-btn small" onClick={() => actions().stepView(1)} aria-label={tr('Zug vor')}>
             ›
           </button>
         </>
@@ -180,16 +181,16 @@ function MoveNav() {
   const a = actions();
   return (
     <div className="move-nav">
-      <button onClick={() => a.viewMove(0)} disabled={shown === 0} aria-label="Zum Anfang" title="Anfang (Pos1)">
+      <button onClick={() => a.viewMove(0)} disabled={shown === 0} aria-label={tr('Zum Anfang')} title={tr('Anfang (Pos1)')}>
         ⏮
       </button>
-      <button onClick={() => a.stepView(-1)} disabled={shown === 0} aria-label="Zug zurück" title="Zurück (←)">
+      <button onClick={() => a.stepView(-1)} disabled={shown === 0} aria-label={tr('Zug zurück')} title={tr('Zurück (←)')}>
         ◀
       </button>
-      <button onClick={() => a.stepView(1)} disabled={shown === total} aria-label="Zug vor" title="Vor (→)">
+      <button onClick={() => a.stepView(1)} disabled={shown === total} aria-label={tr('Zug vor')} title={tr('Vor (→)')}>
         ▶
       </button>
-      <button onClick={() => a.viewMove(null)} disabled={shown === total} aria-label="Zur aktuellen Stellung" title="Ende (Ende)">
+      <button onClick={() => a.viewMove(null)} disabled={shown === total} aria-label={tr('Zur aktuellen Stellung')} title={tr('Ende (Ende)')}>
         ⏭
       </button>
     </div>
@@ -229,7 +230,7 @@ export function MoveList() {
       <button
         className={`move${index === current ? ' current' : ''}`}
         onClick={() => actions().viewMove(index + 1)}
-        title="Stellung nach diesem Zug ansehen"
+        title={tr('Stellung nach diesem Zug ansehen')}
       >
         {san}
       </button>
@@ -238,7 +239,7 @@ export function MoveList() {
   return (
     <>
       <div className="move-list" ref={ref}>
-        {rows.length === 0 && <div className="move-empty">Noch keine Züge</div>}
+        {rows.length === 0 && <div className="move-empty">{tr('Noch keine Züge')}</div>}
         {rows.map((r) => (
           <div className="move-row" key={r.n}>
             <span className="move-no">{r.n}.</span>
@@ -270,19 +271,19 @@ export function TrainingPanel({ compact = false }: { compact?: boolean }) {
     return (
       <div className="training-card hint">
         <div className="training-head">
-          <span className="badge b-hint">Hinweis</span>
-          <button className="icon-btn small" onClick={() => actions().clearHint()} aria-label="Hinweis schließen">
+          <span className="badge b-hint">{tr('Hinweis')}</span>
+          <button className="icon-btn small" onClick={() => actions().clearHint()} aria-label={tr('Hinweis schließen')}>
             <IconClose />
           </button>
         </div>
-        {hint.status === 'loading' && <p className="muted">Stockfish sucht den besten Zug …</p>}
-        {hint.status === 'error' && <p className="muted">Die Schach-KI ist gerade nicht erreichbar.</p>}
+        {hint.status === 'loading' && <p className="muted">{tr('Stockfish sucht den besten Zug …')}</p>}
+        {hint.status === 'error' && <p className="muted">{tr('Die Schach-KI ist gerade nicht erreichbar.')}</p>}
         {hint.status === 'ready' && (
           <>
             <p className="training-title">{hint.title}</p>
             {!compact && hint.points?.map((p) => <p key={p} className="training-point">{p}</p>)}
             {compact && hint.points?.[0] && <p className="training-point">{hint.points[0]}</p>}
-            {hint.evalText && <p className="muted small">Bewertung: {hint.evalText}</p>}
+            {hint.evalText && <p className="muted small">{tr('Bewertung:')} {hint.evalText}</p>}
           </>
         )}
       </div>
@@ -294,9 +295,9 @@ export function TrainingPanel({ compact = false }: { compact?: boolean }) {
     return (
       <div className="training-card">
         <div className="training-head">
-          {c ? <span className={`badge ${QUALITY_CLASS[c.quality]}`}>{c.label}</span> : <span className="badge">Analyse …</span>}
+          {c ? <span className={`badge ${QUALITY_CLASS[c.quality]}`}>{c.label}</span> : <span className="badge">{tr('Analyse …')}</span>}
           <span className="training-move">{feedback.moveTitle}</span>
-          <button className="icon-btn small" onClick={() => actions().dismissFeedback()} aria-label="Bewertung schließen">
+          <button className="icon-btn small" onClick={() => actions().dismissFeedback()} aria-label={tr('Bewertung schließen')}>
             <IconClose />
           </button>
         </div>
@@ -307,21 +308,21 @@ export function TrainingPanel({ compact = false }: { compact?: boolean }) {
         ))}
         {feedback.better && (
           <div className="better">
-            <p className="training-title">Besser war: {figurineSan(feedback.better.san)}</p>
+            <p className="training-title">{tr('Besser war:')} {figurineSan(feedback.better.san)}</p>
             {!compact && feedback.better.points.slice(0, 2).map((p) => <p key={p} className="training-point">{p}</p>)}
           </div>
         )}
-        {feedback.status === 'error' && <p className="muted small">Bewertung nicht verfügbar.</p>}
-        {feedback.evalText && !compact && <p className="muted small">Stellung: {feedback.evalText}</p>}
+        {feedback.status === 'error' && <p className="muted small">{tr('Bewertung nicht verfügbar.')}</p>}
+        {feedback.evalText && !compact && <p className="muted small">{tr('Stellung:')} {feedback.evalText}</p>}
       </div>
     );
   }
 
   return (
     <div className="training-card intro">
-      <span className="badge b-hint">Training</span>
+      <span className="badge b-hint">{tr('Training')}</span>
       <p className="training-point">
-        Nach jedem deiner Züge bewertet Stockfish ihn und erklärt die Idee. Mit <strong>Hinweis</strong> siehst du den besten Zug als Pfeil.
+        {tr('Nach jedem deiner Züge bewertet Stockfish ihn und erklärt die Idee. Mit')} <strong>{tr('Hinweis')}</strong> {tr('siehst du den besten Zug als Pfeil.')}
       </p>
     </div>
   );
@@ -357,41 +358,41 @@ function ActionGrid() {
   const a = actions();
   return (
     <div className="action-grid">
-      <button className="action" onClick={() => a.undo()} disabled={!c.canUndo} title="Zug zurücknehmen (U)">
+      <button className="action" onClick={() => a.undo()} disabled={!c.canUndo} title={tr('Zug zurücknehmen (U)')}>
         <IconUndo />
-        <span>Zurück</span>
+        <span>{tr('Zurück|undo')}</span>
       </button>
       {c.training && (
-        <button className="action accent" onClick={() => a.requestHint()} disabled={!c.canHint} title="Hinweis (H)">
+        <button className="action accent" onClick={() => a.requestHint()} disabled={!c.canHint} title={tr('Hinweis (H)')}>
           <IconHint />
-          <span>Hinweis</span>
+          <span>{tr('Hinweis')}</span>
         </button>
       )}
-      <button className="action" onClick={() => a.flipView()} title="Brett drehen (F)">
+      <button className="action" onClick={() => a.flipView()} title={tr('Brett drehen (F)')}>
         <IconFlip />
-        <span>Drehen</span>
+        <span>{tr('Drehen')}</span>
       </button>
       {c.canPause || c.paused ? (
-        <button className="action" onClick={() => a.setPaused(!c.paused)} title="Pause (P)">
+        <button className="action" onClick={() => a.setPaused(!c.paused)} title={tr('Pause (P)')}>
           {c.paused ? <IconPlay /> : <IconPause />}
-          <span>{c.paused ? 'Weiter' : 'Pause'}</span>
+          <span>{c.paused ? tr('Weiter') : tr('Pause')}</span>
         </button>
       ) : null}
       <button className="action" onClick={() => a.offerDraw()} disabled={!c.canDraw}>
         <IconHandshake />
-        <span>Remis</span>
+        <span>{tr('Remis')}</span>
       </button>
       <button className="action" onClick={() => openDialog('resign')} disabled={!c.canResign}>
         <IconFlag />
-        <span>Aufgeben</span>
+        <span>{tr('Aufgeben')}</span>
       </button>
       <button className="action" onClick={() => openDialog('restart')}>
         <IconRestart />
-        <span>Neu</span>
+        <span>{tr('Neu')}</span>
       </button>
       <button className="action" onClick={() => a.saveNow()}>
         <IconSave />
-        <span>Speichern</span>
+        <span>{tr('Speichern')}</span>
       </button>
       <button className="action" onClick={() => openDialog('pgn')}>
         <IconPgn />
@@ -404,7 +405,7 @@ function ActionGrid() {
 function SoundToggle() {
   const sound = useGame((s) => s.prefs.sound);
   return (
-    <button className="icon-btn" onClick={() => actions().setPrefs({ sound: !sound })} aria-label={sound ? 'Ton aus' : 'Ton an'} title={sound ? 'Ton aus' : 'Ton an'}>
+    <button className="icon-btn" onClick={() => actions().setPrefs({ sound: !sound })} aria-label={sound ? tr('Ton aus') : tr('Ton an')} title={sound ? tr('Ton aus') : tr('Ton an')}>
       <IconSound on={sound} />
     </button>
   );
@@ -414,7 +415,7 @@ function FullscreenButton() {
   const on = useFullscreen();
   if (!fullscreenAvailable()) return null;
   return (
-    <button className="icon-btn" onClick={toggleFullscreen} aria-label={on ? 'Vollbild beenden' : 'Vollbild'} title={on ? 'Vollbild beenden (V)' : 'Vollbild (V)'}>
+    <button className="icon-btn" onClick={toggleFullscreen} aria-label={on ? tr('Vollbild beenden') : tr('Vollbild')} title={on ? tr('Vollbild beenden (V)') : tr('Vollbild (V)')}>
       {on ? <IconShrink /> : <IconExpand />}
     </button>
   );
@@ -425,8 +426,8 @@ function PanelButton({ open }: { open: boolean }) {
     <button
       className="icon-btn"
       onClick={() => actions().setPrefs({ hideSidebar: open })}
-      aria-label={open ? 'Seitenleiste ausblenden' : 'Seitenleiste zeigen'}
-      title={open ? 'Seitenleiste ausblenden (S)' : 'Seitenleiste zeigen (S)'}
+      aria-label={open ? tr('Seitenleiste ausblenden') : tr('Seitenleiste zeigen')}
+      title={open ? tr('Seitenleiste ausblenden (S)') : tr('Seitenleiste zeigen (S)')}
     >
       <IconPanel open={open} />
     </button>
@@ -458,7 +459,7 @@ function FocusHud() {
         <PanelButton open={false} />
         <FullscreenButton />
         <SoundToggle />
-        <button className="icon-btn" onClick={() => actions().openMenu()} aria-label="Menü" title="Menü (Esc)">
+        <button className="icon-btn" onClick={() => actions().openMenu()} aria-label={tr('Menü')} title={tr('Menü (Esc)')}>
           <IconMenu />
         </button>
       </div>
@@ -466,10 +467,10 @@ function FocusHud() {
       <StatusLine />
       <MiniPlayer color={viewSide} />
       <div className="focus-buttons">
-        <button className="icon-btn" onClick={() => actions().undo()} disabled={!c.canUndo} aria-label="Zug zurück" title="Zug zurück (U)">
+        <button className="icon-btn" onClick={() => actions().undo()} disabled={!c.canUndo} aria-label={tr('Zug zurücknehmen')} title={tr('Zug zurücknehmen (U)')}>
           <IconUndo />
         </button>
-        <button className="icon-btn" onClick={() => actions().flipView()} aria-label="Brett drehen" title="Brett drehen (F)">
+        <button className="icon-btn" onClick={() => actions().flipView()} aria-label={tr('Brett drehen')} title={tr('Brett drehen (F)')}>
           <IconFlip />
         </button>
       </div>
@@ -491,7 +492,7 @@ function DesktopHud({ sidebar }: { sidebar: number }) {
           <PanelButton open />
           <FullscreenButton />
           <SoundToggle />
-          <button className="icon-btn" onClick={() => actions().openMenu()} aria-label="Menü" title="Menü (Esc)">
+          <button className="icon-btn" onClick={() => actions().openMenu()} aria-label={tr('Menü')} title={tr('Menü (Esc)')}>
             <IconMenu />
           </button>
         </div>
@@ -544,7 +545,7 @@ function MobileHud() {
     <>
       <div className="mobile-top">
         <PlayerCard color={opposite(viewSide)} />
-        <button className="icon-btn" onClick={() => a.openMenu()} aria-label="Menü">
+        <button className="icon-btn" onClick={() => a.openMenu()} aria-label={tr('Menü')}>
           <IconMenu />
         </button>
       </div>
@@ -558,25 +559,25 @@ function MobileHud() {
         <nav className="mobile-bar">
           <button onClick={() => a.undo()} disabled={!c.canUndo}>
             <IconUndo />
-            <span>Zurück</span>
+            <span>{tr('Zurück|undo')}</span>
           </button>
           {c.training && (
             <button onClick={() => a.requestHint()} disabled={!c.canHint} className="accent">
               <IconHint />
-              <span>Hinweis</span>
+              <span>{tr('Hinweis')}</span>
             </button>
           )}
           <button onClick={() => a.flipView()}>
             <IconFlip />
-            <span>Drehen</span>
+            <span>{tr('Drehen')}</span>
           </button>
           <button onClick={() => openSheet(sheet === 'moves' ? null : 'moves')}>
             <IconList />
-            <span>Züge</span>
+            <span>{tr('Züge')}</span>
           </button>
           <button onClick={() => openSheet(sheet === 'more' ? null : 'more')}>
             <IconMore />
-            <span>Mehr</span>
+            <span>{tr('Mehr')}</span>
           </button>
         </nav>
       </div>
@@ -584,8 +585,8 @@ function MobileHud() {
         <div className="sheet-backdrop" onClick={() => openSheet(null)}>
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-head">
-              <span>{sheet === 'moves' ? 'Zugliste' : 'Partie'}</span>
-              <button className="icon-btn small" onClick={() => openSheet(null)} aria-label="Schließen">
+              <span>{sheet === 'moves' ? tr('Zugliste') : tr('Partie')}</span>
+              <button className="icon-btn small" onClick={() => openSheet(null)} aria-label={tr('Schließen')}>
                 <IconClose />
               </button>
             </div>
@@ -595,26 +596,26 @@ function MobileHud() {
               <div className="sheet-actions">
                 {(c.canPause || c.paused) && (
                   <button onClick={() => { a.setPaused(!c.paused); openSheet(null); }}>
-                    {c.paused ? <IconPlay /> : <IconPause />} {c.paused ? 'Fortsetzen' : 'Pause'}
+                    {c.paused ? <IconPlay /> : <IconPause />} {c.paused ? tr('Fortsetzen') : tr('Pause')}
                   </button>
                 )}
                 <button onClick={() => { a.offerDraw(); openSheet(null); }} disabled={!c.canDraw}>
-                  <IconHandshake /> Remis anbieten
+                  <IconHandshake /> {tr('Remis anbieten')}
                 </button>
                 <button onClick={() => openDialog('resign')} disabled={!c.canResign}>
-                  <IconFlag /> Aufgeben
+                  <IconFlag /> {tr('Aufgeben')}
                 </button>
                 <button onClick={() => openDialog('restart')}>
-                  <IconRestart /> Neue Partie (gleiche Einstellungen)
+                  <IconRestart /> {tr('Neue Partie (gleiche Einstellungen)')}
                 </button>
                 <button onClick={() => { a.saveNow(); openSheet(null); }}>
-                  <IconSave /> Speichern
+                  <IconSave /> {tr('Speichern')}
                 </button>
                 <button onClick={() => openDialog('pgn')}>
-                  <IconPgn /> PGN exportieren / importieren
+                  <IconPgn /> {tr('PGN exportieren / importieren')}
                 </button>
                 <button onClick={() => a.setPrefs({ sound: !sound })}>
-                  <IconSound on={sound} /> Ton {sound ? 'aus' : 'an'}
+                  <IconSound on={sound} /> {sound ? tr('Ton aus') : tr('Ton an')}
                 </button>
                 {c.training && <TrainingPanel />}
               </div>

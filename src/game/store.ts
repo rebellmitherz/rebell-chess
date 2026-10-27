@@ -40,6 +40,7 @@ import {
   type StorageLike,
 } from './persistence';
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, getTimeControl, type GameSettings, type Preferences } from './settings';
+import { tr } from '../i18n';
 
 export type Screen = 'menu' | 'game';
 export type SfxKind = 'move' | 'capture' | 'strike' | 'castle' | 'check' | 'promote' | 'illegal' | 'select' | 'mate' | 'win' | 'loss' | 'draw' | 'ui';
@@ -227,8 +228,8 @@ const FEEDBACK_DEPTH = 12;
 /** Bewertung aus Sicht von Weiß als Text */
 function evalText(cpForMover: number, mover: Color): string {
   const cp = mover === 'w' ? cpForMover : -cpForMover;
-  if (Math.abs(cp) >= 90_000) return cp > 0 ? 'Weiß setzt matt' : 'Schwarz setzt matt';
-  return `${formatEval(cp, undefined)} (aus Sicht von Weiß)`;
+  if (Math.abs(cp) >= 90_000) return cp > 0 ? tr('Weiß setzt matt') : tr('Schwarz setzt matt');
+  return tr('{eval} (aus Sicht von Weiß)', { eval: formatEval(cp, undefined) });
 }
 
 function sanOf(fen: string, uci: string): string {
@@ -462,7 +463,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         set({
           engineThinking: false,
           ...(error
-            ? { engineError: error, ...toast('Die Schach-KI ist nicht erreichbar – es wurde ein Ersatzzug gespielt.') }
+            ? { engineError: error, ...toast(tr('Die Schach-KI ist nicht erreichbar – es wurde ein Ersatzzug gespielt.')) }
             : {}),
         });
         if (record) afterMove(record, false);
@@ -698,7 +699,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
           save = null;
         }
         if (!save) {
-          set({ hasSave: false, ...toast('Kein gültiger Spielstand gefunden.') });
+          set({ hasSave: false, ...toast(tr('Kein gültiger Spielstand gefunden.')) });
           return false;
         }
         const clockOn = getTimeControl(save.settings.timeControlId).initialMs > 0;
@@ -714,11 +715,11 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       importPgn(pgn) {
         const parsed = parsePgn(pgn);
         if (!parsed) {
-          set(toast('Die PGN konnte nicht gelesen werden.'));
+          set(toast(tr('Die PGN konnte nicht gelesen werden.')));
           return false;
         }
         loadGame({ ...get().settings, mode: 'local', timeControlId: 'none' }, parsed.startFen, parsed.moves);
-        set(toast(`Partie mit ${parsed.moves.length} Halbzügen geladen.`));
+        set(toast(tr('Partie mit {n} Halbzügen geladen.', { n: parsed.moves.length })));
         return true;
       },
 
@@ -836,7 +837,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         let plies = 1;
         if (s.settings.mode === 'ai' && history[history.length - 1].color !== s.settings.humanColor) {
           if (history.length < 2) {
-            set(toast('Es gibt noch keinen eigenen Zug zum Zurücknehmen.'));
+            set(toast(tr('Es gibt noch keinen eigenen Zug zum Zurücknehmen.')));
             return;
           }
           plies = 2;
@@ -893,11 +894,11 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         if (!canInteract(s) || drawPending) return;
         const engine = deps.engine;
         if (!engine) {
-          set(toast('Die Schach-KI ist nicht verfügbar.'));
+          set(toast(tr('Die Schach-KI ist nicht verfügbar.')));
           return;
         }
         drawPending = true;
-        set(toast('Stockfish prüft dein Remisangebot …'));
+        set(toast(tr('Stockfish prüft dein Remisangebot …')));
         const ply = game.ply;
         const gameId = s.gameId;
         engine.analyse(game.fen, 12).then(
@@ -908,12 +909,12 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
             // Der Mensch ist am Zug – aus Sicht der KI ist die Bewertung umgekehrt.
             const aiCp = -scoreToCp(res.scoreCp, res.mate);
             const accept = aiCp <= -80 || (Math.abs(aiCp) <= 25 && game.ply >= 40);
-            if (accept) finish({ winner: null, reason: 'agreement' }, toast('Stockfish nimmt das Remis an.'));
-            else set(toast('Stockfish lehnt das Remis ab und spielt weiter.'));
+            if (accept) finish({ winner: null, reason: 'agreement' }, toast(tr('Stockfish nimmt das Remis an.')));
+            else set(toast(tr('Stockfish lehnt das Remis ab und spielt weiter.')));
           },
           () => {
             drawPending = false;
-            set(toast('Das Remisangebot konnte nicht geprüft werden.'));
+            set(toast(tr('Das Remisangebot konnte nicht geprüft werden.')));
           },
         );
       },
@@ -922,7 +923,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         const s = get();
         if (!s.drawOffer) return;
         if (accept) finish({ winner: null, reason: 'agreement' });
-        else set({ drawOffer: null, ...toast('Remis abgelehnt – die Partie geht weiter.') });
+        else set({ drawOffer: null, ...toast(tr('Remis abgelehnt – die Partie geht weiter.')) });
       },
 
       setPaused(paused) {
@@ -1018,11 +1019,11 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
 
       saveNow() {
         if (!deps.storage) {
-          set(toast('Speichern ist in diesem Browser nicht möglich (privater Modus?).'));
+          set(toast(tr('Speichern ist in diesem Browser nicht möglich (privater Modus?).')));
           return;
         }
         persist();
-        set(toast('Partie gespeichert.'));
+        set(toast(tr('Partie gespeichert.')));
       },
 
       showToast(text) {

@@ -1,4 +1,4 @@
-import { Component, useEffect, type ReactNode } from 'react';
+import { Component, Fragment, useEffect, type ReactNode } from 'react';
 import { playSfx, setVolume, unlockAudio } from '../audio/sound';
 import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
@@ -10,6 +10,7 @@ import { Hud } from './Hud';
 import { MainMenu } from './MainMenu';
 import { useLayout } from './useLayout';
 import { useUi } from './uiState';
+import { tr } from '../i18n';
 
 class SceneErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -20,8 +21,8 @@ class SceneErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
     if (this.state.failed) {
       return (
         <div className="fatal">
-          <h1>3D-Darstellung nicht verfügbar</h1>
-          <p>Dein Browser oder Grafiktreiber unterstützt WebGL nicht oder hat es deaktiviert. Bitte einen aktuellen Browser (Chrome, Edge, Firefox, Safari) verwenden.</p>
+          <h1>{tr('3D-Darstellung nicht verfügbar')}</h1>
+          <p>{tr('Dein Browser oder Grafiktreiber unterstützt WebGL nicht oder hat es deaktiviert. Bitte einen aktuellen Browser (Chrome, Edge, Firefox, Safari) verwenden.')}</p>
         </div>
       );
     }
@@ -118,6 +119,7 @@ export function App() {
   const measured = useUi((s) => s.insets);
   const fighting = useGame((s) => s.battle !== null);
   const hideSidebar = useGame((s) => s.prefs.hideSidebar);
+  const lang = useGame((s) => s.prefs.lang);
   useSoundBridge();
   useClockTicker();
   useKeyboard();
@@ -131,20 +133,23 @@ export function App() {
         <ChessScene sidebar={inGame && !hideSidebar ? layout.sidebar : 0} topInset={topInset} bottomInset={bottomInset} />
       </SceneErrorBoundary>
       {/* Während eines Kriegerkampfs treten die Leisten zurück – volle Bühne für die Kamera */}
-      {inGame && (
-        <div className={fighting ? 'hud-layer cinematic' : 'hud-layer'}>
-          <Hud layout={layout} />
-        </div>
-      )}
-      {inGame && <BattleOverlay />}
+      {/* Sprachwechsel: Oberfläche neu aufbauen (die 3D-Szene bleibt stehen) */}
+      <Fragment key={lang}>
+        {inGame && (
+          <div className={fighting ? 'hud-layer cinematic' : 'hud-layer'}>
+            <Hud layout={layout} />
+          </div>
+        )}
+        {inGame && <BattleOverlay />}
+        <PromotionDialog />
+        <GameOverDialog />
+        <DrawOfferDialog />
+        <PauseOverlay />
+        <ConfirmDialogs />
+        <Toast />
+      </Fragment>
       <MateStamp />
       {screen === 'menu' && <MainMenu />}
-      <PromotionDialog />
-      <GameOverDialog />
-      <DrawOfferDialog />
-      <PauseOverlay />
-      <ConfirmDialogs />
-      <Toast />
     </div>
   );
 }

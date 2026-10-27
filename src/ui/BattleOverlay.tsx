@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { gameStore, useGame } from '../game/instance';
 import type { BattleState } from '../game/store';
 import { battleTitle } from './format';
+import { tr } from '../i18n';
 
 /** Wie lange die Balken nach dem Kampf noch herausfahren (ms, passend zu styles.css) */
 const LEAVE_MS = 420;
@@ -41,8 +42,8 @@ export function BattleOverlay() {
         <span className="battle-title">⚔︎ {battleTitle(shown)}</span>
       </div>
       <div className="battle-bar bottom">
-        <button className="battle-skip" onClick={skip} aria-label="Kampf überspringen">
-          Überspringen ▸▸
+        <button className="battle-skip" onClick={skip} aria-label={tr('Kampf überspringen')}>
+          {tr('Überspringen ▸▸')}
         </button>
       </div>
     </div>
