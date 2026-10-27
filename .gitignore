@@ -11,3 +11,8 @@ assets-src/
 public/models/warrior_white.glb
 public/models/warrior_black.glb
 public/models/warrior_moves.glb
+
+# CrazyGames-Paket: enthält die Mixamo-Dateien (Weitergabeverbot) – nicht ins öffentliche Repository
+dist-crazygames/
+crazygames/*.zip
+crazygames/images/

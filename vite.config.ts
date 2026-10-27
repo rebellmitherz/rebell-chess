@@ -1,12 +1,29 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+/** Portal-Build (CrazyGames): SDK-Skript einbinden, App-Installation (Manifest) weglassen */
+function portalHtml(): Plugin {
+  return {
+    name: 'portal-html',
+    transformIndexHtml(html) {
+      return html
+        .replace(/\s*<link rel="manifest"[^>]*>/, '')
+        .replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '')
+        .replace('<script type="module"', '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>\n    <script type="module"');
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const portal = mode === 'crazygames';
+  return {
+  define: { __PORTAL__: JSON.stringify(portal) },
   // Relative Pfade: der Build läuft in jedem Unterordner und von jedem statischen Webspace.
   base: './',
-  plugins: [react()],
+  plugins: portal ? [react(), portalHtml()] : [react()],
   server: { port: 5173 },
   build: {
+    outDir: portal ? 'dist-crazygames' : 'dist',
     target: 'es2022',
     chunkSizeWarningLimit: 1000,
     rolldownOptions: {
@@ -29,4 +46,5 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     testTimeout: 20000,
   },
+  };
 });

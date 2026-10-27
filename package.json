@@ -1,7 +1,7 @@
 {
   "name": "rebell-chess-3d",
   "private": true,
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Rebell Chess 3D – Premium-3D-Schach im Browser",
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "dev:lan": "npm run engine:copy && vite --host",
     "prebuild": "npm run engine:copy",
     "build": "tsc --noEmit && vite build",
+    "build:crazygames": "npm run engine:copy && tsc --noEmit && vite build --mode crazygames && python -I scripts/pack-crazygames.py",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { isPortal } from '../portal';
 
-/** Browser-Vollbild (blendet Adressleiste und Tabs aus – das Brett wird größer) */
+/** Browser-Vollbild (blendet Adressleiste und Tabs aus – das Brett wird größer); im Portal übernimmt das dessen Knopf */
 export function fullscreenAvailable(): boolean {
-  return typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
+  return !isPortal && typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
 }
 
 export function toggleFullscreen() {
