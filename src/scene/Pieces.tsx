@@ -68,6 +68,8 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 /** Ansicht von oben: Figuren um ihren Fuß zum Spieler neigen, damit man ihre Form sieht */
 export const TOP_VIEW_TILT = 1.0;
+/** Gegenüber-Modus: flachere Neigung, damit die Figuren für beide Spieler ordentlich aussehen und sich weniger überdecken */
+export const FACE_TO_FACE_TILT = 0.5;
 export const TOP_VIEW_SCALE = 1.08;
 const noRaycast = () => null;
 
@@ -472,7 +474,10 @@ export function Pieces() {
   const viewScale = topView && !fighting ? TOP_VIEW_SCALE : 1;
   // Gegenüber-Modus: Schwarz sitzt auf der anderen Seite des flach liegenden Geräts – seine Figuren neigen sich zu ihm
   const faceToFace = useGame((s) => s.prefs.faceToFace && s.settings.mode === 'local');
-  const tiltFor = (color: Color) => (faceToFace && color === 'b' ? -viewTilt : viewTilt);
+  const tiltFor = (color: Color) => {
+    if (!faceToFace || viewTilt === 0) return viewTilt;
+    return color === 'b' ? FACE_TO_FACE_TILT : -FACE_TO_FACE_TILT;
+  };
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece; battle: { dirX: number; dirZ: number } | null }>>([]);
