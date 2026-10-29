@@ -15,6 +15,7 @@ import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
 import { useModelPieces } from './pieceModels';
 import { useRealAssets } from './realAssets';
+import { addRim, copyRim, PIECE_RIM } from './rim';
 import { warriorsReady } from './warriors';
 
 /** Springer schauen zum Gegner, leicht gedreht, damit das Profil aus Spielersicht erkennbar bleibt. */
@@ -91,17 +92,30 @@ function usePieceLook(): PieceLook {
   const model = useModelPieces(style !== 'rebell');
   const real = useRealAssets(style === 'real');
   return useMemo(() => {
-    if (model && real) return { geometry: (t) => model.geometries[t], accent: null, material: real.pieces };
+    const withRim = (look: PieceLook): PieceLook => {
+      for (const c of ['w', 'b'] as const) {
+        const m = look.material[c];
+        if (!rimmed.has(m)) {
+          rimmed.add(m);
+          addRim(m, PIECE_RIM[c]);
+        }
+      }
+      return look;
+    };
+    if (model && real) return withRim({ geometry: (t) => model.geometries[t], accent: null, material: real.pieces });
     if (model) {
-      return {
+      return withRim({
         geometry: (t) => model.geometries[t],
         accent: (t) => model.accents[t],
         material: getModelMaterials(model.ao, theme),
-      };
+      });
     }
-    return { geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials(theme).piece };
+    return withRim({ geometry: getPieceGeometry, accent: getAccentGeometry, material: getMaterials(theme).piece });
   }, [model, real, theme]);
 }
+
+/** Materialien, die den Randsaum schon haben */
+const rimmed = new WeakSet<THREE.Material>();
 
 interface PieceProps {
   piece: TrackedPiece;
@@ -342,6 +356,7 @@ function Ghost({
   const material = useMemo(() => {
     const m = look.material[piece.color].clone();
     m.transparent = true;
+    copyRim(look.material[piece.color], m);
     return m;
   }, [piece.color, look]);
   shardGeometry ??= new THREE.TetrahedronGeometry(0.075);

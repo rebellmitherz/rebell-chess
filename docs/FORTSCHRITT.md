@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.10.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.10.1 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -105,3 +105,9 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - Remis durch Wiederholung/50 Züge wird automatisch gewertet (keine „Reklamation“ wie im Turnier).
 - Lizenz für den eigenen Code ist nicht festgelegt (Repository öffentlich, aber ohne LICENSE-Datei = alle Rechte
   vorbehalten). Stockfish bleibt GPL-3.0 mit Lizenztext und Quellverweis.
+
+## 0.10.1 – gleiche Sicht für Schwarz und Weiß, Figuren besser erkennbar (29.10.2026)
+- Licht (Hauptlicht, Gegenlicht, Raumlicht, Schatten) dreht mit dem Spieler mit: Schwarz sieht seine Figuren genauso beleuchtet wie Weiß, nicht mehr im Gegenlicht.
+- Randsaum an allen Figuren (`src/scene/rim.ts`): schwarze Figuren bekommen einen hellen, weiße/goldene einen dunklen Rand – Springer, Läufer und Türme bleiben auf jedem Feld lesbar.
+- Neues Prüfskript `scripts/side-shots.mjs`: gleiche Stellung aus Sicht von Weiß und Schwarz in allen Stilen und Ansichten.
+- Geprüft: Typen, 147 Tests, Vergleichsbilder (vorher/nachher). Nicht geprüft: Handy, Kampf-Szenen mit dem neuen Licht, Leistung auf schwachen Geräten.

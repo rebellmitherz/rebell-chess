@@ -1,7 +1,7 @@
 import { Environment, Lightformer, SoftShadows } from '@react-three/drei';
 import { assetUrl, ENV_FILE } from './realAssets';
-import { Canvas, useThree } from '@react-three/fiber';
-import { Suspense, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import type { GraphicsQuality } from '../game/settings';
@@ -48,6 +48,47 @@ function StudioEnvironment({ intensity }: { intensity: number }) {
   );
 }
 
+/**
+ * Haupt- und Gegenlicht (samt Raumlicht) drehen mit dem Spieler: Schwarz sieht seine Figuren genauso beleuchtet
+ * wie Weiß (Hauptlicht von vorn-links). Sonst läge Schwarz im Gegenlicht und seine Figuren wären kaum zu erkennen.
+ */
+function LightRig({ shadows, shadowMap, k }: { shadows: boolean; shadowMap: number; k: number }) {
+  const group = useRef<THREE.Group>(null!);
+  const scene = useThree((s) => s.scene);
+  const gl = useThree((s) => s.gl);
+  const target = useGame((s) => (s.viewSide === 'w' ? 0 : Math.PI));
+  const angle = useRef(target);
+  useFrame((_, dt) => {
+    if (angle.current === target) return;
+    const next = THREE.MathUtils.damp(angle.current, target, 5, Math.min(dt, 0.1));
+    angle.current = Math.abs(next - target) < 0.002 ? target : next;
+    group.current.rotation.y = angle.current;
+    scene.environmentRotation.y = angle.current;
+    scene.backgroundRotation.y = angle.current;
+    if (shadows) gl.shadowMap.needsUpdate = true;
+  });
+  return (
+    <group ref={group}>
+      <directionalLight
+        castShadow={shadows}
+        position={[-5, 13, 7]}
+        intensity={2.1 * k}
+        color="#fff3dd"
+        shadow-mapSize={[shadowMap || 512, shadowMap || 512]}
+        shadow-camera-left={-7}
+        shadow-camera-right={7}
+        shadow-camera-top={7}
+        shadow-camera-bottom={-7}
+        shadow-camera-near={2}
+        shadow-camera-far={30}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.025}
+      />
+      <directionalLight position={[6, 4, -8]} intensity={0.6 * k} color="#a9c4ff" />
+    </group>
+  );
+}
+
 /** Nur im Dev-Modus: Renderer für Messungen in der Browser-Konsole erreichbar. */
 function DevProbe() {
   const gl = useThree((s) => s.gl);
@@ -86,23 +127,8 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       {q.soft && <SoftShadows size={22} samples={12} focus={0.7} />}
       <ambientLight intensity={0.22 * k} />
       <hemisphereLight args={['#fff4dc', '#08090c', 0.35 * k]} />
-      <directionalLight
-        castShadow={shadows}
-        position={[-5, 13, 7]}
-        intensity={2.1 * k}
-        color="#fff3dd"
-        shadow-mapSize={[q.shadowMap || 512, q.shadowMap || 512]}
-        shadow-camera-left={-7}
-        shadow-camera-right={7}
-        shadow-camera-top={7}
-        shadow-camera-bottom={-7}
-        shadow-camera-near={2}
-        shadow-camera-far={30}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.025}
-      />
+      <LightRig shadows={shadows} shadowMap={q.shadowMap} k={k} />
       <spotLight position={[0, 13, 0]} angle={0.55} penumbra={0.9} intensity={1.4 * k} decay={0} color="#ffe2ad" />
-      <directionalLight position={[6, 4, -8]} intensity={0.6 * k} color="#a9c4ff" />
       <Suspense fallback={null}>
         {realStyle ? (
           // Echtes Raumlicht (Wohnraum mit Fenstern), unscharf im Hintergrund
