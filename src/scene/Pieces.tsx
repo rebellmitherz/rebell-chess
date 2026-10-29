@@ -71,6 +71,8 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 export const TOP_VIEW_TILT = 1.0;
 /** Gegenüber-Modus: flachere Neigung, damit die Figuren für beide Spieler ordentlich aussehen und sich weniger überdecken */
 export const FACE_TO_FACE_TILT = 0.5;
+/** Gegenüber-Modus: größer, weil die flachere Neigung die Figuren sonst kleiner wirken lässt */
+export const FACE_TO_FACE_SCALE = 1.3;
 export const TOP_VIEW_SCALE = 1.08;
 const noRaycast = () => null;
 
@@ -494,11 +496,13 @@ export function Pieces() {
   const viewScale = topView && !fighting ? TOP_VIEW_SCALE : 1;
   // Gegenüber-Modus: Schwarz sitzt auf der anderen Seite des flach liegenden Geräts – seine Figuren neigen sich zu ihm
   const faceToFace = useGame((s) => s.prefs.faceToFace && s.settings.mode === 'local');
-  const marks = useGame((s) => s.prefs.faceToFace && s.prefs.pieceMarks && s.settings.mode === 'local') && topView && !fighting;
+  const marks = useGame((s) => s.prefs.faceToFace && s.prefs.faceMarks && s.settings.mode === 'local') && topView && !fighting;
   const tiltFor = (color: Color) => {
     if (!faceToFace || viewTilt === 0) return viewTilt;
     return color === 'b' ? FACE_TO_FACE_TILT : -FACE_TO_FACE_TILT;
   };
+
+  const scaleNow = faceToFace && viewTilt !== 0 ? FACE_TO_FACE_SCALE : viewScale;
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece; battle: { dirX: number; dirZ: number } | null }>>([]);
@@ -541,7 +545,7 @@ export function Pieces() {
           inCheck={p.type === 'k' && p.square === checkSquare}
           mated={p.type === 'k' && p.square === mateSquare}
           viewTilt={tiltFor(p.color)}
-          viewScale={viewScale}
+          viewScale={scaleNow}
           pickable={!topView}
           hidden={fighting && battle.to === p.square && battle.attacker.color === p.color}
           marks={marks}
@@ -554,7 +558,7 @@ export function Pieces() {
           look={look}
           battle={g.battle}
           viewTilt={tiltFor(g.piece.color)}
-          viewScale={viewScale}
+          viewScale={scaleNow}
           onDone={() => setGhosts((all) => all.filter((x) => x.key !== g.key))}
         />
       ))}

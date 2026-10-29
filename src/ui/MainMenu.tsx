@@ -234,8 +234,8 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
         hint={tr('Zwei Spieler, das Gerät liegt flach dazwischen: Schwarz sitzt gegenüber und sieht seine Figuren richtig herum. Am besten in der Ansicht „von oben“')}
       />
       <Toggle
-        checked={prefs.pieceMarks}
-        onChange={(pieceMarks) => set({ pieceMarks })}
+        checked={prefs.faceMarks}
+        onChange={(faceMarks) => set({ faceMarks })}
         label={tr('Symbole auf den Figuren')}
         hint={tr('Nur im Gegenüber-Modus: Ein Plättchen mit dem Figurensymbol auf jeder Figur, damit auch die Figuren des Gegners gut zu erkennen sind')}
       />

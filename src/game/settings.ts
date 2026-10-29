@@ -70,7 +70,7 @@ export interface Preferences {
    */
   faceToFace: boolean;
   /** Gegenüber-Modus: Symbol-Plättchen auf den Figuren, damit man auch die kopfstehenden Figuren des Gegners erkennt */
-  pieceMarks: boolean;
+  faceMarks: boolean;
   /** PC: Schachuhr-Tafeln für beide Spieler neben dem Brett */
   boardClocks: boolean;
   /** Sprache der Oberfläche */
@@ -106,7 +106,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showCoordinates: true,
   boardClocks: true,
   faceToFace: false,
-  pieceMarks: true,
+  faceMarks: false,
   hideSidebar: false,
   lang: detectLang(),
 };
@@ -155,7 +155,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
     boardClocks: bool(r.boardClocks, base.boardClocks),
     faceToFace: bool(r.faceToFace, base.faceToFace),
-    pieceMarks: bool(r.pieceMarks, base.pieceMarks),
+    faceMarks: bool(r.faceMarks, base.faceMarks),
     hideSidebar: bool(r.hideSidebar, base.hideSidebar),
     lang: r.lang === 'de' || r.lang === 'en' ? r.lang : base.lang,
   };

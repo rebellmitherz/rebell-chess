@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 29.10.2026 · Version 0.12.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 29.10.2026 · Version 0.12.1 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -124,3 +124,8 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - Neu: Im Gegenüber-Modus liegt oben auf jeder Figur ein Plättchen mit dem Figurensymbol (♚ ♛ ♜ ♝ ♞ ♟). Weiße Figuren haben ein dunkles Plättchen, schwarze ein helles. Das Symbol steht für den Besitzer richtig herum, der Gegenüber erkennt es auch kopfstehend sofort.
 - Ein/aus in den Einstellungen („Symbole auf den Figuren“, Standard: an). Wirkt nur im Gegenüber-Modus, in der Ansicht „von oben“ und nicht im Kriegerkampf.
 - Geprüft: Typen, 147 Tests, Bilder (Handy-Format, Marmor und Rebell-Stil). Nicht geprüft: echtes Handy (Schrift der Symbole hängt vom Gerät ab, der Bauer ist mit Textwähler gegen Emoji-Darstellung abgesichert), Leistung auf schwachen Geräten.
+
+## 0.12.1 – Gegenüber-Modus: größere Figuren, Plättchen aus (29.10.2026)
+- Die Figuren sind im Gegenüber-Modus 20 % größer (1,3 statt 1,08): die flachere Neigung hatte sie kleiner wirken lassen, jetzt füllen sie ihr Feld wieder.
+- Die Symbol-Plättchen sind jetzt standardmäßig aus (Emilio: sah schlecht aus); weiter einschaltbar unter „Symbole auf den Figuren“. Die Einstellung heißt intern neu (`faceMarks`), damit sie bei allen aus ist.
+- Geprüft: Typen, 147 Tests, Bilder (Marmor und Rebell-Stil, Handy-Format). Nicht geprüft: echtes Handy.
