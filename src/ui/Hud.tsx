@@ -6,6 +6,7 @@ import { gameStore, useGame } from '../game/instance';
 import { displayPly } from '../game/store';
 import { COLOR_NAME, FIGURINE, figurineSan, playerName, resultTitle } from './format';
 import {
+  IconClock,
   IconClose,
   IconExpand,
   IconFlag,
@@ -30,6 +31,7 @@ import { useNow } from './useLayout';
 import { useUi } from './uiState';
 import { fullscreenAvailable, toggleFullscreen, useFullscreen } from './fullscreen';
 import { tr } from '../i18n';
+import { BoardClocks, type ClockPadMode } from './BoardClocks';
 
 const actions = () => gameStore.getState();
 
@@ -421,6 +423,15 @@ function FullscreenButton() {
   );
 }
 
+function ClocksToggle() {
+  const on = useGame((s) => s.prefs.boardClocks);
+  return (
+    <button className={`icon-btn${on ? ' on' : ''}`} onClick={() => actions().setPrefs({ boardClocks: !on })} aria-pressed={on} aria-label={tr('Uhren am Brett ein/aus')} title={tr('Uhren am Brett ein/aus')}>
+      <IconClock />
+    </button>
+  );
+}
+
 function PanelButton({ open }: { open: boolean }) {
   return (
     <button
@@ -458,6 +469,7 @@ function FocusHud() {
       <div className="focus-buttons">
         <PanelButton open={false} />
         <FullscreenButton />
+        <ClocksToggle />
         <SoundToggle />
         <button className="icon-btn" onClick={() => actions().openMenu()} aria-label={tr('Menü')} title={tr('Menü (Esc)')}>
           <IconMenu />
@@ -478,11 +490,19 @@ function FocusHud() {
   );
 }
 
-function DesktopHud({ sidebar }: { sidebar: number }) {
+function DesktopHud({ sidebar, layout, padMode }: { sidebar: number; layout: Layout; padMode: ClockPadMode | null }) {
   const viewSide = useGame((s) => s.viewSide);
-  if (sidebar === 0) return <FocusHud />;
+  const pads = padMode && <BoardClocks mode={padMode} sidebar={sidebar} areaWidth={layout.width - sidebar} areaHeight={layout.height} />;
+  if (sidebar === 0)
+    return (
+      <>
+        {pads}
+        <FocusHud />
+      </>
+    );
   return (
     <>
+      {pads}
       <div className="brand-corner">
         <span className="brand-mark">REBELL</span>
         <span className="brand-sub">CHESS 3D</span>
@@ -491,6 +511,7 @@ function DesktopHud({ sidebar }: { sidebar: number }) {
         <div className="sidebar-head">
           <PanelButton open />
           <FullscreenButton />
+          <ClocksToggle />
           <SoundToggle />
           <button className="icon-btn" onClick={() => actions().openMenu()} aria-label={tr('Menü')} title={tr('Menü (Esc)')}>
             <IconMenu />
@@ -627,7 +648,7 @@ function MobileHud() {
   );
 }
 
-export function Hud({ layout }: { layout: Layout }) {
+export function Hud({ layout, padMode }: { layout: Layout; padMode: ClockPadMode | null }) {
   const hidden = useGame((s) => s.prefs.hideSidebar);
-  return layout.desktop ? <DesktopHud sidebar={hidden ? 0 : layout.sidebar} /> : <MobileHud />;
+  return layout.desktop ? <DesktopHud sidebar={hidden ? 0 : layout.sidebar} layout={layout} padMode={padMode} /> : <MobileHud />;
 }

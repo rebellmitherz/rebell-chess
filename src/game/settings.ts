@@ -64,6 +64,13 @@ export interface Preferences {
   /** Zwei Spieler: Brett dreht sich nach jedem Zug zur Seite am Zug */
   turnBoard: boolean;
   showCoordinates: boolean;
+  /**
+   * Zwei Spieler, Gerät liegt flach zwischen ihnen: Schwarz sitzt gegenüber und sieht seine Figuren richtig herum
+   * (Figuren und Karte des oberen Spielers sind für ihn gedreht). Schließt „Brett drehen“ aus.
+   */
+  faceToFace: boolean;
+  /** PC: Schachuhr-Tafeln für beide Spieler neben dem Brett */
+  boardClocks: boolean;
   /** Sprache der Oberfläche */
   lang: Lang;
   /** PC: Seitenleiste während der Partie ausgeblendet – das Brett bekommt die ganze Breite */
@@ -95,6 +102,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   battleMode: 'warriors',
   turnBoard: true,
   showCoordinates: true,
+  boardClocks: true,
+  faceToFace: false,
   hideSidebar: false,
   lang: detectLang(),
 };
@@ -141,6 +150,8 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' ? r.viewMode : base.viewMode,
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
+    boardClocks: bool(r.boardClocks, base.boardClocks),
+    faceToFace: bool(r.faceToFace, base.faceToFace),
     hideSidebar: bool(r.hideSidebar, base.hideSidebar),
     lang: r.lang === 'de' || r.lang === 'en' ? r.lang : base.lang,
   };

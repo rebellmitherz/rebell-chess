@@ -1008,8 +1008,15 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       setPrefs(partial) {
         const s = get();
         const prefs = { ...s.prefs, ...partial };
+        // Brett drehen und Gegenüber-Modus schließen sich aus: zuletzt eingeschaltetes gewinnt
+        if (partial.faceToFace) prefs.turnBoard = false;
+        else if (partial.turnBoard) prefs.faceToFace = false;
         savePreferences(deps.storage, prefs);
-        const viewSide = partial.turnBoard && s.settings.mode === 'local' && s.active ? s.status.turn : s.viewSide;
+        const viewSide = partial.faceToFace
+          ? 'w'
+          : partial.turnBoard && s.settings.mode === 'local' && s.active
+            ? s.status.turn
+            : s.viewSide;
         set({ prefs, viewSide });
       },
 

@@ -8,6 +8,13 @@ function Svg({ children }: { children: ReactNode }) {
   );
 }
 
+export const IconClock = () => (
+  <Svg>
+    <circle cx="12" cy="13" r="7.5" />
+    <path d="M12 9v4l2.5 2M9.5 3h5" />
+  </Svg>
+);
+
 export const IconUndo = () => (
   <Svg>
     <path d="M9 14 4 9l5-5" />

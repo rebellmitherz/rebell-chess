@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.10.1 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 26.10.2026 · Version 0.11.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -111,3 +111,8 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - Randsaum an allen Figuren (`src/scene/rim.ts`): schwarze Figuren bekommen einen hellen, weiße/goldene einen dunklen Rand – Springer, Läufer und Türme bleiben auf jedem Feld lesbar.
 - Neues Prüfskript `scripts/side-shots.mjs`: gleiche Stellung aus Sicht von Weiß und Schwarz in allen Stilen und Ansichten.
 - Geprüft: Typen, 147 Tests, Vergleichsbilder (vorher/nachher). Nicht geprüft: Handy, Kampf-Szenen mit dem neuen Licht, Leistung auf schwachen Geräten.
+
+## 0.11.0 – Uhren am Brett und Gegenüber-Modus (29.10.2026)
+- **Gegenüber-Modus** (Einstellungen, nur „2 Spieler“): Gerät liegt flach zwischen zwei Spielern. Schwarz sitzt gegenüber – seine Figuren neigen sich zu ihm (so wie Weiß seine von unten sieht), die Spielerkarte oben ist für ihn gedreht. Schließt „Brett drehen“ aus. Am besten in der Ansicht „von oben“.
+- **Schachuhr-Tafeln am Brett** (PC, ein/aus per Uhr-Knopf in der Seitenleiste oder in den Einstellungen): eine Tafel pro Spieler, links neben dem Brett oben/unten – oder als schmale Leiste über/unter dem Brett, wenn der Platz fehlt. Der Spieler am Zug ist „gedrückt“ und leuchtet, unter 20 s rot. Antippen = Pause/Weiter. Ohne Zeitlimit zählt die Tafel die verbrauchte Zeit mit. Im Gegenüber-Modus steht die obere Tafel für Schwarz richtig herum.
+- Geprüft: Typen, 147 Tests, Bilder (Handy-Gegenüber, PC mit Seitenleiste, ohne Seitenleiste mit Zeitlimit, schmales Fenster). Nicht geprüft: echtes Handy, Tippen auf die Tafel/Pause im Browser, Gegenüber-Modus in der 3D-Schrägansicht (dort nicht sinnvoll).

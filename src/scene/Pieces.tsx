@@ -470,6 +470,9 @@ export function Pieces() {
   // Kopf zeigt vom Spieler weg (Bildschirm oben): Weiß unten → nach -z, Schwarz unten → nach +z
   const viewTilt = topView && !fighting ? (viewSide === 'w' ? -TOP_VIEW_TILT : TOP_VIEW_TILT) : 0;
   const viewScale = topView && !fighting ? TOP_VIEW_SCALE : 1;
+  // Gegenüber-Modus: Schwarz sitzt auf der anderen Seite des flach liegenden Geräts – seine Figuren neigen sich zu ihm
+  const faceToFace = useGame((s) => s.prefs.faceToFace && s.settings.mode === 'local');
+  const tiltFor = (color: Color) => (faceToFace && color === 'b' ? -viewTilt : viewTilt);
 
   const prev = useRef<TrackedPiece[]>(pieces);
   const [ghosts, setGhosts] = useState<Array<{ key: string; piece: TrackedPiece; battle: { dirX: number; dirZ: number } | null }>>([]);
@@ -511,7 +514,7 @@ export function Pieces() {
           profile={profileFor(p)}
           inCheck={p.type === 'k' && p.square === checkSquare}
           mated={p.type === 'k' && p.square === mateSquare}
-          viewTilt={viewTilt}
+          viewTilt={tiltFor(p.color)}
           viewScale={viewScale}
           pickable={!topView}
           hidden={fighting && battle.to === p.square && battle.attacker.color === p.color}
@@ -523,7 +526,7 @@ export function Pieces() {
           piece={g.piece}
           look={look}
           battle={g.battle}
-          viewTilt={viewTilt}
+          viewTilt={tiltFor(g.piece.color)}
           viewScale={viewScale}
           onDone={() => setGhosts((all) => all.filter((x) => x.key !== g.key))}
         />

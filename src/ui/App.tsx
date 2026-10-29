@@ -7,6 +7,7 @@ import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, Promotio
 import { toggleFullscreen } from './fullscreen';
 import { MateStamp } from './MateStamp';
 import { Hud } from './Hud';
+import { CLOCK_BAR_INSET, clockPadMode } from './BoardClocks';
 import { MainMenu } from './MainMenu';
 import { useLayout } from './useLayout';
 import { useUi } from './uiState';
@@ -124,8 +125,13 @@ export function App() {
   useClockTicker();
   useKeyboard();
   const inGame = screen === 'game';
-  const topInset = !inGame || layout.desktop ? 0 : (measured?.top ?? layout.topInset);
-  const bottomInset = !inGame || layout.desktop ? 0 : (measured?.bottom ?? layout.bottomInset);
+  const boardClocks = useGame((s) => s.prefs.boardClocks);
+  const faceToFace = useGame((s) => s.prefs.faceToFace && s.settings.mode === 'local');
+  const sidebarWidth = hideSidebar ? 0 : layout.sidebar;
+  const padMode = inGame && layout.desktop && boardClocks ? clockPadMode(layout.width - sidebarWidth, layout.height) : null;
+  const barInset = padMode === 'bar' ? CLOCK_BAR_INSET : 0;
+  const topInset = !inGame ? 0 : layout.desktop ? barInset : (measured?.top ?? layout.topInset);
+  const bottomInset = !inGame ? 0 : layout.desktop ? barInset : (measured?.bottom ?? layout.bottomInset);
 
   return (
     <div className="app">
@@ -136,8 +142,8 @@ export function App() {
       {/* Sprachwechsel: Oberfläche neu aufbauen (die 3D-Szene bleibt stehen) */}
       <Fragment key={lang}>
         {inGame && (
-          <div className={fighting ? 'hud-layer cinematic' : 'hud-layer'}>
-            <Hud layout={layout} />
+          <div className={`hud-layer${fighting ? ' cinematic' : ''}${padMode ? ' pads-on' : ''}${faceToFace ? ' f2f' : ''}`}>
+            <Hud layout={layout} padMode={padMode} />
           </div>
         )}
         {inGame && <BattleOverlay />}

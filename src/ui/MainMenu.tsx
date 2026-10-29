@@ -222,6 +222,18 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
       <Toggle checked={prefs.showLastMove} onChange={(showLastMove) => set({ showLastMove })} label={tr('Letzten Zug markieren')} />
       <Toggle checked={prefs.showCoordinates} onChange={(showCoordinates) => set({ showCoordinates })} label={tr('Koordinaten am Brettrand')} />
       <Toggle
+        checked={prefs.boardClocks}
+        onChange={(boardClocks) => set({ boardClocks })}
+        label={tr('Schachuhr am Brett')}
+        hint={tr('PC: Eine Uhr pro Spieler neben dem Brett. Ohne Bedenkzeit zählt sie die Zeit mit, die jeder bisher gebraucht hat')}
+      />
+      <Toggle
+        checked={prefs.faceToFace}
+        onChange={(faceToFace) => set({ faceToFace })}
+        label={tr('Gegenüber-Modus')}
+        hint={tr('Zwei Spieler, das Gerät liegt flach dazwischen: Schwarz sitzt gegenüber und sieht seine Figuren richtig herum. Am besten in der Ansicht „von oben“')}
+      />
+      <Toggle
         checked={prefs.turnBoard}
         onChange={(turnBoard) => set({ turnBoard })}
         label={tr('Brett zum Spieler am Zug drehen')}
