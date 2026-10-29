@@ -98,6 +98,8 @@ export const EN: Record<string, string> = {
   'Schachuhr am Brett': 'Chess clock at the board',
   'Gegenüber-Modus': 'Face-to-face mode',
   'Zwei Spieler, das Gerät liegt flach dazwischen: Schwarz sitzt gegenüber und sieht seine Figuren richtig herum. Am besten in der Ansicht „von oben“': 'Two players, device lying flat between them: Black sits opposite and sees their pieces the right way up. Works best in the “top-down” view',
+  'Symbole auf den Figuren': 'Symbols on the pieces',
+  'Nur im Gegenüber-Modus: Ein Plättchen mit dem Figurensymbol auf jeder Figur, damit auch die Figuren des Gegners gut zu erkennen sind': 'Face-to-face mode only: a small disc with the piece symbol on top of each piece, so your opponent’s pieces are easy to recognise too',
   'PC: Eine Uhr pro Spieler neben dem Brett. Ohne Bedenkzeit zählt sie die Zeit mit, die jeder bisher gebraucht hat': 'Desktop: one clock per player next to the board. Without a time limit it counts up how long each player has used so far',
   'Uhren am Brett ein/aus': 'Board clocks on/off',
   'Uhr antippen: Pause': 'Tap the clock: pause',

@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 26.10.2026 · Version 0.11.1 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 29.10.2026 · Version 0.12.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -119,3 +119,8 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 
 ## 0.11.1 – Gegenüber-Modus flacher (29.10.2026)
 - Im Gegenüber-Modus neigen sich die Figuren nur noch halb so stark (0,5 statt 1,0 rad): kompakter, weniger Überdeckung, für beide Spieler gut lesbar. Jeder sieht die Figuren des anderen kopfüber – wie an einem echten Brett.
+
+## 0.12.0 – Symbol-Plättchen im Gegenüber-Modus (29.10.2026)
+- Neu: Im Gegenüber-Modus liegt oben auf jeder Figur ein Plättchen mit dem Figurensymbol (♚ ♛ ♜ ♝ ♞ ♟). Weiße Figuren haben ein dunkles Plättchen, schwarze ein helles. Das Symbol steht für den Besitzer richtig herum, der Gegenüber erkennt es auch kopfstehend sofort.
+- Ein/aus in den Einstellungen („Symbole auf den Figuren“, Standard: an). Wirkt nur im Gegenüber-Modus, in der Ansicht „von oben“ und nicht im Kriegerkampf.
+- Geprüft: Typen, 147 Tests, Bilder (Handy-Format, Marmor und Rebell-Stil). Nicht geprüft: echtes Handy (Schrift der Symbole hängt vom Gerät ab, der Bauer ist mit Textwähler gegen Emoji-Darstellung abgesichert), Leistung auf schwachen Geräten.

@@ -69,6 +69,8 @@ export interface Preferences {
    * (Figuren und Karte des oberen Spielers sind für ihn gedreht). Schließt „Brett drehen“ aus.
    */
   faceToFace: boolean;
+  /** Gegenüber-Modus: Symbol-Plättchen auf den Figuren, damit man auch die kopfstehenden Figuren des Gegners erkennt */
+  pieceMarks: boolean;
   /** PC: Schachuhr-Tafeln für beide Spieler neben dem Brett */
   boardClocks: boolean;
   /** Sprache der Oberfläche */
@@ -104,6 +106,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showCoordinates: true,
   boardClocks: true,
   faceToFace: false,
+  pieceMarks: true,
   hideSidebar: false,
   lang: detectLang(),
 };
@@ -152,6 +155,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
     boardClocks: bool(r.boardClocks, base.boardClocks),
     faceToFace: bool(r.faceToFace, base.faceToFace),
+    pieceMarks: bool(r.pieceMarks, base.pieceMarks),
     hideSidebar: bool(r.hideSidebar, base.hideSidebar),
     lang: r.lang === 'de' || r.lang === 'en' ? r.lang : base.lang,
   };

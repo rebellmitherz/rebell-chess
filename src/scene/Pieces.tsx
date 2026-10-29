@@ -13,6 +13,7 @@ import { emitImpact } from './ImpactFX';
 import { beginDrag, clickSuppressed, pointerDrag } from './interaction';
 import { getMaterials, getModelMaterials } from './materials';
 import { getAccentGeometry, getPieceGeometry } from './pieceGeometry';
+import { getMarkMaterial, MARK_SIZE } from './pieceMarks';
 import { useModelPieces } from './pieceModels';
 import { useRealAssets } from './realAssets';
 import { addRim, copyRim, PIECE_RIM } from './rim';
@@ -140,9 +141,17 @@ interface PieceProps {
   pickable: boolean;
   /** Kämpft gerade als Krieger – erscheint erst bei der Rückverwandlung wieder */
   hidden: boolean;
+  /** Symbol-Plättchen oben auf der Figur (Gegenüber-Modus) */
+  marks: boolean;
 }
 
-function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated, viewTilt, viewScale, pickable, hidden }: PieceProps) {
+/** Höhe des Figurenkopfs (obere Kante der Geometrie), dort liegt das Symbol-Plättchen */
+function pieceTop(geometry: THREE.BufferGeometry): number {
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  return geometry.boundingBox?.max.y ?? 1;
+}
+
+function Piece({ piece, lifted, interactive, look, displaySquare, profile, inCheck, mated, viewTilt, viewScale, pickable, hidden, marks }: PieceProps) {
   const group = useRef<THREE.Group>(null!);
   const selectSquare = useGame((s) => s.selectSquare);
   const [x, z] = squareToWorld(displaySquare);
@@ -325,6 +334,17 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
         />
         {look.accent && <mesh geometry={look.accent(piece.type)} material={mats.accent[piece.color]} raycast={noRaycast} />}
       </group>
+      {marks && (
+        // Liegt flach oben auf dem Kopf; Schwarz sitzt gegenüber, sein Symbol steht um 180° gedreht
+        <mesh
+          position={[0, pieceTop(look.geometry(piece.type)) + 0.03, 0]}
+          rotation={[-Math.PI / 2, 0, piece.color === 'b' ? Math.PI : 0]}
+          material={getMarkMaterial(piece.color, piece.type)}
+          raycast={noRaycast}
+        >
+          <planeGeometry args={[MARK_SIZE, MARK_SIZE]} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -474,6 +494,7 @@ export function Pieces() {
   const viewScale = topView && !fighting ? TOP_VIEW_SCALE : 1;
   // Gegenüber-Modus: Schwarz sitzt auf der anderen Seite des flach liegenden Geräts – seine Figuren neigen sich zu ihm
   const faceToFace = useGame((s) => s.prefs.faceToFace && s.settings.mode === 'local');
+  const marks = useGame((s) => s.prefs.faceToFace && s.prefs.pieceMarks && s.settings.mode === 'local') && topView && !fighting;
   const tiltFor = (color: Color) => {
     if (!faceToFace || viewTilt === 0) return viewTilt;
     return color === 'b' ? FACE_TO_FACE_TILT : -FACE_TO_FACE_TILT;
@@ -523,6 +544,7 @@ export function Pieces() {
           viewScale={viewScale}
           pickable={!topView}
           hidden={fighting && battle.to === p.square && battle.attacker.color === p.color}
+          marks={marks}
         />
       ))}
       {ghosts.map((g) => (
