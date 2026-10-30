@@ -64,7 +64,7 @@ function NewGamePanel({ onBack }: { onBack: () => void }) {
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'ai', label: tr('Stockfish-KI') },
+            { value: 'ai', label: tr('Rebell-KI') },
             { value: 'local', label: tr('Zwei Spieler') },
           ]}
         />
@@ -281,7 +281,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           </p>
           <h3>Analysis</h3>
           <p>
-            Clicking a move in the move list shows the position after it. In training mode and after the game, Stockfish rates every position (bar, number, best move). “Back to game” takes you back.
+            Clicking a move in the move list shows the position after it. In training mode and after the game, the AI rates every position (bar, number, best move). “Back to game” takes you back.
           </p>
           <h3>Saving</h3>
           <p>The game is saved automatically in your browser after every move. With “PGN” you can export it and load it on other devices.</p>
@@ -295,7 +295,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           )}
           <h3>Licences</h3>
           <p>
-            Chess engine: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">licence text</a>, source: github.com/official-stockfish/Stockfish and github.com/nmrugg/stockfish.js). Rules: chess.js (BSD-2-Clause).
+            Chess AI: Rebell's own engine. Rules: chess.js (BSD-2-Clause).
             3D: three.js, React Three Fiber, three-bvh-csg (MIT). Fonts Cinzel and Inter (OFL-1.1).
             Pieces and board: “Chess Set” by Riley Queen, room light “Lebombo”, table “Wood Table 001” (all Poly Haven, CC0). Warriors and fight moves: Adobe Mixamo (“Paladin”, “Pro Sword and Shield Pack”). Recordings: “Impact Sounds” by Kenney (CC0). The “Rebel” style, textures and bell tones are generated in code.
           </p>
@@ -332,7 +332,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           <h3>Analyse</h3>
           <p>
             Ein Klick auf einen Zug in der Zugliste zeigt die Stellung danach. Im Trainingsmodus und nach Partieende bewertet
-            Stockfish jede Stellung (Balken, Zahl, bester Zug). „Zur Partie“ führt zurück.
+            die KI jede Stellung (Balken, Zahl, bester Zug). „Zur Partie“ führt zurück.
           </p>
           <h3>Speichern</h3>
           <p>Die Partie wird nach jedem Zug automatisch im Browser gespeichert. Über „PGN“ lässt sie sich exportieren und auf anderen Geräten laden.</p>
@@ -347,8 +347,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           )}
           <h3>Lizenzen</h3>
           <p>
-            Schach-KI: Stockfish 19 (GPL-3.0, <a href="engine/STOCKFISH-LICENSE-GPL-3.0.txt" target="_blank" rel="noreferrer">Lizenztext</a>,
-            Quelltext: github.com/official-stockfish/Stockfish und github.com/nmrugg/stockfish.js). Regeln: chess.js (BSD-2-Clause).
+            Schach-KI: eigene Rebell-Engine. Regeln: chess.js (BSD-2-Clause).
             3D: three.js, React Three Fiber, three-bvh-csg (MIT). Schriften Cinzel und Inter (OFL-1.1).
             Figuren und Brett: „Chess Set“ von Riley Queen, Raumlicht „Lebombo“, Tisch „Wood Table 001“ (alle Poly Haven,
             CC0). Krieger und Kampfbewegungen: Adobe Mixamo („Paladin“, „Pro Sword and Shield Pack“). Aufnahmen: „Impact Sounds“ von Kenney (CC0). Stil „Rebell“, Texturen und Glockentöne sind im Code erzeugt.

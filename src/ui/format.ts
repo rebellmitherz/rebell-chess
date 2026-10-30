@@ -31,12 +31,12 @@ export function figurineSan(san: string): string {
 
 export function playerName(settings: GameSettings, color: Color): string {
   if (settings.mode === 'local') return COLOR_NAME[color];
-  return color === settings.humanColor ? tr('Du') : `Stockfish · ${tr(getDifficulty(settings.aiLevel).name)}`;
+  return color === settings.humanColor ? tr('Du') : `Rebell-KI · ${tr(getDifficulty(settings.aiLevel).name)}`;
 }
 
 export function resultTitle(result: GameResult, settings: GameSettings): string {
   if (result.winner === null) return tr('Remis');
-  if (settings.mode === 'ai') return result.winner === settings.humanColor ? tr('Du hast gewonnen!') : tr('Stockfish gewinnt');
+  if (settings.mode === 'ai') return result.winner === settings.humanColor ? tr('Du hast gewonnen!') : tr('Die KI gewinnt');
   return tr('{color} gewinnt', { color: COLOR_NAME[result.winner] });
 }
 

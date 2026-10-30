@@ -1,18 +1,19 @@
-import type { EngineOptions, SearchLimits } from './StockfishEngine';
+import type { SearchLimits } from './types';
 
 export interface DifficultyLevel {
   id: number;
   name: string;
-  /** Grober Richtwert – die Lite-Engine ist nicht exakt kalibriert */
+  /** Grober Richtwert aus Testpartien, keine geprüfte Wertungszahl */
   strength: string;
   description: string;
-  options: EngineOptions;
   limits: SearchLimits;
+  /** Abweichung vom besten Zug in Centipawns: die KI wählt zufällig unter den Zügen in diesem Abstand */
+  margin?: number;
+  /** Eröffnungsbuch nutzen */
+  book: boolean;
   /** Wahrscheinlichkeit für einen zufälligen legalen Zug (macht niedrige Stufen menschlicher) */
   randomMoveChance: number;
 }
-
-const unlimited = { 'UCI_LimitStrength': false, 'Skill Level': 20 };
 
 export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
   {
@@ -20,35 +21,39 @@ export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
     name: 'Einsteiger',
     strength: 'ca. 600 Elo',
     description: 'Macht oft Fehler – ideal zum Lernen der Regeln.',
-    options: { 'UCI_LimitStrength': false, 'Skill Level': 0 },
     limits: { depth: 1 },
-    randomMoveChance: 0.45,
+    margin: 250,
+    book: false,
+    randomMoveChance: 0.35,
   },
   {
     id: 2,
     name: 'Anfänger',
     strength: 'ca. 900 Elo',
     description: 'Sieht einfache Drohungen, übersieht aber Taktik.',
-    options: { 'UCI_LimitStrength': false, 'Skill Level': 0 },
-    limits: { depth: 2 },
-    randomMoveChance: 0.18,
+    limits: { depth: 1 },
+    margin: 130,
+    book: false,
+    randomMoveChance: 0.15,
   },
   {
     id: 3,
     name: 'Hobbyspieler',
     strength: 'ca. 1300 Elo',
     description: 'Solide Züge mit gelegentlichen Ungenauigkeiten.',
-    options: { 'UCI_LimitStrength': false, 'Skill Level': 4 },
-    limits: { depth: 5, movetime: 400 },
-    randomMoveChance: 0.04,
+    limits: { depth: 2 },
+    margin: 80,
+    book: true,
+    randomMoveChance: 0.06,
   },
   {
     id: 4,
     name: 'Vereinsspieler',
     strength: 'ca. 1600 Elo',
     description: 'Spielt planvoll und nutzt Fehler aus.',
-    options: { 'Skill Level': 20, 'UCI_LimitStrength': true, 'UCI_Elo': 1600 },
-    limits: { movetime: 500 },
+    limits: { depth: 3 },
+    margin: 25,
+    book: true,
     randomMoveChance: 0,
   },
   {
@@ -56,8 +61,8 @@ export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
     name: 'Experte',
     strength: 'ca. 2000 Elo',
     description: 'Starke Taktik, kaum grobe Fehler.',
-    options: { 'Skill Level': 20, 'UCI_LimitStrength': true, 'UCI_Elo': 2000 },
-    limits: { movetime: 800 },
+    limits: { depth: 4, movetime: 300 },
+    book: true,
     randomMoveChance: 0,
   },
   {
@@ -65,17 +70,17 @@ export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
     name: 'Meister',
     strength: 'ca. 2400 Elo',
     description: 'Meisterniveau – sehr schwer zu schlagen.',
-    options: { 'Skill Level': 20, 'UCI_LimitStrength': true, 'UCI_Elo': 2400 },
-    limits: { movetime: 1200 },
+    limits: { movetime: 150 },
+    book: true,
     randomMoveChance: 0,
   },
   {
     id: 7,
     name: 'Großmeister',
     strength: 'volle Stärke',
-    description: 'Stockfish ohne Bremse (Lite-Netz, 2 Sekunden pro Zug).',
-    options: unlimited,
+    description: 'Die Rebell-KI ohne Bremse (2 Sekunden pro Zug).',
     limits: { movetime: 2000 },
+    book: true,
     randomMoveChance: 0,
   },
 ];
@@ -83,6 +88,3 @@ export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
 export function getDifficulty(id: number): DifficultyLevel {
   return DIFFICULTY_LEVELS.find((l) => l.id === id) ?? DIFFICULTY_LEVELS[2];
 }
-
-/** Einstellungen für Analyse (Hinweise, Zugbewertung): immer volle Stärke. */
-export const ANALYSIS_OPTIONS: EngineOptions = unlimited;

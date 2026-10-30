@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ChessGame } from '../../src/core/chessGame';
-import type { SearchResult } from '../../src/engine/StockfishEngine';
+import type { SearchResult } from '../../src/engine/types';
 import type { EngineService } from '../../src/game/engineService';
 import { MemoryStorage, SAVE_KEY } from '../../src/game/persistence';
 import { DEFAULT_SETTINGS, type GameSettings } from '../../src/game/settings';
@@ -217,7 +217,7 @@ describe('Partie gegen die KI', () => {
     expect(store.getState().toast?.text).toContain('Ersatzzug');
   });
 
-  it('Stockfish nimmt Remis nur in schlechterer Stellung an', async () => {
+  it('KI nimmt Remis nur in schlechterer Stellung an', async () => {
     // Mensch (Weiß) am Zug, Bewertung +300 für Weiß → KI steht schlecht → nimmt an
     const { store } = setup({ mode: 'ai', humanColor: 'w' }, fakeEngine({ analyse: () => ({ scoreCp: 300 }) }));
     store.getState().offerDraw();

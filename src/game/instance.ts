@@ -1,14 +1,15 @@
 import { useStore } from 'zustand';
-import { createWorkerTransport } from '../engine/workerTransport';
-import { createStockfishService } from './engineService';
+import { createEngineService, type EngineWorker } from './engineService';
 import { browserStorage } from './persistence';
 import { DEFAULT_PREFERENCES, detectDefaultGraphics } from './settings';
 import { setLang } from '../i18n';
 import { createGameStore, type GameStore } from './store';
 
-/** Die eine Spielinstanz der App (Browser): echte Stockfish-Worker + localStorage. */
+/** Die eine Spielinstanz der App (Browser): eigene Schach-KI im Web Worker + localStorage. */
 export const gameStore = createGameStore({
-  engine: createStockfishService(() => createWorkerTransport()),
+  engine: createEngineService(
+    () => new Worker(new URL('../engine/rebell/worker.ts', import.meta.url), { type: 'module' }) as unknown as EngineWorker,
+  ),
   storage: browserStorage(),
   defaultPrefs: { ...DEFAULT_PREFERENCES, graphics: detectDefaultGraphics() },
   // Die 3D-Szene spielt Kriegerkämpfe ab und meldet ihr Ende

@@ -1,6 +1,6 @@
 # Rebell Chess 3D
 
-Premium-3D-Schach im Browser – für Windows-PC und Smartphone. Gegen Stockfish (7 Stufen) oder zu zweit an einem Gerät,
+Premium-3D-Schach im Browser – für Windows-PC und Smartphone. Gegen die eigene Rebell-KI (7 Stufen) oder zu zweit an einem Gerät,
 mit Schachuhren, Training, Analyse-Modus, Zugliste, Rückgängig und automatischem Speichern. Installierbar als App und
 nach dem ersten Laden offline spielbar.
 
@@ -36,7 +36,7 @@ npm test
 ```
 
 93 automatische Tests: Schachregeln, Uhr, Figuren-IDs, Erklärungen, Speichern/Laden, Drag & Drop, Analyse-Modus,
-Figurengeometrie, Figurenmodell, Spielfluss gegen eine Test-Engine und die **echte Stockfish-Engine** (WASM in Node.js).
+Figurengeometrie, Figurenmodell, Spielfluss gegen eine Test-Engine und die **eigene Schach-KI** (Zuggenerator mit Perft-Vergleichswerten geprüft).
 
 ```bash
 npm run typecheck
@@ -57,7 +57,7 @@ npm run preview
 
 → **http://localhost:4173**
 
-Hinweis: `dist/index.html` per Doppelklick (file://) öffnen funktioniert nicht, weil Browser Web Worker und WASM nur
+Hinweis: `dist/index.html` per Doppelklick (file://) öffnen funktioniert nicht, weil Browser Web Worker nur
 über http(s) laden. Immer über `npm run preview` oder einen Webserver öffnen.
 
 ## Veröffentlichen (GitHub Pages)
@@ -78,7 +78,7 @@ Baut das Spiel und lädt den Ordner `dist/` in den Zweig `gh-pages` von `rebellm
 - Tasten: `U` Zug zurück · `F` Brett drehen · `H` Hinweis (Training) · `P` Pause · `Esc` Menü · `←` `→` blättern.
 - Schlagen: Beide Figuren werden zu Kriegern und kämpfen (die Uhr steht so lange). Tippen, Klick, Leertaste oder
   Esc überspringen den Kampf. Menü → Einstellungen → „Beim Schlagen“: Kriegerkampf, Kurz oder Aus.
-- Analyse: Klick auf einen Zug in der Zugliste zeigt die Stellung danach (mit Stockfish-Bewertung im Training und
+- Analyse: Klick auf einen Zug in der Zugliste zeigt die Stellung danach (mit KI-Bewertung im Training und
   nach Partieende).
 - Als App: Android/Chrome/Edge „Als App installieren“, iPhone Safari: Teilen → „Zum Home-Bildschirm“.
 

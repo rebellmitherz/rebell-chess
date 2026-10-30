@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 29.10.2026 · Version 0.12.1 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 30.10.2026 · Version 0.13.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -129,3 +129,10 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - Die Figuren sind im Gegenüber-Modus 20 % größer (1,3 statt 1,08): die flachere Neigung hatte sie kleiner wirken lassen, jetzt füllen sie ihr Feld wieder.
 - Die Symbol-Plättchen sind jetzt standardmäßig aus (Emilio: sah schlecht aus); weiter einschaltbar unter „Symbole auf den Figuren“. Die Einstellung heißt intern neu (`faceMarks`), damit sie bei allen aus ist.
 - Geprüft: Typen, 147 Tests, Bilder (Marmor und Rebell-Stil, Handy-Format). Nicht geprüft: echtes Handy.
+
+## 0.13.0 – Eigene Schach-KI statt Stockfish (30.10.2026)
+- **Neue Rebell-KI** (`src/engine/rebell/`), komplett eigener Code: Zuggenerator (0x88), Bewertung mit Material, Feldtabellen, Bauernstruktur, Beweglichkeit und Königssicherheit, Alpha-Beta-Suche mit Transpositionstabelle, kleines Eröffnungsbuch. Läuft im Web Worker, kennt Wiederholungen aus dem Partieverlauf.
+- **Stockfish ist entfernt** (Paket, Dateien, Lizenzhinweis im Spiel). Damit ist die GPL-Frage für Portale erledigt. Spiel und KI stehen jetzt unter eigener Lizenz „alle Rechte vorbehalten“ (`LICENSE`).
+- Stufen neu eingestellt und mit je 12 Testpartien gemessen (100 ms pro Zug gegen Stockfish mit Elo-Bremse, untereinander): Stufe 3 etwa 1300, Stufe 4 etwa 1600, Stufe 5 etwa 1900–2200, Stufe 6 um 2400 und mehr, Stufe 7 nochmals stärker. Stufen 1–2 nur im Vergleich untereinander gemessen. Das sind grobe Richtwerte, keine geprüften Wertungszahlen. Auf langsamen Handys sind die Stufen 6–7 schwächer, weil sie nach Bedenkzeit rechnen.
+- Hinweise und Zugbewertung rechnen höchstens 0,9 Sekunden pro Stellung.
+- Geprüft: Typen, 163 Tests (u. a. Perft-Referenzwerte, 30 Zufallspartien gegen chess.js, Matt-Aufgaben, König+Turm matt setzen), KI-Züge und Hinweis im Browser (Entwicklungsmodus), Worker im fertigen Build. Nicht geprüft: echtes Handy, eine komplette Partie im fertigen Build von Hand.

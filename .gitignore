@@ -1,6 +1,5 @@
 node_modules/
 dist/
-public/engine/
 *.log
 .vite/
 coverage/

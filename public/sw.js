@@ -1,14 +1,12 @@
 // Service Worker: macht Rebell Chess 3D nach dem ersten Besuch offline spielbar.
 // - Startseite: erst Netz (Updates kommen sofort an), ohne Netz aus dem Speicher
 // - Dateien mit Hash im Namen (assets/…): einmal laden, dann aus dem Speicher (ändern sich nie)
-// - Engine, Figuren, Sounds, Symbole: aus dem Speicher, im Hintergrund auffrischen
-const CACHE = 'rebellchess-v25';
+// - Figuren, Sounds, Symbole: aus dem Speicher, im Hintergrund auffrischen
+const CACHE = 'rebellchess-v26';
 const CORE = [
   './',
   './manifest.webmanifest',
   './favicon.svg',
-  './engine/stockfish-19-lite-single.js',
-  './engine/stockfish-19-lite-single.wasm',
   './models/pieces.glb',
   './models/pieces_ao.jpg',
   './models/board.glb',

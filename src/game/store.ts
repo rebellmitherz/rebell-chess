@@ -26,7 +26,7 @@ import {
   type Square,
 } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
-import { scoreToCp } from '../engine/uci';
+import { scoreToCp } from '../engine/types';
 import { FRESH_BATTLE_HISTORY, nextHistory, shouldFight, type BattleHistory } from './battleRules';
 import { resolveDrop } from './drop';
 import type { EngineService } from './engineService';
@@ -439,7 +439,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
 
       const job: Promise<{ uci: string | null; error?: string }> = useRandom
         ? Promise.resolve({ uci: pickRandom(), error: engine ? undefined : 'Keine Engine geladen' })
-        : engine.playMove(fen, level).then(
+        : engine.playMove(fen, level, { startFen: game.startFen, moves: game.uciMoves() }).then(
             (uci) => ({ uci }),
             (err: unknown) => ({ uci: pickRandom(), error: err instanceof Error ? err.message : String(err) }),
           );
@@ -729,8 +729,8 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         const names: Record<Color, string> =
           s.settings.mode === 'ai'
             ? s.settings.humanColor === 'w'
-              ? { w: 'Spieler', b: `Stockfish (${level.name})` }
-              : { w: `Stockfish (${level.name})`, b: 'Spieler' }
+              ? { w: 'Spieler', b: `Rebell-KI (${level.name})` }
+              : { w: `Rebell-KI (${level.name})`, b: 'Spieler' }
             : { w: 'Weiß', b: 'Schwarz' };
         const d = new Date(deps.now());
         const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
@@ -898,7 +898,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
           return;
         }
         drawPending = true;
-        set(toast(tr('Stockfish prüft dein Remisangebot …')));
+        set(toast(tr('Die KI prüft dein Remisangebot …')));
         const ply = game.ply;
         const gameId = s.gameId;
         engine.analyse(game.fen, 12).then(
@@ -909,8 +909,8 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
             // Der Mensch ist am Zug – aus Sicht der KI ist die Bewertung umgekehrt.
             const aiCp = -scoreToCp(res.scoreCp, res.mate);
             const accept = aiCp <= -80 || (Math.abs(aiCp) <= 25 && game.ply >= 40);
-            if (accept) finish({ winner: null, reason: 'agreement' }, toast(tr('Stockfish nimmt das Remis an.')));
-            else set(toast(tr('Stockfish lehnt das Remis ab und spielt weiter.')));
+            if (accept) finish({ winner: null, reason: 'agreement' }, toast(tr('Die KI nimmt das Remis an.')));
+            else set(toast(tr('Die KI lehnt das Remis ab und spielt weiter.')));
           },
           () => {
             drawPending = false;

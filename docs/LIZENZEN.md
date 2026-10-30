@@ -1,10 +1,9 @@
 # Lizenzen der verwendeten Bausteine
 
-Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, keine Laufzeit-Downloads.
+Alle fremden Bausteine sind Open Source und kostenlos, ihre Lizenzen erlauben auch kommerzielle Nutzung. Keine kostenpflichtigen Dienste, keine Laufzeit-Downloads.
 
 | Paket | Lizenz | Verwendung |
 |---|---|---|
-| stockfish (Stockfish.js 19, Nathan Rugg / Stockfish-Team) | **GPL-3.0** | Schach-KI, läuft als eigenes Programm im Web Worker |
 | chess.js | BSD-2-Clause | Regeln, Zuggenerierung, PGN |
 | three | MIT | 3D-Grafik |
 | @react-three/fiber, @react-three/drei | MIT | React-Anbindung, Kamera, Umgebungslicht |
@@ -17,17 +16,11 @@ Alle Bausteine sind Open Source und kostenlos. Keine kostenpflichtigen Dienste, 
 | @fontsource/cinzel, @fontsource/inter | OFL-1.1 | Schriften (lokal gebündelt) |
 | vite, vitest, typescript | MIT / Apache-2.0 | Entwicklung, Build, Tests |
 
-## Stockfish (GPL-3.0) – was das bedeutet
+## Schach-KI
 
-- Stockfish wird **unverändert** als eigene Datei (`engine/stockfish-19-lite-single.js` + `.wasm`) ausgeliefert und
-  nur über das UCI-Textprotokoll angesprochen.
-- Der vollständige Lizenztext liegt im Build unter `engine/STOCKFISH-LICENSE-GPL-3.0.txt` und ist im Spiel unter
-  *Anleitung → Lizenzen* verlinkt.
-- Quelltext der Engine: https://github.com/official-stockfish/Stockfish und https://github.com/nmrugg/stockfish.js
-- **Bei einer öffentlichen Veröffentlichung** muss der Quelltext von Stockfish (bzw. ein Hinweis, wo er erhältlich ist)
-  mitgegeben werden – das ist durch Lizenzdatei und Links erfüllt. Ob das gesamte Spiel unter GPL gestellt werden muss,
-  hängt von der rechtlichen Bewertung ab (eigenständiges Programm im Worker vs. „kombiniertes Werk“). Für die private
-  Nutzung spielt das keine Rolle; vor einem kommerziellen Vertrieb bitte rechtlich prüfen lassen.
+Die KI (`src/engine/rebell/`) ist eigener Code: Zuggenerator, Bewertung mit von Hand gesetzten Tabellen, Suche und
+Eröffnungsbuch (allgemein bekannte Zugfolgen). Stockfish (GPL-3.0) wurde bis Version 0.12.1 mitgeliefert und ist seit
+0.13.0 vollständig entfernt. Für die Stärkemessung der Stufen lief es einmalig lokal als Gegner, es ist nicht Teil des Spiels.
 
 ## Mixamo (Adobe) – Krieger und Kampfbewegungen
 
@@ -49,6 +42,7 @@ Rohdaten liegen nicht in Git; sie werden mit `npm run assets:pieces`, `npm run a
 
 ## Eigene Inhalte
 
+- Spielcode und Schach-KI: © rebellmitherz, alle Rechte vorbehalten (siehe `LICENSE`).
 - Figurenstil „Rebell“: prozedural im Code erzeugt (Drehkörper, Extrusion, CSG).
 - Materialien Gold/Onyx/Silber, Texturen (Marmor, gebürstetes Metall, Koordinaten): im Code erzeugt.
 - Glockentöne und Bedienklänge: mit der Web Audio API synthetisiert.

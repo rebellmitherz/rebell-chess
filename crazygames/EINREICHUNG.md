@@ -27,14 +27,14 @@ Das Zip enthält die Mixamo-Dateien und liegt deshalb **nicht in Git** (siehe Ab
 
 **Titel:** Rebell Chess 3D
 
-**Kurzbeschreibung (EN):** 3D chess where captures turn into epic warrior duels. Play Stockfish or a friend.
+**Kurzbeschreibung (EN):** 3D chess where captures turn into epic warrior duels. Play the AI or a friend.
 
 **Beschreibung (EN):**
 Rebell Chess 3D is a premium 3D chess game that plays by every rule – castling, en passant, promotion, draws – and then does something no chess game does: when it matters, the pieces become armoured warriors and fight it out. Every duel plays out differently, with its own moves, camera cuts and slow-motion finishing blow. Minor captures are quick and punchy, and a checkmate slams down a huge stamp with a boom.
-Play against Stockfish (7 levels from beginner to master), against a friend on one device, or in training mode with hints and move explanations. Three looks: real marble on black, emerald and gold, or red and ivory. Works on desktop and phone.
+Play against the built-in AI (7 levels from beginner to strong club player), against a friend on one device, or in training mode with hints and move explanations. Three looks: real marble on black, emerald and gold, or red and ivory. Works on desktop and phone.
 
 **Beschreibung (DE):**
-Rebell Chess 3D ist ein 3D-Schachspiel mit allen Regeln (Rochade, en passant, Umwandlung, Remis) und einer Besonderheit: Bei wichtigen Schlägen werden die Figuren zu gepanzerten Kriegern und kämpfen. Jeder Kampf läuft anders ab, mit eigenen Bewegungen, Kameraschnitten und Zeitlupe beim Todesstoß. Kleine Schläge sind kurz und knallen mit einer Mini-Explosion, Schachmatt kommt mit einem riesigen Stempel. Spiele gegen Stockfish (7 Stufen), zu zweit an einem Gerät oder im Trainingsmodus mit Hinweisen und Erklärungen. Drei Looks: Marmor auf Schwarz, Smaragd und Gold, Rot und Elfenbein.
+Rebell Chess 3D ist ein 3D-Schachspiel mit allen Regeln (Rochade, en passant, Umwandlung, Remis) und einer Besonderheit: Bei wichtigen Schlägen werden die Figuren zu gepanzerten Kriegern und kämpfen. Jeder Kampf läuft anders ab, mit eigenen Bewegungen, Kameraschnitten und Zeitlupe beim Todesstoß. Kleine Schläge sind kurz und knallen mit einer Mini-Explosion, Schachmatt kommt mit einem riesigen Stempel. Spiele gegen die eingebaute KI (7 Stufen), zu zweit an einem Gerät oder im Trainingsmodus mit Hinweisen und Erklärungen. Drei Looks: Marmor auf Schwarz, Smaragd und Gold, Rot und Elfenbein.
 
 **Anleitung (EN):**
 Tap or click a piece, then its target square (or drag it). Dots show legal moves, rings show captures. Mouse wheel / two fingers to zoom. Keys: U undo · F flip board · H hint (training) · P pause · S sidebar · Esc menu · ←/→ browse moves. Tap a warrior duel to skip it.
@@ -45,7 +45,7 @@ Tap or click a piece, then its target square (or drag it). Dots show legal moves
 
 ## 4. Rechtliche Punkte – vor dem Abschicken klären
 
-1. **Stockfish (GPL-3.0).** Die Engine steckt im Spiel. Die GPL verlangt, dass das Gesamtwerk offen bleibt, wenn man Stockfish mitliefert. Der Quellcode ist öffentlich (github.com/rebellmitherz/rebell-chess), Lizenztext und Quellverweis liegen im Spiel. **Ob das mit einem Portal vereinbar ist, das Einnahmen teilt, ist nicht geklärt – rechtlich prüfen lassen.** Alternative: KI-Gegner weglassen oder eine nicht-GPL-Engine nehmen.
+1. **Schach-KI.** Seit 0.13.0 eigene Engine ohne fremden Code, Stockfish (GPL) ist entfernt. Das frühere GPL-Problem besteht damit nicht mehr.
 2. **Mixamo (Adobe).** Die Krieger (Paladin + Bewegungen) dürfen in Spielen genutzt werden, aber nicht als Einzeldateien weitergegeben werden. Im Zip liegen sie umgewandelt und komprimiert (`models/warrior_*.glb`). Das ist eine Grauzone – Adobe-Bedingungen prüfen oder die Krieger später ersetzen.
 3. **Frei nutzbar (CC0):** Figuren/Brett (Poly Haven, Riley Queen), Raumlicht, Tisch, Klänge (Kenney). Namensnennung steht in der Spielanleitung.
 4. **Originalität:** CrazyGames lehnt Klone ab. Die Krieger-Kämpfe, das Matt-Finale und der Look sind das Alleinstellungsmerkmal.
