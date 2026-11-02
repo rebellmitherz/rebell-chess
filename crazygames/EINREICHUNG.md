@@ -1,13 +1,13 @@
 # Rebell Chess 3D bei CrazyGames einreichen
 
-Stand: 27.10.2026 · Version 0.10.0. Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
+Stand: 02.11.2026 · Version 0.14.0 (neu: 2D-Ansicht). Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
 Angaben zu CrazyGames stammen aus deren öffentlichen Seiten (docs.crazygames.com) und können sich ändern – im Portal gegenprüfen.
 
 ## 1. Was hochgeladen wird
 
 | Was | Wo liegt es |
 |---|---|
-| Das Spiel als Zip (Portal-Build mit CrazyGames-SDK) | `crazygames/rebell-chess-crazygames.zip` (7,2 MB, 130 Dateien) |
+| Das Spiel als Zip (Portal-Build mit CrazyGames-SDK) | `crazygames/rebell-chess-crazygames.zip` (8,4 MB entpackt, 6,0 MB gepackt, 128 Dateien) |
 | Bilder (quer 1920×1080, quadratisch 800×800, hoch 800×1200), je 5 Motive | `crazygames/images/<größe>/` |
 | Texte (Titel, Beschreibung, Anleitung) | unten, Abschnitt 3 |
 
@@ -37,7 +37,7 @@ Play against the built-in AI (7 levels from beginner to strong club player), aga
 Rebell Chess 3D ist ein 3D-Schachspiel mit allen Regeln (Rochade, en passant, Umwandlung, Remis) und einer Besonderheit: Bei wichtigen Schlägen werden die Figuren zu gepanzerten Kriegern und kämpfen. Jeder Kampf läuft anders ab, mit eigenen Bewegungen, Kameraschnitten und Zeitlupe beim Todesstoß. Kleine Schläge sind kurz und knallen mit einer Mini-Explosion, Schachmatt kommt mit einem riesigen Stempel. Spiele gegen die eingebaute KI (7 Stufen), zu zweit an einem Gerät oder im Trainingsmodus mit Hinweisen und Erklärungen. Drei Looks: Marmor auf Schwarz, Smaragd und Gold, Rot und Elfenbein.
 
 **Anleitung (EN):**
-Tap or click a piece, then its target square (or drag it). Dots show legal moves, rings show captures. Mouse wheel / two fingers to zoom. Keys: U undo · F flip board · H hint (training) · P pause · S sidebar · Esc menu · ←/→ browse moves. Tap a warrior duel to skip it.
+Tap or click a piece, then its target square (or drag it). Dots show legal moves, rings show captures. 2D/3D button (or D key) switches between a clear flat board and the 3D view. Mouse wheel / two fingers to zoom. Keys: U undo · F flip board · H hint (training) · P pause · S sidebar · Esc menu · ←/→ browse moves. Tap a warrior duel to skip it.
 
 **Tags:** chess, 3d, board game, strategy, ai, two player, puzzle, brain
 **Kategorie:** Brettspiele / Strategie
@@ -52,7 +52,7 @@ Tap or click a piece, then its target square (or drag it). Dots show legal moves
 
 ## 5. Technischer Stand (gemessen)
 
-- Gesamtgröße 10,3 MB (Grenze 250 MB, Mobile-Startseite ab ≤ 20 MB Startdownload), 130 Dateien (Grenze 1500).
+- Gesamtgröße 8,4 MB (Grenze 250 MB, Mobile-Startseite ab ≤ 20 MB Startdownload), 128 Dateien (Grenze 1500).
 - Relative Pfade, kein Service Worker, keine App-Installation, kein eigener Vollbild-Knopf im Portal.
 - SDK: Initialisierung, Laden (Start/Ende) und „Gameplay Start/Stop“ geprüft mit dem echten SDK von sdk.crazygames.com (lokal): Start beim Beginn einer Partie, Stop bei Menü, Pause, Ergebnis.
 - Getestet in Edge (Chromium). **Nicht getestet:** Safari/iPhone, echtes Handy, Ton.

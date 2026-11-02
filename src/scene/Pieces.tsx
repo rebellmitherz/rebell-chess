@@ -489,7 +489,7 @@ export function Pieces() {
     return ply > 0 && s.history[ply - 1].isCheckmate ? checkSquareOf(s) : null;
   });
   const look = usePieceLook();
-  const topView = useGame((s) => s.prefs.viewMode === 'top');
+  const topView = useGame((s) => s.prefs.viewMode !== 'perspective');
   const viewSide = useGame((s) => s.viewSide);
   // Kopf zeigt vom Spieler weg (Bildschirm oben): Weiß unten → nach -z, Schwarz unten → nach +z
   const viewTilt = topView && !fighting ? (viewSide === 'w' ? -TOP_VIEW_TILT : TOP_VIEW_TILT) : 0;

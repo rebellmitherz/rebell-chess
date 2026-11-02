@@ -164,11 +164,14 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           value={prefs.viewMode}
           onChange={(viewMode) => set({ viewMode })}
           options={[
+            { value: 'flat', label: '2D' },
             { value: 'top', label: tr('Gerade von oben') },
             { value: 'perspective', label: tr('3D schräg') },
           ]}
         />
-        <p className="field-hint">{tr('Gerade: Brett von oben, Figuren zu dir geneigt – angetippt wird das Feld.')}</p>
+        <p className="field-hint">
+          {tr('2D: flaches Brett, am klarsten und schnellsten – Kriegerkämpfe laufen trotzdem in 3D. Gerade: Brett von oben, Figuren zu dir geneigt. Umschalten jederzeit mit der Taste D oder dem Knopf 2D/3D.')}
+        </p>
       </div>
       <div className="field">
         <span className="field-label">{tr('Figurenstil')}</span>
@@ -273,7 +276,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           <p>Mouse wheel or two fingers zoom, right mouse button or two fingers move the view. In the “3D angled” view, dragging on empty space turns the board. “Flip” switches sides.</p>
           <h3>Keyboard</h3>
           <p>
-            <kbd>U</kbd> undo · <kbd>F</kbd> flip board · <kbd>H</kbd> hint · <kbd>P</kbd> pause · <kbd>S</kbd> sidebar on/off · <kbd>V</kbd> full screen · <kbd>Esc</kbd> menu · <kbd>←</kbd> <kbd>→</kbd> browse through the game
+            <kbd>U</kbd> undo · <kbd>F</kbd> flip board · <kbd>H</kbd> hint · <kbd>P</kbd> pause · <kbd>S</kbd> sidebar on/off · <kbd>D</kbd> 2D/3D · <kbd>V</kbd> full screen · <kbd>Esc</kbd> menu · <kbd>←</kbd> <kbd>→</kbd> browse through the game
           </p>
           <h3>Rules</h3>
           <p>
@@ -320,7 +323,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           </p>
           <h3>Tastatur</h3>
           <p>
-            <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>S</kbd> Seitenleiste ein/aus · <kbd>V</kbd> Vollbild · <kbd>Esc</kbd> Menü ·
+            <kbd>U</kbd> Zug zurück · <kbd>F</kbd> Brett drehen · <kbd>H</kbd> Hinweis · <kbd>P</kbd> Pause · <kbd>S</kbd> Seitenleiste ein/aus · <kbd>D</kbd> 2D/3D · <kbd>V</kbd> Vollbild · <kbd>Esc</kbd> Menü ·
             <kbd>←</kbd> <kbd>→</kbd> durch die Partie blättern
           </p>
           <h3>Regeln</h3>

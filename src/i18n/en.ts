@@ -1,6 +1,10 @@
 /** Englische Texte; Schlüssel = deutscher Text (siehe index.ts). Von Hand gepflegt. */
 export const EN: Record<string, string> = {
+  '2D: flaches Brett, am klarsten und schnellsten – Kriegerkämpfe laufen trotzdem in 3D. Gerade: Brett von oben, Figuren zu dir geneigt. Umschalten jederzeit mit der Taste D oder dem Knopf 2D/3D.':
+    '2D: flat board, the clearest and fastest view – warrior duels still play in 3D. Straight: board seen from above, pieces tilted towards you. Switch any time with the D key or the 2D/3D button.',
+  '2D-Ansicht (D)': '2D view (D)',
   '3D schräg': '3D angled',
+  '3D-Ansicht (D)': '3D view (D)',
   '3D-Darstellung nicht verfügbar': '3D view not available',
   '3D-Schach, in dem die Figuren kämpfen': '3D chess where the pieces fight',
   '50-Züge-Regel – 50 Züge ohne Bauernzug und ohne Schlagen.': '50-move rule – 50 moves without a pawn move or capture.',
@@ -74,7 +78,6 @@ export const EN: Record<string, string> = {
   'Fortsetzen': 'Resume',
   'Gegner': 'Opponent',
   'Gerade von oben': 'Straight from above',
-  'Gerade: Brett von oben, Figuren zu dir geneigt – angetippt wird das Feld.': 'Straight: board seen from above, pieces tilted towards you – you tap the square.',
   'Gespeicherte Partie fortsetzen': 'Continue saved game',
   'Gibt Schach: Der Gegner muss zuerst seinen König in Sicherheit bringen.': 'Gives check: the opponent must first get their king to safety.',
   'Grafikqualität': 'Graphics quality',
@@ -168,6 +171,7 @@ export const EN: Record<string, string> = {
   'Schwarz': 'Black',
   'Schwarz setzt matt': 'Black mates',
   'Seitenleiste ausblenden': 'Hide sidebar',
+  'Schachbrett': 'Chessboard',
   'Seitenleiste ausblenden (S)': 'Hide sidebar (S)',
   'Seitenleiste zeigen': 'Show sidebar',
   'Seitenleiste zeigen (S)': 'Show sidebar (S)',

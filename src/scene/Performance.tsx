@@ -17,6 +17,9 @@ export function FrameDriver({ idleFps }: { idleFps: number }) {
     let lastIdle = 0;
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
+      // 2D-Ansicht: die 3D-Szene ist verdeckt und ruht (nur Kriegerkämpfe laufen in 3D)
+      const s = gameStore.getState();
+      if (s.prefs.viewMode === 'flat' && s.screen === 'game' && !s.battle) return;
       if (now < activity.until || pointerDrag.pieceId !== null) {
         invalidate();
         return;

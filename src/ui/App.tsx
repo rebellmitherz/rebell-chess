@@ -3,6 +3,7 @@ import { playSfx, setVolume, unlockAudio } from '../audio/sound';
 import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
 import { BattleOverlay } from './BattleOverlay';
+import { Board2D } from './Board2D';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
 import { toggleFullscreen } from './fullscreen';
 import { MateStamp } from './MateStamp';
@@ -107,6 +108,9 @@ function useKeyboard() {
         case 'v':
           toggleFullscreen();
           break;
+        case 'd':
+          s.setPrefs({ viewMode: s.prefs.viewMode === 'flat' ? 'top' : 'flat' });
+          break;
       }
     };
     window.addEventListener('keydown', onKey);
@@ -132,12 +136,16 @@ export function App() {
   const barInset = padMode === 'bar' ? CLOCK_BAR_INSET : 0;
   const topInset = !inGame ? 0 : layout.desktop ? barInset : (measured?.top ?? layout.topInset);
   const bottomInset = !inGame ? 0 : layout.desktop ? barInset : (measured?.bottom ?? layout.bottomInset);
+  // 2D-Ansicht: flaches Brett im freien Bereich; im Kriegerkampf übernimmt kurz die 3D-Szene
+  const flat = useGame((s) => s.prefs.viewMode === 'flat') && inGame;
+  const sceneSidebar = inGame && !hideSidebar ? layout.sidebar : 0;
 
   return (
-    <div className="app">
+    <div className={`app${flat && !fighting ? ' flat-2d' : ''}`}>
       <SceneErrorBoundary>
-        <ChessScene sidebar={inGame && !hideSidebar ? layout.sidebar : 0} topInset={topInset} bottomInset={bottomInset} />
+        <ChessScene sidebar={sceneSidebar} topInset={topInset} bottomInset={bottomInset} />
       </SceneErrorBoundary>
+      {flat && <Board2D left={0} right={sceneSidebar} top={topInset} bottom={bottomInset} hidden={fighting} />}
       {/* Während eines Kriegerkampfs treten die Leisten zurück – volle Bühne für die Kamera */}
       {/* Sprachwechsel: Oberfläche neu aufbauen (die 3D-Szene bleibt stehen) */}
       <Fragment key={lang}>

@@ -129,7 +129,8 @@ export function CameraRig({ sidebar, topInset, bottomInset }: { sidebar: number;
   const screen = useGame((s) => s.screen);
   const resetToken = useGame((s) => s.gameId);
   const size = useThree((s) => s.size);
-  const top = useGame((s) => s.prefs.viewMode === 'top');
+  // 2D: Kampf und Menü laufen in der Ansicht von oben
+  const top = useGame((s) => s.prefs.viewMode !== 'perspective');
   const battle = useGame((s) => (s.screen === 'game' ? s.battle : null));
   const cinematic = battle !== null;
   const f = framing(size.width, size.height, sidebar, topInset, bottomInset, top);

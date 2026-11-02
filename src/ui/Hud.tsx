@@ -423,6 +423,17 @@ function FullscreenButton() {
   );
 }
 
+/** Umschalter 2D ↔ 3D: zeigt, wohin er schaltet */
+function ViewToggle() {
+  const flat = useGame((s) => s.prefs.viewMode === 'flat');
+  const label = flat ? tr('3D-Ansicht (D)') : tr('2D-Ansicht (D)');
+  return (
+    <button className="icon-btn view-toggle" onClick={() => actions().setPrefs({ viewMode: flat ? 'top' : 'flat' })} aria-label={label} title={label}>
+      {flat ? '3D' : '2D'}
+    </button>
+  );
+}
+
 function ClocksToggle() {
   const on = useGame((s) => s.prefs.boardClocks);
   return (
@@ -468,6 +479,7 @@ function FocusHud() {
     <div className="focus-hud">
       <div className="focus-buttons">
         <PanelButton open={false} />
+        <ViewToggle />
         <FullscreenButton />
         <ClocksToggle />
         <SoundToggle />
@@ -510,6 +522,7 @@ function DesktopHud({ sidebar, layout, padMode }: { sidebar: number; layout: Lay
       <aside className="sidebar" style={{ width: sidebar }}>
         <div className="sidebar-head">
           <PanelButton open />
+          <ViewToggle />
           <FullscreenButton />
           <ClocksToggle />
           <SoundToggle />
@@ -566,6 +579,7 @@ function MobileHud() {
     <>
       <div className="mobile-top">
         <PlayerCard color={opposite(viewSide)} />
+        <ViewToggle />
         <button className="icon-btn" onClick={() => a.openMenu()} aria-label={tr('Menü')}>
           <IconMenu />
         </button>

@@ -6,8 +6,11 @@ export type GameMode = 'local' | 'ai';
 export type GraphicsQuality = 'high' | 'medium' | 'low';
 /** real = Marmorfiguren + Holzbrett mit echten Texturen, classic = Modell in Gold/Onyx („Edel“), rebell = eigene Figuren */
 export type PieceStyle = 'real' | 'classic' | 'rebell';
-/** top = Brett gerade von oben, Figuren zum Spieler geneigt · perspective = schräge 3D-Ansicht */
-export type ViewMode = 'top' | 'perspective';
+/**
+ * top = Brett gerade von oben, Figuren zum Spieler geneigt · perspective = schräge 3D-Ansicht ·
+ * flat = flaches 2D-Brett (Kriegerkämpfe laufen trotzdem in 3D)
+ */
+export type ViewMode = 'top' | 'perspective' | 'flat';
 /**
  * Schlagzüge: warriors = Kriegerkampf nur in wichtigen Momenten, sonst schneller Schlag · always = bei jedem Schlag
  * Kriegerkampf · quick = immer schneller Schlag mit Mini-Explosion · off = schlicht
@@ -150,7 +153,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
         : r.battleAnimations === false
           ? 'off'
           : base.battleMode,
-    viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' ? r.viewMode : base.viewMode,
+    viewMode: r.viewMode === 'top' || r.viewMode === 'perspective' || r.viewMode === 'flat' ? r.viewMode : base.viewMode,
     turnBoard: bool(r.turnBoard, base.turnBoard),
     showCoordinates: bool(r.showCoordinates, base.showCoordinates),
     boardClocks: bool(r.boardClocks, base.boardClocks),

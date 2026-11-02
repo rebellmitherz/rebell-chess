@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 30.10.2026 · Version 0.13.0 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 02.11.2026 · Version 0.14.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -136,3 +136,9 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - Stufen neu eingestellt und mit je 12 Testpartien gemessen (100 ms pro Zug gegen Stockfish mit Elo-Bremse, untereinander): Stufe 3 etwa 1300, Stufe 4 etwa 1600, Stufe 5 etwa 1900–2200, Stufe 6 um 2400 und mehr, Stufe 7 nochmals stärker. Stufen 1–2 nur im Vergleich untereinander gemessen. Das sind grobe Richtwerte, keine geprüften Wertungszahlen. Auf langsamen Handys sind die Stufen 6–7 schwächer, weil sie nach Bedenkzeit rechnen.
 - Hinweise und Zugbewertung rechnen höchstens 0,9 Sekunden pro Stellung.
 - Geprüft: Typen, 163 Tests (u. a. Perft-Referenzwerte, 30 Zufallspartien gegen chess.js, Matt-Aufgaben, König+Turm matt setzen), KI-Züge und Hinweis im Browser (Entwicklungsmodus), Worker im fertigen Build. Nicht geprüft: echtes Handy, eine komplette Partie im fertigen Build von Hand.
+
+## 0.14.0 – 2D-Ansicht (02.11.2026)
+- Neu: **2D-Ansicht** – flaches Brett von oben als HTML (`src/ui/Board2D.tsx`), klar lesbar und schnell. Die Figuren sind Bilder der echten Marmorfiguren (`public/pieces2d/`, erzeugt mit `node scripts/build-sprites.mjs`, braucht `npm run dev`). Antippen oder Ziehen, Punkte/Ringe für Züge, letzter Zug, Schach, Hinweispfeil, Koordinaten, Brett drehen, Gegenüber-Modus, Analyse. Brettfarben je Stil (Holz, Smaragd, Rot).
+- Kriegerkämpfe laufen auch in 2D: Das 2D-Brett blendet sich aus, der Kampf läuft in 3D, danach geht es flach weiter. Solange 2D sichtbar ist, ruht die 3D-Szene (spart Akku).
+- Umschalten: Knopf „2D/3D“ oben (PC und Handy), Taste D, oder Einstellungen → Ansicht. Standard bleibt „Gerade von oben“ (3D).
+- Geprüft: Typen, Tests (neu: gespeicherte Ansicht), im Browser per Chrome ohne Fenster: Klick-Zug, Zieh-Zug, Kampf blendet 2D aus und wieder ein, Hinweispfeil, Gegenüber-Modus, PC- und Handy-Format. Nicht geprüft: echtes Handy/Touch, Safari.

@@ -17,9 +17,9 @@ interface Stamp {
   sub: string;
 }
 
-/** Kurzes, hartes Beben der ganzen 3D-Ansicht */
+/** Kurzes, hartes Beben der ganzen Ansicht (2D-Brett oder 3D-Szene) */
 function quake() {
-  const el = document.querySelector('.scene-canvas');
+  const el = document.querySelector('.b2d-board') ?? document.querySelector('.scene-canvas');
   if (!el || !('animate' in el)) return;
   const frames = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
     const a = 16 * Math.pow(0.62, i);
