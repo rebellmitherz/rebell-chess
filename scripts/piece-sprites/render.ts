@@ -12,8 +12,11 @@ const TYPES: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p'];
 /** Springer im Profil, Kopf nach links (wie in Schachdiagrammen) */
 const KNIGHT_YAW: Record<Color, number> = { w: Math.PI - 0.35, b: Math.PI - 0.35 };
 /** Blick leicht von oben, wie bei einem Brett vor einem */
-const ELEVATION = 0.32;
+const ELEVATION = 0.1;
 const FOV = 18;
+/** Brettbild: Ausschnitt ±4,15 Einheiten (Spielfeld ±4 plus ein schmaler Rand des Rahmens) */
+const BOARD_HALF = 4.15;
+const BOARD_PX = 1536;
 
 async function main() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -50,11 +53,26 @@ async function main() {
   const height = kingBox.max.y - kingBox.min.y;
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.01, 100);
   // Fuß knapp über dem unteren Bildrand, Krone knapp unter dem oberen
-  const span = height * 1.12;
+  const span = height * 1.04;
   const distance = span / 2 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
   const center = new THREE.Vector3(0, kingBox.min.y + height * 0.5, 0);
   camera.position.set(0, center.y + Math.sin(ELEVATION) * distance, Math.cos(ELEVATION) * distance);
   camera.lookAt(center);
+
+  // Brett von genau oben (Draufsicht ohne Perspektive), gleiches Licht und Material wie in der 3D-Szene
+  renderer.setSize(BOARD_PX, BOARD_PX);
+  renderer.setClearColor(0x2a2420, 1);
+  const top = new THREE.OrthographicCamera(-BOARD_HALF, BOARD_HALF, BOARD_HALF, -BOARD_HALF, 0.1, 40);
+  top.position.set(0, 12, 0);
+  top.up.set(0, 0, -1);
+  top.lookAt(0, 0, 0);
+  const boardMesh = new THREE.Mesh(real.board.geometry, real.board.material);
+  scene.add(boardMesh);
+  renderer.render(scene, top);
+  const boardImage = renderer.domElement.toDataURL('image/png');
+  scene.remove(boardMesh);
+  renderer.setSize(SIZE, SIZE);
+  renderer.setClearColor(0x000000, 0);
 
   const out: Record<string, string> = {};
   for (const color of ['w', 'b'] as const) {
@@ -67,6 +85,7 @@ async function main() {
       scene.remove(mesh);
     }
   }
+  (window as unknown as { __board: string }).__board = boardImage;
   (window as unknown as { __sprites: Record<string, string> }).__sprites = out;
 }
 

@@ -514,7 +514,9 @@ export function Pieces() {
     const s = gameStore.getState();
     const warriorFight = s.battle !== null && s.battle.ply === s.history.length && warriorsReady() !== null;
     // Beim Kriegerkampf übernehmen die Krieger – keine zerspringende Figur
-    if (removed.length > 0 && removed.length <= 2 && !warriorFight) {
+    // 2D-Ansicht: das flache Brett zeigt den Schlag selbst (Kampf, 3D-Szene sichtbar, bleibt wie er ist)
+    const flatOnly = s.prefs.viewMode === 'flat' && s.battle === null;
+    if (removed.length > 0 && removed.length <= 2 && !warriorFight && !flatOnly) {
       const move = shownLastMove();
       let battle: { dirX: number; dirZ: number } | null = null;
       if (battleOn && move?.isCapture) {

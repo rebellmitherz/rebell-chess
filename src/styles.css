@@ -1922,7 +1922,8 @@ kbd {
   rotate: 180deg;
 }
 
-/* ---------- 2D-Ansicht: flaches Brett als HTML, die 3D-Szene ruht darunter ---------- */
+
+/* ---------- 2D-Ansicht: flaches Brett (Bild des echten Marmorbretts) mit Figurenbildern, die 3D-Szene ruht darunter ---------- */
 
 .app.flat-2d .scene-canvas {
   visibility: hidden;
@@ -1933,7 +1934,7 @@ kbd {
   display: grid;
   place-items: center;
   container-type: size;
-  background: radial-gradient(ellipse at 50% 40%, #2b241f 0%, #120f0d 75%);
+  background: radial-gradient(ellipse at 50% 40%, #3a2f27 0%, #17120f 78%);
   transition: opacity 0.25s ease;
 }
 
@@ -1948,27 +1949,33 @@ kbd {
   --coord-on-light: #7d5434;
   --coord-on-dark: #f0dcb8;
   position: relative;
-  width: min(96cqw, 96cqh);
+  width: min(98cqw, 98cqh);
   aspect-ratio: 1;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  border-radius: 4px;
-  overflow: hidden;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  /* Rahmen wie eine Holzleiste, Brett liegt auf dem Tisch */
+  border-radius: 2.2%;
+  background: #2a1c12;
   box-shadow:
-    0 0 0 clamp(4px, 1.1cqmin, 10px) #2a1c12,
-    0 0 0 calc(clamp(4px, 1.1cqmin, 10px) + 1px) rgba(226, 185, 92, 0.45),
-    0 18px 50px rgba(0, 0, 0, 0.6);
+    0 0 0 1px rgba(226, 185, 92, 0.35),
+    0 22px 60px rgba(0, 0, 0, 0.65);
 }
 
-@media (max-width: 859px), (max-aspect-ratio: 11/10) {
-  .b2d-board {
-    width: min(98cqw, 98cqh);
-  }
+/* Brettbild: Draufsicht des 3D-Bretts (Rahmen und Marmor), für Schwarz um 180° gedreht wie die Szene */
+.b2d-board.theme-real {
+  --coord-on-light: #6a5840;
+  --coord-on-dark: #eadfc8;
+  background: none;
+}
+
+.b2d-board.theme-real::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--board-img) center / 100% 100% no-repeat;
+  transition: rotate 0.5s ease;
+}
+
+.b2d-board.theme-real[data-side='b']::before {
+  rotate: 180deg;
 }
 
 .b2d-board.theme-classic {
@@ -1985,7 +1992,19 @@ kbd {
   --coord-on-dark: #f3e6d2;
 }
 
-.b2d-board.interactive {
+/* Spielfeld: 8 Einheiten von 8,3 des Bildausschnitts (der Rest ist der Rahmen) */
+.b2d-grid {
+  position: absolute;
+  inset: 1.807%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.b2d-grid.interactive {
   cursor: pointer;
 }
 
@@ -1993,11 +2012,11 @@ kbd {
   position: relative;
 }
 
-.b2d-sq.light {
+.b2d-board:not(.theme-real) .b2d-sq.light {
   background: var(--light);
 }
 
-.b2d-sq.dark {
+.b2d-board:not(.theme-real) .b2d-sq.dark {
   background: var(--dark);
 }
 
@@ -2028,7 +2047,7 @@ kbd {
   color: var(--coord-on-dark);
 }
 
-/* Markierungen und Figuren liegen über dem Feld-Raster, Position per translate in Feld-Einheiten */
+/* Markierungen und Figuren liegen über dem Feld-Raster, Position per translate in Feldeinheiten */
 .b2d-mark,
 .b2d-piece {
   position: absolute;
@@ -2044,7 +2063,7 @@ kbd {
 }
 
 .b2d-mark.selected {
-  background: rgba(246, 212, 124, 0.55);
+  background: rgba(246, 212, 124, 0.5);
   box-shadow: inset 0 0 0 3px rgba(255, 226, 154, 0.95);
 }
 
@@ -2082,56 +2101,130 @@ kbd {
   }
 }
 
-/* Schlag: kurzer Lichtring auf dem Feld */
-.b2d-mark.burst {
-  z-index: 4;
-  border-radius: 50%;
-  animation: b2d-burst 0.55s ease-out forwards;
-}
-
-@keyframes b2d-burst {
-  from {
-    box-shadow: 0 0 0 0 rgba(255, 170, 70, 0.95), inset 0 0 18px rgba(255, 200, 120, 0.9);
-    scale: 0.5;
-    opacity: 1;
-  }
-  to {
-    box-shadow: 0 0 0 14px rgba(255, 120, 40, 0), inset 0 0 0 rgba(255, 200, 120, 0);
-    scale: 1.5;
-    opacity: 0;
-  }
-}
-
+/* Figur: Bild der Marmorfigur (frontal), steht auf dem Feld und überragt es leicht, mit weichem Schatten am Boden */
 .b2d-piece {
   z-index: 2;
-  transition: transform 0.2s cubic-bezier(0.3, 0.7, 0.3, 1);
   will-change: transform;
+  animation: b2d-in 0.45s ease-out;
+}
+
+@keyframes b2d-in {
+  from {
+    scale: 0.6;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+.b2d-piece::before {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 3%;
+  height: 13%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 75%);
+  filter: blur(1px);
+}
+
+.b2d-piece.ghost::before {
+  display: none;
 }
 
 .b2d-piece img {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
-  /* Bild hat oben und unten Luft: Figur etwas tiefer setzen und vom Fuß aus vergrößern, damit sie das Feld füllt */
-  translate: 0 4%;
-  scale: 1.1;
-  transform-origin: 50% 95%;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+  scale: 1.12;
+  translate: 0 -4%;
+  transform-origin: 50% 96%;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* Schwarze Figuren auf dunklen Feldern: feiner heller Saum (wie der Randsaum in 3D) */
+.b2d-piece.c-b img {
+  filter: drop-shadow(0 0 1.2px rgba(235, 240, 255, 0.75)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
 }
 
 .b2d-piece.turned img {
   rotate: 180deg;
-  translate: 0 -2%;
-  scale: 1.04;
+  translate: 0 0;
   transform-origin: 50% 50%;
 }
 
+.b2d-piece.lift img {
+  animation: b2d-float 1.4s ease-in-out infinite;
+}
+
+@keyframes b2d-float {
+  0%,
+  100% {
+    transform: translateY(-9%);
+  }
+  50% {
+    transform: translateY(-14%);
+  }
+}
+
 .b2d-piece.lifted {
-  z-index: 5;
+  z-index: 7;
 }
 
 .b2d-piece.lifted img {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5));
+  transform: translateY(-8%) scale(1.12);
+  filter: drop-shadow(0 12px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* Schach: König zittert kurz; Matt: König kippt nach dem Mattzug um */
+.b2d-piece.check img {
+  animation: b2d-tremble 1.1s ease-out;
+}
+
+@keyframes b2d-tremble {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  12% {
+    transform: rotate(-6deg);
+  }
+  28% {
+    transform: rotate(5deg);
+  }
+  44% {
+    transform: rotate(-3.5deg);
+  }
+  62% {
+    transform: rotate(2.5deg);
+  }
+  80% {
+    transform: rotate(-1deg);
+  }
+}
+
+.b2d-piece.mated.w img {
+  animation: b2d-fall-w 0.9s 0.85s cubic-bezier(0.5, 0, 0.8, 0.6) forwards;
+}
+
+.b2d-piece.mated.b img {
+  animation: b2d-fall-b 0.9s 0.85s cubic-bezier(0.5, 0, 0.8, 0.6) forwards;
+}
+
+@keyframes b2d-fall-w {
+  to {
+    transform: translateY(14%) rotate(86deg);
+  }
+}
+
+@keyframes b2d-fall-b {
+  to {
+    transform: translateY(14%) rotate(-86deg);
+  }
 }
 
 .b2d-arrow {
@@ -2145,8 +2238,28 @@ kbd {
   opacity: 0.85;
 }
 
+/* Einschlag-Effekte (Blitz, Druckwelle, Glutball, Funken): werden von Board2D.tsx erzeugt */
+.b2d-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.b2d-fx-el,
+.b2d-spark {
+  position: absolute;
+  pointer-events: none;
+}
+
+.b2d-spark {
+  border-radius: 50%;
+  mix-blend-mode: screen;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .b2d-piece {
-    transition: none;
+  .b2d-piece,
+  .b2d-piece.lift img {
+    animation: none;
   }
 }

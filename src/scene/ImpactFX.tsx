@@ -27,6 +27,14 @@ let nextId = 1;
 let lastImpact: Impact | null = null;
 const listeners = new Set<(impact: Impact) => void>();
 
+/** Die 2D-Ansicht zeigt dieselben Einschläge auf ihrem flachen Brett */
+export function subscribeImpacts(listener: (impact: Impact) => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 type ImpactInput = Omit<Impact, 'id' | 'at' | 'power' | 'ring' | 'burst'> & Partial<Pick<Impact, 'power' | 'ring' | 'burst'>>;
 
 export function emitImpact(impact: ImpactInput) {

@@ -1,6 +1,6 @@
 # Rebell Chess 3D bei CrazyGames einreichen
 
-Stand: 02.11.2026 · Version 0.14.0 (neu: 2D-Ansicht). Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
+Stand: 03.11.2026 · Version 0.14.1 (2D-Ansicht mit Marmorbrett). Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
 Angaben zu CrazyGames stammen aus deren öffentlichen Seiten (docs.crazygames.com) und können sich ändern – im Portal gegenprüfen.
 
 ## 1. Was hochgeladen wird
