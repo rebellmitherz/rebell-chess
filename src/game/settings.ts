@@ -103,7 +103,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   volume: 0.8,
   graphics: 'high',
   pieceStyle: 'real',
-  viewMode: 'top',
+  viewMode: 'flat',
   battleMode: 'warriors',
   turnBoard: true,
   showCoordinates: true,

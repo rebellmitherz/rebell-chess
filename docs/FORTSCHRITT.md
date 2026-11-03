@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 03.11.2026 · Version 0.14.1 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 03.11.2026 · Version 0.14.2 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -148,3 +148,6 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 - **Alle Effekte bleiben:** Zugbewegung mit Abheben/Sprung (gleiche Bewegungsfunktionen wie in 3D), Ansturm beim Schlagen, geschlagene Figur wird zurückgeschleudert und überschlägt sich, Einschlagblitz, Druckwelle, Glutball, Funkenregen, Beben des Bretts, Schach-Zittern des Königs, Matt-Umkippen des Königs mit rotem Glühen, Umwandlungs-Funken und der Matt-Stempel. Kriegerkämpfe laufen unverändert in 3D.
 - Auswahl hebt die Figur an (schwebt), schwarze Figuren haben einen feinen hellen Saum auf dunklen Feldern.
 - Geprüft (Chrome ohne Fenster, PC und Handy-Format): Brett und Figuren, Springer-Sprung, Schlag mit Effekten, Matt in 7 Zügen mit Stempel, Klick- und Zieh-Zug, Kampf blendet 2D aus und ein. Nicht geprüft: echtes Handy, Safari; die anderen Brettstile (Edel/Rebell) behalten in 2D einfarbige Felder.
+
+## 0.14.2 – Start in 2D (03.11.2026)
+- Neue Spieler starten in der 2D-Ansicht (Standard `viewMode: 'flat'`). Wer schon eine Ansicht gespeichert hat, behält sie; Umschalten mit Knopf 2D/3D oder Taste D.
