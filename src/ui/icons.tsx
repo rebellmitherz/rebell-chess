@@ -121,3 +121,55 @@ export const IconPanel = ({ open }: { open: boolean }) => (
     <path d={open ? 'M8 10l2 2-2 2' : 'M10 10l-2 2 2 2'} />
   </Svg>
 );
+export const IconSwords = () => (
+  <Svg>
+    <path d="M14.5 17.5 3 6V3h3l11.5 11.5" />
+    <path d="M13 19l6-6M16 16l4 4M19 21l2-2" />
+    <path d="M9.5 6.5 14 2h3v3l-4.5 4.5" />
+    <path d="M5 14l-2 2 2 2M8 19l-2 2" />
+  </Svg>
+);
+export const IconPuzzle = () => (
+  <Svg>
+    <path d="M10 3h4v2.5a1.5 1.5 0 0 0 3 0V3h4v4h-2.5a1.5 1.5 0 0 0 0 3H21v4h-4v-2.5a1.5 1.5 0 0 0-3 0V14h-4v-4H7.5a1.5 1.5 0 0 1 0-3H10z" />
+    <path d="M3 14h4v7H3zM10 17h4v4h-4z" />
+  </Svg>
+);
+export const IconBoard = () => (
+  <Svg>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+  </Svg>
+);
+export const IconUsers = () => (
+  <Svg>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <circle cx="17" cy="9" r="2.6" />
+    <path d="M16.5 14.5A5 5 0 0 1 21.5 20" />
+  </Svg>
+);
+export const IconTrophy = () => (
+  <Svg>
+    <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+    <path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8M9 18h6" />
+  </Svg>
+);
+export const IconGear = () => (
+  <Svg>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+  </Svg>
+);
+export const IconBook = () => (
+  <Svg>
+    <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
+    <path d="M4 19V5M8 7h7M8 11h5" />
+  </Svg>
+);
+export const IconLock = () => (
+  <Svg>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </Svg>
+);

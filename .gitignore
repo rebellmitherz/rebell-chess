@@ -15,3 +15,6 @@ public/models/warrior_moves.glb
 dist-crazygames/
 crazygames/*.zip
 crazygames/images/
+
+# Zwischenstände der Rätsel-Erzeugung
+scripts/out/

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export type DialogKind = 'resign' | 'restart' | 'pgn' | null;
 export type SheetKind = 'moves' | 'more' | null;
+export type MenuPanel = 'home' | 'new' | 'settings' | 'help' | 'campaign' | 'puzzles' | 'achievements';
 
 interface UiState {
   dialog: DialogKind;
@@ -12,6 +13,9 @@ interface UiState {
   stamping: boolean;
   /** Gemessene Höhe der HUD-Leisten auf Smartphones (für die Kamera) */
   insets: { top: number; bottom: number } | null;
+  /** Seite des Hauptmenüs (Feldzug, Rätsel …) */
+  menuPanel: MenuPanel;
+  setMenuPanel(p: MenuPanel): void;
   openDialog(d: DialogKind): void;
   openSheet(s: SheetKind): void;
   dismissResult(key: string): void;
@@ -26,6 +30,8 @@ export const useUi = create<UiState>((set) => ({
   dismissedResultKey: null,
   insets: null,
   stamping: false,
+  menuPanel: 'home',
+  setMenuPanel: (menuPanel) => set({ menuPanel }),
   setStamping: (stamping) => set({ stamping }),
   openDialog: (dialog) => set({ dialog, sheet: null }),
   openSheet: (sheet) => set({ sheet }),

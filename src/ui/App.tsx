@@ -1,9 +1,11 @@
 import { Component, Fragment, useEffect, type ReactNode } from 'react';
+import { setMusic } from '../audio/music';
 import { playSfx, setVolume, unlockAudio } from '../audio/sound';
 import { gameStore, useGame } from '../game/instance';
 import { ChessScene } from '../scene/ChessScene';
 import { BattleOverlay } from './BattleOverlay';
 import { Board2D } from './Board2D';
+import { AchievementToasts, CoachHint, MatchIntro, OpponentBubble } from './Progress';
 import { ConfirmDialogs, DrawOfferDialog, GameOverDialog, PauseOverlay, PromotionDialog, Toast } from './Dialogs';
 import { toggleFullscreen } from './fullscreen';
 import { MateStamp } from './MateStamp';
@@ -37,6 +39,7 @@ function useSoundBridge() {
     setVolume(gameStore.getState().prefs.volume);
     return gameStore.subscribe((s, prev) => {
       if (s.prefs.volume !== prev.prefs.volume) setVolume(s.prefs.volume);
+      if (s.prefs.sound !== prev.prefs.sound || s.prefs.music !== prev.prefs.music) setMusic(s.prefs.sound && s.prefs.music);
       if (s.sfx && s.sfx !== prev.sfx && s.prefs.sound) {
         // Mit Kampf-Animation: Anlauf-Rauschen, Einschlag genau beim Treffer
         playSfx(s.sfx.kind === 'capture' && s.prefs.battleMode !== 'off' ? 'strike' : s.sfx.kind);
@@ -44,7 +47,11 @@ function useSoundBridge() {
     });
   }, []);
   useEffect(() => {
-    const unlock = () => unlockAudio();
+    const unlock = () => {
+      unlockAudio();
+      const p = gameStore.getState().prefs;
+      setMusic(p.sound && p.music);
+    };
     window.addEventListener('pointerdown', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
     return () => {
@@ -139,6 +146,9 @@ export function App() {
   // 2D-Ansicht: flaches Brett im freien Bereich; im Kriegerkampf übernimmt kurz die 3D-Szene
   const flat = useGame((s) => s.prefs.viewMode === 'flat') && inGame;
   const sceneSidebar = inGame && !hideSidebar ? layout.sidebar : 0;
+  // Neue Partie: das Menü öffnet danach wieder auf der Startseite
+  const gameId = useGame((s) => s.gameId);
+  useEffect(() => useUi.getState().setMenuPanel('home'), [gameId]);
 
   return (
     <div className={`app${flat && !fighting ? ' flat-2d' : ''}`}>
@@ -161,6 +171,10 @@ export function App() {
         <PauseOverlay />
         <ConfirmDialogs />
         <Toast />
+        {inGame && <OpponentBubble left={0} right={sceneSidebar} top={topInset + (layout.desktop ? 14 : 8)} />}
+        {inGame && <CoachHint left={0} right={sceneSidebar} bottom={bottomInset} />}
+        {inGame && <MatchIntro />}
+        <AchievementToasts />
       </Fragment>
       <MateStamp />
       {screen === 'menu' && <MainMenu />}

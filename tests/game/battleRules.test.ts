@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ChessGame } from '../../src/core/chessGame';
 import type { MoveRecord } from '../../src/core/types';
-import { FIGHT_COOLDOWN_PLIES, FRESH_BATTLE_HISTORY, isImportantCapture, nextHistory, QUICK_STREAK_LIMIT, shouldFight } from '../../src/game/battleRules';
+import { FIGHT_COOLDOWN_PLIES, FRESH_BATTLE_HISTORY, isFirstCapture, isImportantCapture, nextHistory, QUICK_STREAK_LIMIT, shouldFight } from '../../src/game/battleRules';
 
 /** Zug in einer Stellung spielen und die Zugbeschreibung zurückgeben */
 const play = (fen: string, from: string, to: string): MoveRecord => new ChessGame(fen).move({ from: from as never, to: to as never })!;
@@ -33,6 +33,12 @@ describe('Welche Schläge sind wichtig?', () => {
 });
 
 describe('Wann kommt wirklich ein Kampf?', () => {
+  it('der erste Schlag einer Partie gilt als Kampf, danach nicht mehr', () => {
+    expect(isFirstCapture(FRESH_BATTLE_HISTORY)).toBe(true);
+    expect(isFirstCapture(nextHistory(FRESH_BATTLE_HISTORY, true, 4))).toBe(false);
+    expect(isFirstCapture(nextHistory(FRESH_BATTLE_HISTORY, false, 4))).toBe(false);
+  });
+
   it('wichtiger Schlag: ja; unwichtiger: nein', () => {
     expect(shouldFight(play(...QUEEN_TAKES_QUEEN), 12, FRESH_BATTLE_HISTORY)).toBe(true);
     expect(shouldFight(play(...PAWN_TAKES_PAWN), 12, FRESH_BATTLE_HISTORY)).toBe(false);

@@ -1,6 +1,6 @@
 # Rebell Chess 3D bei CrazyGames einreichen
 
-Stand: 03.11.2026 · Version 0.14.1 (2D-Ansicht mit Marmorbrett). Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
+Stand: 05.11.2026 · Version 0.15.0 (Feldzug, Rätsel, Fortschritt – nach der Absage vom 04.11. überarbeitet). Alles hier ist vorbereitet; **hochgeladen und abgeschickt hast du es erst, wenn du es im Portal tust.**
 Angaben zu CrazyGames stammen aus deren öffentlichen Seiten (docs.crazygames.com) und können sich ändern – im Portal gegenprüfen.
 
 ## 1. Was hochgeladen wird
@@ -27,11 +27,13 @@ Das Zip enthält die Mixamo-Dateien und liegt deshalb **nicht in Git** (siehe Ab
 
 **Titel:** Rebell Chess 3D
 
-**Kurzbeschreibung (EN):** 3D chess where captures turn into epic warrior duels. Play the AI or a friend.
+**Kurzbeschreibung (EN):** Chess where captures turn into epic warrior duels. Beat seven rivals, solve checkmate puzzles, level up.
 
 **Beschreibung (EN):**
-Rebell Chess 3D is a premium 3D chess game that plays by every rule – castling, en passant, promotion, draws – and then does something no chess game does: when it matters, the pieces become armoured warriors and fight it out. Every duel plays out differently, with its own moves, camera cuts and slow-motion finishing blow. Minor captures are quick and punchy, and a checkmate slams down a huge stamp with a boom.
-Play against the built-in AI (7 levels from beginner to strong club player), against a friend on one device, or in training mode with hints and move explanations. Three looks: real marble on black, emerald and gold, or red and ivory. Works on desktop and phone.
+Rebell Chess is chess with a twist: when pieces capture, they turn into armoured warriors and fight it out in 3D – every duel plays out differently, with camera cuts and a slow-motion finishing blow. A checkmate slams down a huge stamp with a boom.
+Campaign: challenge seven rivals with their own personalities – from Benno the Pawn to the Rebel himself. Beat one to unlock the next and earn up to three stars per opponent.
+Puzzles: find the checkmate in 1, 2 or 3 moves while the AI defends.
+Level up from Recruit to Rebel King, unlock achievements, and play on a clear marble 2D board or in full 3D – switch any time. Also: free games against the AI (7 levels), two players on one device, and a training mode with hints and move explanations. Works on desktop and phone.
 
 **Beschreibung (DE):**
 Rebell Chess 3D ist ein 3D-Schachspiel mit allen Regeln (Rochade, en passant, Umwandlung, Remis) und einer Besonderheit: Bei wichtigen Schlägen werden die Figuren zu gepanzerten Kriegern und kämpfen. Jeder Kampf läuft anders ab, mit eigenen Bewegungen, Kameraschnitten und Zeitlupe beim Todesstoß. Kleine Schläge sind kurz und knallen mit einer Mini-Explosion, Schachmatt kommt mit einem riesigen Stempel. Spiele gegen die eingebaute KI (7 Stufen), zu zweit an einem Gerät oder im Trainingsmodus mit Hinweisen und Erklärungen. Drei Looks: Marmor auf Schwarz, Smaragd und Gold, Rot und Elfenbein.

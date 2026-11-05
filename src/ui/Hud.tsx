@@ -27,6 +27,8 @@ import {
   IconUndo,
 } from './icons';
 import type { Layout } from './useLayout';
+import { getOpponent } from '../game/opponents';
+import { Avatar } from './Progress';
 import { useNow } from './useLayout';
 import { useUi } from './uiState';
 import { fullscreenAvailable, toggleFullscreen, useFullscreen } from './fullscreen';
@@ -72,9 +74,10 @@ function PlayerCard({ color }: { color: Color }) {
   const thinking = useGame((s) => s.engineThinking);
   const active = !result && turn === color;
   const isAi = settings.mode === 'ai' && color !== settings.humanColor;
+  const opponent = isAi && settings.context?.kind === 'campaign' ? getOpponent(settings.context.opponent) : undefined;
   return (
     <div className={`player-card${active ? ' active' : ''}`}>
-      <div className={`piece-chip chip-${color}`}>{FIGURINE.k}</div>
+      {opponent ? <Avatar opp={opponent} size="sm" /> : <div className={`piece-chip chip-${color}`}>{FIGURINE.k}</div>}
       <div className="player-info">
         <div className="player-name">{playerName(settings, color)}</div>
         <CapturedRow color={color} />
@@ -112,6 +115,7 @@ function StatusLine() {
           : tr('Die KI ist am Zug')
         : tr('{color} ist am Zug', { color: COLOR_NAME[status.turn] });
     text = status.inCheck ? `${tr('Schach!')} ${who}` : who;
+    if (settings.context?.kind === 'puzzle') text = `${tr('Matt in {n}', { n: settings.context.mateIn })} · ${text}`;
     if (status.inCheck) tone = 'check';
   }
   return (

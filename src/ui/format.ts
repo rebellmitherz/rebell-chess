@@ -1,5 +1,6 @@
 import type { Color, GameResult, PieceSymbol } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
+import { getOpponent, say } from '../game/opponents';
 import type { GameSettings } from '../game/settings';
 import { getLang, tr } from '../i18n';
 
@@ -31,11 +32,17 @@ export function figurineSan(san: string): string {
 
 export function playerName(settings: GameSettings, color: Color): string {
   if (settings.mode === 'local') return COLOR_NAME[color];
-  return color === settings.humanColor ? tr('Du') : `Rebell-KI · ${tr(getDifficulty(settings.aiLevel).name)}`;
+  if (color === settings.humanColor) return tr('Du');
+  const ctx = settings.context;
+  if (ctx?.kind === 'campaign') return say(getOpponent(ctx.opponent)!.name);
+  if (ctx?.kind === 'puzzle') return tr('Verteidigung');
+  return `Rebell-KI · ${tr(getDifficulty(settings.aiLevel).name)}`;
 }
 
 export function resultTitle(result: GameResult, settings: GameSettings): string {
   if (result.winner === null) return tr('Remis');
+  if (settings.context?.kind === 'puzzle') return result.winner === settings.humanColor && result.reason === 'checkmate' ? tr('Rätsel gelöst!') : tr('Nicht gelöst');
+  if (settings.context?.kind === 'campaign' && result.winner !== settings.humanColor) return tr('{name} gewinnt', { name: say(getOpponent(settings.context.opponent)!.name) });
   if (settings.mode === 'ai') return result.winner === settings.humanColor ? tr('Du hast gewonnen!') : tr('Die KI gewinnt');
   return tr('{color} gewinnt', { color: COLOR_NAME[result.winner] });
 }

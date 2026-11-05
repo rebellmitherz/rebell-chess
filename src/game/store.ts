@@ -27,7 +27,7 @@ import {
 } from '../core/types';
 import { getDifficulty } from '../engine/difficulty';
 import { scoreToCp } from '../engine/types';
-import { FRESH_BATTLE_HISTORY, nextHistory, shouldFight, type BattleHistory } from './battleRules';
+import { FRESH_BATTLE_HISTORY, isFirstCapture, nextHistory, shouldFight, type BattleHistory } from './battleRules';
 import { resolveDrop } from './drop';
 import type { EngineService } from './engineService';
 import {
@@ -521,7 +521,7 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
         deps.battleScenes &&
         s.screen === 'game' &&
         record.isCapture &&
-        (mode === 'always' || (mode === 'warriors' && shouldFight(record, d.history.length, battleHistory)));
+        (mode === 'always' || (mode === 'warriors' && (isFirstCapture(battleHistory) || shouldFight(record, d.history.length, battleHistory))));
       // Nur Schläge zählen für den Verlauf (Wichtiges bekommt einen Kampf, der Rest bleibt schnell)
       if (deps.battleScenes && mode === 'warriors' && record.isCapture) battleHistory = nextHistory(battleHistory, wantsFight, d.history.length);
       const battle: BattleState | null =
@@ -874,7 +874,9 @@ function createGameStoreCore(partialDeps: Partial<StoreDeps>): GameStoreApi {
       },
 
       restart() {
-        loadGame(get().settings, START_FEN, []);
+        // Rätsel beginnen wieder in ihrer Stellung, alles andere in der Grundstellung
+        const s = get();
+        loadGame(s.settings, s.settings.context?.kind === 'puzzle' ? s.startFen : START_FEN, []);
       },
 
       resign() {

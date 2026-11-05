@@ -41,6 +41,9 @@ export function getTimeControl(id: string): TimeControl {
   return TIME_CONTROLS.find((t) => t.id === id) ?? TIME_CONTROLS[0];
 }
 
+/** Wozu die Partie gehört: Feldzug (Gegner-Nummer) oder Rätsel (Nummer, Matt in n); fehlt bei freien Partien */
+export type GameContext = { kind: 'campaign'; opponent: number } | { kind: 'puzzle'; id: string; mateIn: number };
+
 /** Einstellungen einer Partie */
 export interface GameSettings {
   mode: GameMode;
@@ -50,6 +53,8 @@ export interface GameSettings {
   timeControlId: string;
   /** Trainingsmodus: Hinweise, Zugbewertung, Erklärungen */
   training: boolean;
+  /** Feldzug oder Rätsel (fehlt bei freien Partien) */
+  context?: GameContext;
 }
 
 /** Geräte-/Darstellungseinstellungen (unabhängig von der Partie) */
@@ -57,6 +62,8 @@ export interface Preferences {
   showLegalMoves: boolean;
   showLastMove: boolean;
   sound: boolean;
+  /** Hintergrundmusik (nur wenn auch der Ton an ist) */
+  music: boolean;
   /** Lautstärke 0–1 */
   volume: number;
   graphics: GraphicsQuality;
@@ -100,6 +107,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showLegalMoves: true,
   showLastMove: true,
   sound: true,
+  music: true,
   volume: 0.8,
   graphics: 'high',
   pieceStyle: 'real',
@@ -117,14 +125,27 @@ export const DEFAULT_PREFERENCES: Preferences = {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
 
+function sanitizeContext(raw: unknown): GameContext | undefined {
+  if (!isObj(raw)) return undefined;
+  if (raw.kind === 'campaign' && Number.isInteger(raw.opponent) && (raw.opponent as number) >= 1 && (raw.opponent as number) <= 7) {
+    return { kind: 'campaign', opponent: raw.opponent as number };
+  }
+  if (raw.kind === 'puzzle' && typeof raw.id === 'string' && [1, 2, 3].includes(raw.mateIn as number)) {
+    return { kind: 'puzzle', id: raw.id, mateIn: raw.mateIn as number };
+  }
+  return undefined;
+}
+
 export function sanitizeSettings(raw: unknown): GameSettings {
   const r = isObj(raw) ? raw : {};
+  const context = sanitizeContext(r.context);
   return {
     mode: r.mode === 'local' || r.mode === 'ai' ? r.mode : DEFAULT_SETTINGS.mode,
     humanColor: r.humanColor === 'b' ? 'b' : 'w',
     aiLevel: DIFFICULTY_LEVELS.some((l) => l.id === r.aiLevel) ? (r.aiLevel as number) : DEFAULT_SETTINGS.aiLevel,
     timeControlId: TIME_CONTROLS.some((t) => t.id === r.timeControlId) ? (r.timeControlId as string) : 'none',
     training: bool(r.training, false),
+    ...(context ? { context } : {}),
   };
 }
 
@@ -137,6 +158,7 @@ export function sanitizePreferences(raw: unknown, base: Preferences = DEFAULT_PR
     showLegalMoves: bool(r.showLegalMoves, base.showLegalMoves),
     showLastMove: bool(r.showLastMove, base.showLastMove),
     sound: bool(r.sound, base.sound),
+    music: bool(r.music, base.music),
     volume: typeof r.volume === 'number' && Number.isFinite(r.volume) ? Math.min(1, Math.max(0, r.volume)) : base.volume,
     graphics: r.graphics === 'high' || r.graphics === 'medium' || r.graphics === 'low' ? r.graphics : base.graphics,
     // Bis 0.4 war „classic“ (Gold/Onyx) der Standard – gespeicherte Einstellungen von damals einmalig auf „Echt“ heben

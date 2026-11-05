@@ -7,7 +7,9 @@ import './styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { gameStore } from './game/instance';
-import { bindPortalToGame, initPortal, isPortal, portalLoadingDone } from './portal';
+import { browserStorage } from './game/persistence';
+import { bindProgress, useProgress } from './game/progress';
+import { bindPortalToGame, initPortal, isPortal, portalHappy, portalLoadingDone } from './portal';
 import { registerPwa } from './pwa';
 import { App } from './ui/App';
 
@@ -19,6 +21,12 @@ if (isPortal) {
     if (document.readyState === 'complete') portalLoadingDone();
   });
 } else registerPwa();
+
+// Fortschritt (Stufe, Feldzug, Rätsel, Erfolge) hört auf die Partie
+bindProgress(gameStore, browserStorage());
+useProgress.subscribe((s, prev) => {
+  if (s.reward && s.reward !== prev.reward && s.reward.value.won) portalHappy();
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

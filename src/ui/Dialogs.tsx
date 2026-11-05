@@ -5,6 +5,9 @@ import { gameStore, useGame } from '../game/instance';
 import { COLOR_NAME, FIGURINE, resultReason, resultScore, resultTitle } from './format';
 import { useUi } from './uiState';
 import { tr } from '../i18n';
+import { getOpponent, say } from '../game/opponents';
+import { nextPuzzle, startCampaign, startPuzzle, useProgress } from '../game/progress';
+import { Confetti, openMenuAt, puzzleTip, RewardPanel } from './Progress';
 
 const actions = () => gameStore.getState();
 
@@ -64,40 +67,98 @@ export function GameOverDialog() {
   const dismissed = useUi((s) => s.dismissedResultKey);
   const dismiss = useUi((s) => s.dismissResult);
   const openDialog = useUi((s) => s.openDialog);
+  const reward = useProgress((s) => s.reward);
+  const [tip, setTip] = useState<string | null>(null);
+  useEffect(() => setTip(null), [gameId]);
   if (!result || screen !== 'game' || fighting || stamping) return null;
   const key = `${gameId}-${plies}-${result.reason}`;
   if (dismissed === key) return null;
   const won = settings.mode === 'ai' && result.winner === settings.humanColor;
+  const ctx = settings.context;
+  const puzzle = ctx?.kind === 'puzzle';
+  const solved = puzzle && won && result.reason === 'checkmate';
+  const rewardOk = reward && reward.gameId === gameId && reward.plies === plies ? reward.value : null;
+  const nextOpp = ctx?.kind === 'campaign' && won ? getOpponent(ctx.opponent + 1) : undefined;
+  const reason =
+    puzzle && !solved
+      ? ctx.mateIn === 1
+        ? tr('Das war nicht das Matt – versuch es noch einmal.')
+        : tr('In {n} Zügen kam kein Matt – versuch es noch einmal.', { n: ctx.mateIn })
+      : resultReason(result);
   return (
     <Modal onClose={() => dismiss(key)}>
-      <div className={`result-crest${result.winner === null ? ' draw' : won || settings.mode === 'local' ? ' win' : ' loss'}`}>{resultScore(result)}</div>
+      {(won || solved) && <Confetti />}
+      <div className={`result-crest${result.winner === null ? ' draw' : won || settings.mode === 'local' ? ' win' : ' loss'}`}>
+        {puzzle ? (solved ? '✓' : '✗') : resultScore(result)}
+      </div>
       <h2 className="modal-title">{resultTitle(result, settings)}</h2>
-      <p className="modal-text">{resultReason(result)}</p>
+      <p className="modal-text">{reason}</p>
+      {rewardOk && <RewardPanel reward={rewardOk} />}
+      {puzzle && !solved && tip && <p className="reward-line">{tr('Tipp: Der erste Zug ist {move}.', { move: tip })}</p>}
       <div className="modal-actions">
-        <button className="btn primary" onClick={() => actions().restart()}>
-          {tr('Neue Partie')}
+        {nextOpp && (
+          <button className="btn primary" onClick={() => startCampaign(gameStore, nextOpp.id)}>
+            {tr('Nächster Gegner: {name}', { name: say(nextOpp.name) })}
+          </button>
+        )}
+        {puzzle && solved && (
+          <button className="btn primary" onClick={() => startNextPuzzle()}>
+            {tr('Nächstes Rätsel')}
+          </button>
+        )}
+        {puzzle && !solved && !tip && (
+          <button className="btn" onClick={() => setTip(puzzleTip(ctx.id))}>
+            {tr('Tipp zeigen')}
+          </button>
+        )}
+        <button className={`btn${nextOpp || solved ? '' : ' primary'}`} onClick={() => actions().restart()}>
+          {puzzle || ctx?.kind === 'campaign' ? tr('Nochmal') : tr('Neue Partie')}
         </button>
-        <button className="btn" onClick={() => actions().undo()}>
-          {tr('Zug zurücknehmen')}
-        </button>
+        {puzzle && !solved && (
+          <button className="btn" onClick={() => startNextPuzzle()}>
+            {tr('Überspringen')}
+          </button>
+        )}
+        {!puzzle && (
+          <button className="btn" onClick={() => actions().undo()}>
+            {tr('Zug zurücknehmen')}
+          </button>
+        )}
         <button className="btn" onClick={() => dismiss(key)}>
           {tr('Brett ansehen')}
         </button>
-        <button
-          className="btn"
-          onClick={() => {
-            dismiss(key);
-            openDialog('pgn');
-          }}
-        >
-          {tr('PGN speichern')}
-        </button>
+        {!ctx && (
+          <button
+            className="btn"
+            onClick={() => {
+              dismiss(key);
+              openDialog('pgn');
+            }}
+          >
+            {tr('PGN speichern')}
+          </button>
+        )}
+        {ctx?.kind === 'campaign' && (
+          <button className="btn" onClick={() => openMenuAt('campaign')}>
+            {tr('Feldzug')}
+          </button>
+        )}
+        {puzzle && (
+          <button className="btn" onClick={() => openMenuAt('puzzles')}>
+            {tr('Rätsel-Übersicht')}
+          </button>
+        )}
         <button className="btn ghost" onClick={() => actions().openMenu()}>
           {tr('Hauptmenü')}
         </button>
       </div>
     </Modal>
   );
+}
+
+function startNextPuzzle() {
+  const p = nextPuzzle(useProgress.getState().data);
+  if (p) startPuzzle(gameStore, p);
 }
 
 export function DrawOfferDialog() {

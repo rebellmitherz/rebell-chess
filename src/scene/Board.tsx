@@ -128,7 +128,8 @@ function useCoordinateTexture(inside: boolean, side: 'w' | 'b') {
     };
     draw();
     // Nach dem Laden der Schrift neu zeichnen
-    void document.fonts?.load('600 60px Cinzel').then(draw);
+    // Schrift nicht ladbar (z. B. gesperrt): mit Ersatzschrift zeichnen statt einen Fehler zu werfen
+    void document.fonts?.load('600 60px Cinzel').then(draw, draw);
   }, [texture, inside, side]);
   return texture;
 }

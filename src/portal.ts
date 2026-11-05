@@ -7,7 +7,7 @@ import type { GameStoreApi } from './game/store';
  */
 interface CrazyGamesSdk {
   init(): Promise<void>;
-  game: { gameplayStart(): void; gameplayStop(): void; loadingStart(): void; loadingStop(): void };
+  game: { gameplayStart(): void; gameplayStop(): void; loadingStart(): void; loadingStop(): void; happytime?(): void };
 }
 
 export const isPortal: boolean = typeof __PORTAL__ !== 'undefined' && __PORTAL__;
@@ -34,6 +34,16 @@ export function portalLoadingDone(): void {
   if (!ready) return;
   try {
     sdk()?.game.loadingStop();
+  } catch {
+    /* ignorieren */
+  }
+}
+
+/** Freudiger Moment (Sieg, Rätsel gelöst): das Portal darf ihn feiern */
+export function portalHappy(): void {
+  if (!ready) return;
+  try {
+    sdk()?.game.happytime?.();
   } catch {
     /* ignorieren */
   }

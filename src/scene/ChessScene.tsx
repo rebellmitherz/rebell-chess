@@ -1,7 +1,7 @@
 import { Environment, Lightformer, SoftShadows } from '@react-three/drei';
 import { assetUrl, ENV_FILE } from './realAssets';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/instance';
 import type { GraphicsQuality } from '../game/settings';
@@ -16,6 +16,8 @@ import { ImpactFX, ShakeGroup } from './ImpactFX';
 import { AdaptiveResolution, FrameDriver, ShadowUpdater } from './Performance';
 import { Pieces } from './Pieces';
 import { PostEffects } from './PostEffects';
+import { loadModelPieces } from './pieceModels';
+import { loadRealAssets } from './realAssets';
 
 const QUALITY: Record<
   GraphicsQuality,
@@ -89,6 +91,62 @@ function LightRig({ shadows, shadowMap, k }: { shadows: boolean; shadowMap: numb
   );
 }
 
+/** Meldet, dass das Raumlicht geladen ist (steht in derselben Suspense-Grenze wie die Umgebung) */
+function Loaded({ onLoaded }: { onLoaded: () => void }) {
+  useEffect(onLoaded, [onLoaded]);
+  return null;
+}
+
+/**
+ * Sanfter Start: erst alles laden (Figuren, Texturen, Raumlicht), dann alle Shader in einem Rutsch übersetzen –
+ * im Hintergrund (KHR_parallel_shader_compile), ohne den Hauptthread zu blockieren. Bis dahin zeichnet die Szene
+ * nichts; das Menü bleibt bedienbar. Früher kamen mehrere Übersetzungswellen nacheinander (je nachgeladenem Teil),
+ * jede legte das Spiel für Sekunden lahm.
+ */
+function Warmup({ envReady, style, post, onReady }: { envReady: boolean; style: string; post: boolean; onReady: () => void }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  const done = useRef(false);
+  useEffect(() => {
+    if (!envReady || done.current) return;
+    let alive = true;
+    const finish = () => {
+      if (!alive || done.current) return;
+      done.current = true;
+      onReady();
+    };
+    // Sicherheitsnetz: nach 12 s auf jeden Fall zeichnen
+    const fallback = setTimeout(finish, 12_000);
+    const assets: Promise<unknown>[] = style === 'rebell' ? [] : [loadModelPieces()];
+    if (style === 'real') assets.push(loadRealAssets());
+    Promise.allSettled(assets)
+      // React baut die geladenen Teile erst im nächsten Durchlauf in die Szene ein
+      .then(() => new Promise((r) => setTimeout(r, 120)))
+      .then(() => {
+        // Mit Bildeffekten zeichnet die Szene in einen Zwischenpuffer – andere Shader-Varianten (ohne Tonwert-
+        // anpassung, linearer Farbraum). Beide Varianten übersetzen, sonst kommt die zweite Welle beim ersten Bild.
+        const jobs = [gl.compileAsync(scene, camera)];
+        if (post) {
+          const target = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
+          const previous = gl.getRenderTarget();
+          gl.setRenderTarget(target);
+          jobs.push(gl.compileAsync(scene, camera));
+          gl.setRenderTarget(previous);
+          void jobs[1].finally(() => target.dispose());
+        }
+        return Promise.all(jobs);
+      })
+      .catch(() => undefined)
+      .then(finish);
+    return () => {
+      alive = false;
+      clearTimeout(fallback);
+    };
+  }, [envReady, style, post, gl, scene, camera, onReady]);
+  return null;
+}
+
 /** Nur im Dev-Modus: Renderer für Messungen in der Browser-Konsole erreichbar. */
 function DevProbe() {
   const gl = useThree((s) => s.gl);
@@ -111,14 +169,20 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
   const k = realStyle ? 1 : 0.42;
   const q = QUALITY[graphics];
   const shadows = q.shadowMap > 0;
+  const style = useGame((s) => s.prefs.pieceStyle);
+  // Bereit = Shader übersetzt; Raumlicht (nur Stil „Echt“ lädt eine Datei) muss dafür geladen sein
+  const [ready, setReady] = useState(false);
+  const [envReady, setEnvReady] = useState(!realStyle);
+  const onEnv = useRef(() => setEnvReady(true)).current;
+  const onReady = useRef(() => setReady(true)).current;
 
   return (
     <Canvas
       key={graphics}
-      className="scene-canvas"
+      className={`scene-canvas${ready ? ' ready' : ''}`}
       shadows={shadows ? { type: THREE.PCFSoftShadowMap } : false}
       dpr={q.dpr}
-      frameloop="demand"
+      frameloop={ready ? 'demand' : 'never'}
       camera={{ fov: FOV, position: [0, 16, 16], near: 0.1, far: 160 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
     >
@@ -132,13 +196,16 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       <Suspense fallback={null}>
         {realStyle ? (
           // Echtes Raumlicht (Wohnraum mit Fenstern), unscharf im Hintergrund
-          <Environment
-            files={assetUrl(ENV_FILE)}
-            background
-            backgroundBlurriness={0.55}
-            backgroundIntensity={0.55}
-            environmentIntensity={0.95}
-          />
+          <>
+            <Environment
+              files={assetUrl(ENV_FILE)}
+              background
+              backgroundBlurriness={0.55}
+              backgroundIntensity={0.55}
+              environmentIntensity={0.95}
+            />
+            <Loaded onLoaded={onEnv} />
+          </>
         ) : (
           <StudioEnvironment intensity={k} />
         )}
@@ -157,6 +224,7 @@ export function ChessScene({ sidebar, topInset, bottomInset }: { sidebar: number
       <FrameDriver idleFps={q.idleFps} />
       {shadows && <ShadowUpdater />}
       <AdaptiveResolution min={q.dpr[0]} max={q.dpr[1]} />
+      {!ready && <Warmup envReady={envReady || !realStyle} style={style} post={q.post} onReady={onReady} />}
       {import.meta.env.DEV && <DevProbe />}
     </Canvas>
   );

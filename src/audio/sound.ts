@@ -526,6 +526,31 @@ export function playSfx(kind: SfxKind) {
   renderInto(l.chain, kind, l.ctx.currentTime + 0.005);
 }
 
+/** Fanfaren für Belohnungen: Stern, Stufenaufstieg, Erfolg, neuer Gegner */
+export type ChimeKind = 'star' | 'levelup' | 'achievement';
+
+export function playChime(kind: ChimeKind, delay = 0) {
+  const l = liveChain();
+  if (!l || volume <= 0) return;
+  const c = l.chain;
+  const t = l.ctx.currentTime + 0.005 + delay;
+  if (kind === 'star') {
+    bell(c, 1318.5, t, 0.05, 1.6);
+    bell(c, 1975.5, t + 0.07, 0.03, 1.4);
+  } else if (kind === 'levelup') {
+    [587.33, 739.99, 880, 1174.66].forEach((f, i) => bell(c, f, t + i * 0.1, 0.06, 2.4));
+    bell(c, 1479.98, t + 0.42, 0.05, 2.8);
+  } else {
+    [783.99, 1046.5, 1318.5].forEach((f, i) => bell(c, f, t + i * 0.09, 0.05, 1.8));
+  }
+}
+
+/** Ausgang für die Hintergrundmusik: gleicher Lautstärkeregler und Hall wie die Effekte */
+export function liveAudio(): { ctx: AudioContext; master: GainNode; wet: AudioNode } | null {
+  const l = liveChain();
+  return l ? { ctx: l.ctx, master: l.master, wet: l.chain.wet } : null;
+}
+
 export function playBattleSfx(kind: BattleSfx) {
   const l = liveChain();
   if (!l || volume <= 0) return;

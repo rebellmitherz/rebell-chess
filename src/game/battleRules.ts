@@ -46,6 +46,14 @@ export function shouldFight(record: MoveRecord, ply: number, history: BattleHist
   return history.quickStreak >= QUICK_STREAK_LIMIT && prize && cooledDown;
 }
 
+/**
+ * Erster Schlag einer Partie: immer ein Kampf. Wer das Spiel zum ersten Mal spielt, soll die Krieger sofort sehen –
+ * sie sind das Besondere an Rebell Chess (danach gelten die normalen Regeln oben).
+ */
+export function isFirstCapture(history: BattleHistory): boolean {
+  return history.lastFightPly === -Infinity && history.quickStreak === 0;
+}
+
 /** Verlauf nach einem Schlagzug fortschreiben */
 export function nextHistory(history: BattleHistory, fought: boolean, ply: number): BattleHistory {
   return fought ? { quickStreak: 0, lastFightPly: ply } : { quickStreak: history.quickStreak + 1, lastFightPly: history.lastFightPly };

@@ -1,6 +1,6 @@
 # Rebell Chess 3D – Fortschritt
 
-Stand: 03.11.2026 · Version 0.14.2 · online: https://rebellmitherz.github.io/rebell-chess/
+Stand: 05.11.2026 · Version 0.15.0 · online: https://rebellmitherz.github.io/rebell-chess/
 
 Legende: **getestet** = automatischer Test vorhanden und grün · **im Browser geprüft** = von Hand in der laufenden App
 ausprobiert (Chromium, Desktop- und Smartphone-Ansicht emuliert) · **offen** = noch nicht vorhanden.
@@ -151,3 +151,15 @@ zeigen die Last (Dreiecke, Draw Calls, Bildrate in Ruhe), nicht die tatsächlich
 
 ## 0.14.2 – Start in 2D (03.11.2026)
 - Neue Spieler starten in der 2D-Ansicht (Standard `viewMode: 'flat'`). Wer schon eine Ansicht gespeichert hat, behält sie; Umschalten mit Knopf 2D/3D oder Taste D.
+
+## 0.15.0 – Vom Schachprogramm zum Spiel (05.11.2026)
+Anlass: CrazyGames lehnte 0.13.0 am 04.11. wegen der Gesamtqualität ab. Befund und Plan: `docs/QUALITAET_PLAN.md`.
+- **Startbildschirm neu:** Stufe mit Erfahrungsbalken, großer Knopf „Spielen“ (sofort gegen den nächsten Gegner), Kacheln Feldzug / Rätsel / Freie Partie / Zu zweit, unten Erfolge, Einstellungen, Anleitung. Ladebildschirm im `index.html` statt schwarzer Seite.
+- **Feldzug:** sieben Gegner mit Namen, Wappen (Marmorfigur auf farbigem Ring), Beinamen und Sprüchen, Stufen 1–7 der Rebell-KI, Benno der Bauer bis Der Rebell (`src/game/opponents.ts`). Freischalten der Reihe nach, bis zu drei Sterne (Sieg · ohne Zurücknehmen/Hinweise · in höchstens 30 Zügen). Vor der Partie ein kurzer Auftritt des Gegners, in der Partie eine Sprechblase (Begrüßung, Schach, Schlag, Kampf).
+- **Rätsel:** Matt in 1, 2 und 3, mit der eigenen KI erzeugt (`scripts/puzzles.gen.ts`, `scripts/merge-puzzles.mjs`, Daten `src/game/puzzles.json`), nur Stellungen mit genau einem Lösungszug. Die KI verteidigt; nach der erlaubten Zugzahl ohne Matt ist das Rätsel nicht gelöst, mit Tipp (erster Zug), Nochmal, Überspringen. Serie und Rekord.
+- **Fortschritt** (`src/game/progress.ts`, eigener Speicher `rebellchess.progress.v1`): Erfahrungspunkte, Stufe und Rang (Rekrut bis Rebellenkönig), 12 Erfolge mit goldener Einblendung. Nach „Zug zurücknehmen“ und neuem Ende gibt es nur den Unterschied an Erfahrung.
+- **Ergebnisfenster:** Spruch des Gegners, Sterne mit Klang, Erfahrungsbalken, Aufstieg, neuer Gegner, Erfolge, Goldregen beim Sieg; Knöpfe je nach Lage (Nächster Gegner, Nächstes Rätsel, Nochmal …).
+- **Erster Schlag jeder Partie ist ein Kriegerkampf** (`isFirstCapture`), damit jeder sofort das Besondere sieht.
+- **Ton:** Hintergrundmusik, im Code erzeugt (`src/audio/music.ts`, d-Moll, leise, Schalter „Musik“, schweigt im Hintergrund-Tab); Fanfaren für Sterne, Aufstieg, Erfolge.
+- **Technik:** unbehandelter Fehler beim Laden der Schrift behoben; Portal-Signal „happytime“ bei Sieg; Anleitung ergänzt.
+- Geprüft: Typen, Tests (neu: Fortschritt, erster Kampf), Bilder von Startseite, Feldzug, Rätsel, Erfolgen, Partie mit Sprechblase und Kampf, Siegerfenster, Rätsel gelöst/nicht gelöst (PC und Handy), Ladezeit des Baus, Musikpegel gemessen. Nicht geprüft: echtes Handy, Safari, Musik angehört.

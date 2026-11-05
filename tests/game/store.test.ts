@@ -545,9 +545,13 @@ describe('Kriegerkampf nur bei wichtigen Schlägen', () => {
     return store;
   }
 
-  it('Bauer schlägt Bauer: schneller Schlag, kein Kampf', () => {
+  it('erster Schlag der Partie: immer ein Kampf, danach Bauer schlägt Bauer schnell', () => {
     const store = important('rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2');
     store.getState().tryMove('e4', 'd5');
+    expect(store.getState().battle).toMatchObject({ attacker: { type: 'p' }, victim: { type: 'p' } });
+    store.getState().endBattle();
+    // Dd8xd5: Dame schlägt Bauer – kein wichtiger Schlag, direkt nach dem ersten Kampf
+    store.getState().tryMove('d8', 'd5');
     expect(store.getState().battle).toBeNull();
     expect(store.getState().sfx?.kind).toBe('capture');
   });

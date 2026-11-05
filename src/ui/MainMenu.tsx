@@ -9,8 +9,12 @@ import { FIGURINE } from './format';
 import type { Lang } from '../i18n';
 import { getLang, tr } from '../i18n';
 import { isPortal } from '../portal';
+import { ACHIEVEMENTS, PUZZLES, totalStars, useProgress } from '../game/progress';
+import { OPPONENTS } from '../game/opponents';
+import { IconBoard, IconBook, IconGear, IconPuzzle, IconSwords, IconTrophy, IconUsers } from './icons';
+import { AchievementsPanel, CampaignPanel, PlayButton, PlayerStrip, PuzzlePanel } from './Progress';
+import { useUi } from './uiState';
 
-type Panel = 'home' | 'new' | 'settings' | 'help';
 type ColorChoice = Color | 'random';
 
 const actions = () => gameStore.getState();
@@ -205,6 +209,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
         </p>
       </div>
       <Toggle checked={prefs.sound} onChange={(sound) => set({ sound })} label={tr('Soundeffekte')} />
+      {prefs.sound && <Toggle checked={prefs.music} onChange={(music) => set({ music })} label={tr('Musik')} hint={tr('Ruhige, selbst erzeugte Begleitmusik')} />}
       {prefs.sound && (
         <label className="slider-row">
           <span className="toggle-label">{tr('Lautstärke')}</span>
@@ -265,11 +270,18 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
       <h2 className="panel-title">{tr('Anleitung')}</h2>
       {en ? (
         <>
+          <h3>Campaign, puzzles, achievements</h3>
+          <p>
+            “Play” takes you straight to your next opponent. The campaign has seven opponents, from Benno the Pawn to the Rebel – beat one to
+            unlock the next. Each win earns up to three stars: for winning, for winning without takebacks and hints, and for winning in 30 moves or fewer.
+            Puzzles: find the checkmate in 1, 2 or 3 moves while the AI defends. Wins, stars and puzzles give experience points (XP) – they raise
+            your level and rank from Recruit to Rebel King. Achievements are listed in the main menu.
+          </p>
           <h3>Moving</h3>
           <p>Tap or click a piece, then its target square – or drag the piece onto the target square. Dots show legal moves, rings show captures.</p>
           <h3>Capturing</h3>
           <p>
-            On important captures (queen, rook, checkmate …) both pieces turn into warriors – paladins, and every fight plays out differently. All other captures are quick and go off with a small explosion. The clock stops until the fight is over.
+            On the first capture of every game and on important captures (queen, rook, checkmate …) both pieces turn into warriors – paladins, and every fight plays out differently. All other captures are quick and go off with a small explosion. The clock stops until the fight is over.
             Tapping, clicking, <kbd>Space</kbd> or <kbd>Esc</kbd> skips it; under Settings → “On captures” there are also “Quick” and “Off”.
           </p>
           <h3>Camera</h3>
@@ -305,6 +317,14 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
         </>
       ) : (
         <>
+          <h3>Feldzug, Rätsel, Erfolge</h3>
+          <p>
+            „Spielen“ startet sofort gegen deinen nächsten Gegner. Im Feldzug warten sieben Gegner, von Benno dem Bauern bis zum Rebellen – wer
+            einen besiegt, schaltet den nächsten frei. Jeder Sieg bringt bis zu drei Sterne: für den Sieg, für einen Sieg ohne Zurücknehmen und
+            Hinweise und für einen Sieg in höchstens 30 Zügen. Rätsel: Finde das Matt in 1, 2 oder 3 Zügen, die KI verteidigt sich. Siege, Sterne und
+            Rätsel bringen Erfahrungspunkte (EP) – sie heben deine Stufe und deinen Rang vom Rekruten bis zum Rebellenkönig. Die Erfolge stehen im
+            Hauptmenü.
+          </p>
           <h3>Ziehen</h3>
           <p>
             Figur antippen oder anklicken, dann das Zielfeld – oder die Figur direkt aufs Zielfeld ziehen. Punkte zeigen legale
@@ -312,7 +332,7 @@ function HelpPanel({ onBack }: { onBack: () => void }) {
           </p>
           <h3>Schlagen</h3>
           <p>
-            Bei wichtigen Schlägen (Dame, Turm, Matt …) werden beide Figuren zu Kriegern – Paladine, jeder Kampf läuft anders ab. Alle anderen Schläge sind kurz und knallen mit einer kleinen Explosion. Die Uhr steht, bis
+            Beim ersten Schlag jeder Partie und bei wichtigen Schlägen (Dame, Turm, Matt …) werden beide Figuren zu Kriegern – Paladine, jeder Kampf läuft anders ab. Alle anderen Schläge sind kurz und knallen mit einer kleinen Explosion. Die Uhr steht, bis
             der Kampf vorbei ist. Antippen, Klick, Leertaste oder <kbd>Esc</kbd> überspringen ihn; unter Einstellungen →
             „Beim Schlagen“ gibt es auch „Kurz“ und „Aus“.
           </p>
@@ -382,7 +402,9 @@ function LangSwitch() {
 
 export function MainMenu() {
   useGame((s) => s.prefs.lang); // bei Sprachwechsel neu zeichnen
-  const [panel, setPanel] = useState<Panel>('home');
+  const panel = useUi((s) => s.menuPanel);
+  const setPanel = useUi((s) => s.setMenuPanel);
+  const progress = useProgress((s) => s.data);
   const active = useGame((s) => s.active);
   const hasSave = useGame((s) => s.hasSave);
   const result = useGame((s) => s.result);
@@ -403,32 +425,68 @@ export function MainMenu() {
         </header>
         {panel === 'home' && (
           <nav className="menu-list">
+            <PlayerStrip />
             {active && (
               <button className="btn primary big" onClick={() => actions().closeMenu()}>
                 {result ? tr('Zurück zum Brett') : tr('Zurück zur Partie')}
               </button>
             )}
             {!active && hasSave && (
-              <button className="btn primary big" onClick={() => actions().continueSaved()}>
+              <button className="btn big" onClick={() => actions().continueSaved()}>
                 {tr('Gespeicherte Partie fortsetzen')}
               </button>
             )}
-            <button className={`btn big${!active && !hasSave ? ' primary' : ''}`} onClick={() => setPanel('new')}>
-              {tr('Neue Partie')}
-            </button>
-            <button className="btn" onClick={() => setPanel('settings')}>
-              {tr('Einstellungen')}
-            </button>
-            <button className="btn" onClick={() => setPanel('help')}>
-              {tr('Anleitung')}
-            </button>
-            {installable && (
-              <button className="btn" onClick={() => void promptInstall()}>
-                {tr('Als App installieren')}
+            <PlayButton />
+            <div className="mode-grid">
+              <button className="mode-tile" onClick={() => setPanel('campaign')}>
+                <IconSwords />
+                <strong>{tr('Feldzug')}</strong>
+                <small>
+                  ★ {totalStars(progress)} / {OPPONENTS.length * 3}
+                </small>
               </button>
-            )}
+              <button className="mode-tile" onClick={() => setPanel('puzzles')}>
+                <IconPuzzle />
+                <strong>{tr('Rätsel')}</strong>
+                <small>
+                  {progress.puzzles.length} / {PUZZLES.length}
+                </small>
+              </button>
+              <button className="mode-tile" onClick={() => setPanel('new')}>
+                <IconBoard />
+                <strong>{tr('Freie Partie')}</strong>
+                <small>{tr('Stufe, Farbe, Uhr')}</small>
+              </button>
+              <button
+                className="mode-tile"
+                onClick={() => actions().startGame({ mode: 'local', humanColor: 'w', aiLevel: 3, timeControlId: 'none', training: false })}
+              >
+                <IconUsers />
+                <strong>{tr('Zu zweit')}</strong>
+                <small>{tr('an einem Gerät')}</small>
+              </button>
+            </div>
+            <div className="menu-foot">
+              <button className="foot-btn" onClick={() => setPanel('achievements')}>
+                <IconTrophy /> {tr('Erfolge')} {progress.achievements.length}/{ACHIEVEMENTS.length}
+              </button>
+              <button className="foot-btn" onClick={() => setPanel('settings')}>
+                <IconGear /> {tr('Einstellungen')}
+              </button>
+              <button className="foot-btn" onClick={() => setPanel('help')}>
+                <IconBook /> {tr('Anleitung')}
+              </button>
+              {installable && (
+                <button className="foot-btn" onClick={() => void promptInstall()}>
+                  {tr('Als App installieren')}
+                </button>
+              )}
+            </div>
           </nav>
         )}
+        {panel === 'campaign' && <CampaignPanel onBack={back} />}
+        {panel === 'puzzles' && <PuzzlePanel onBack={back} />}
+        {panel === 'achievements' && <AchievementsPanel onBack={back} />}
         {panel === 'new' && <NewGamePanel onBack={back} />}
         {panel === 'settings' && <SettingsPanel onBack={back} />}
         {panel === 'help' && <HelpPanel onBack={back} />}
