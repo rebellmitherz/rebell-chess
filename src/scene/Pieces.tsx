@@ -68,12 +68,14 @@ const qView = new THREE.Quaternion();
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 /** Ansicht von oben: Figuren um ihren Fuß zum Spieler neigen, damit man ihre Form sieht */
-export const TOP_VIEW_TILT = 1.0;
+export const TOP_VIEW_TILT = 0.8;
 /** Gegenüber-Modus: flachere Neigung, damit die Figuren für beide Spieler ordentlich aussehen und sich weniger überdecken */
 export const FACE_TO_FACE_TILT = 0.5;
 /** Gegenüber-Modus: größer, weil die flachere Neigung die Figuren sonst kleiner wirken lässt */
 export const FACE_TO_FACE_SCALE = 1.3;
-export const TOP_VIEW_SCALE = 0.84;
+export const TOP_VIEW_SCALE = 0.8;
+/** Fuß der geneigten Figur wandert zum Spieler hin, damit sie im Feld bleibt und nicht ins nächste Feld ragt (Einheiten pro Bogenmaß Neigung) */
+const TILT_FOOT_SHIFT = 0.3;
 const noRaycast = () => null;
 
 /** Neigt eine Figur um ihren Fußpunkt in Richtung (dirX, dirZ); positiv = Kopf nach vorn. */
@@ -279,7 +281,7 @@ function Piece({ piece, lifted, interactive, look, displaySquare, profile, inChe
     // Matt: König kippt um, nachdem der Mattzug gelandet ist
     a.topple = THREE.MathUtils.damp(a.topple, mated && now - a.mateStart > 0.85 ? 1 : 0, 3.2, dt);
 
-    g.position.set(pose.x, pose.y + a.lift + a.topple * 0.26, pose.z);
+    g.position.set(pose.x, pose.y + a.lift + a.topple * 0.26, pose.z - a.viewTilt * TILT_FOOT_SHIFT);
     tiltQuaternion(qTilt, dirX || 0.001, dirZ || 1, pose.tilt + tremble);
     // Umkippen leicht übertrieben, dann zurückfedern (Werte > 1 nach dem Dämpfen gibt es nicht – Bogen über sin)
     const fall = a.topple * 1.5 + Math.sin(a.topple * Math.PI) * 0.12;
