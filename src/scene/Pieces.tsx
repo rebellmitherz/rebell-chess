@@ -73,7 +73,7 @@ export const TOP_VIEW_TILT = 1.0;
 export const FACE_TO_FACE_TILT = 0.5;
 /** Gegenüber-Modus: größer, weil die flachere Neigung die Figuren sonst kleiner wirken lässt */
 export const FACE_TO_FACE_SCALE = 1.3;
-export const TOP_VIEW_SCALE = 1.08;
+export const TOP_VIEW_SCALE = 0.84;
 const noRaycast = () => null;
 
 /** Neigt eine Figur um ihren Fußpunkt in Richtung (dirX, dirZ); positiv = Kopf nach vorn. */

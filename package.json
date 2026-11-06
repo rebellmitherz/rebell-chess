@@ -2,7 +2,7 @@
   "name": "rebell-chess-3d",
   "private": true,
   "license": "UNLICENSED",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Rebell Chess 3D – Premium-3D-Schach im Browser",
   "type": "module",
   "scripts": {
